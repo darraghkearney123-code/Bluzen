@@ -1,0 +1,812 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <title>Bluzen — The Quiz</title>
+  <meta name="description" content="A short check-in for you, or someone you care for. No labels, no right answers. Just a clearer picture of what's going on."/>
+  <link rel="icon" href="assets/bluzen-mark-cyan.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Lora:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --navy:        #1B2A4A;
+      --navy-deep:   #14203A;
+      --ink:         #1A2332;
+      --cyan:        #2BB3C0;
+      --cyan-bright: #3DD6E3;
+      --teal-navy:   #14506B;
+      --slate:       #5A6B7B;
+      --mist:        #F4F8FA;
+      --cyan-wash:   #DCF2F5;
+      --cloud:       #FFFFFF;
+      --border:      rgba(27,42,74,.08);
+      --radius:      16px;
+      --radius-lg:   22px;
+      --shadow-sm:   0 2px 12px rgba(27,42,74,.06);
+      --shadow-md:   0 8px 30px rgba(27,42,74,.10);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Nunito', system-ui, sans-serif;
+      background: var(--mist);
+      color: var(--ink);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+
+    .wrap { max-width: 560px; margin: 0 auto; padding: 20px 18px 64px; }
+
+    /* ── Header ── */
+    .site-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .logo-mark {
+      width: 42px; height: 42px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--navy), var(--teal-navy));
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .logo-orb { width: 18px; height: 18px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, var(--cyan-bright), var(--cyan) 70%); }
+    .brand-name { font-family: 'Lora', Georgia, serif; font-size: 21px; font-weight: 600; color: var(--navy); letter-spacing: -.3px; }
+
+    /* ── Progress ── */
+    .progress-wrap { margin-bottom: 20px; display: none; }
+    .progress-wrap.show { display: block; }
+    .progress-top { display: flex; justify-content: space-between; font-size: 12px; color: var(--slate); font-weight: 700; margin-bottom: 6px; }
+    .progress-bar { height: 5px; background: rgba(27,42,74,.08); border-radius: 100px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--cyan-bright)); border-radius: 100px; transition: width .4s ease; width: 0%; }
+
+    /* ── Cards ── */
+    .card { background: var(--cloud); border-radius: var(--radius-lg); border: 1px solid var(--border); box-shadow: var(--shadow-sm); overflow: hidden; }
+    .hidden { display: none !important; }
+
+    /* ── Start screen (navy moment) ── */
+    .start-card { background: linear-gradient(160deg, var(--navy) 0%, var(--navy-deep) 100%); color: var(--cloud); border: none; }
+    .start-inner { padding: 44px 30px 36px; text-align: center; }
+    .orb {
+      width: 92px; height: 92px; border-radius: 50%;
+      margin: 0 auto 26px;
+      background: radial-gradient(circle at 35% 32%, var(--cyan-bright) 0%, var(--cyan) 55%, var(--teal-navy) 100%);
+      box-shadow: 0 0 50px rgba(61,214,227,.35), 0 0 100px rgba(43,179,192,.15);
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .orb { animation: breathe 6s ease-in-out infinite; }
+      @keyframes breathe {
+        0%, 100% { transform: scale(1);   box-shadow: 0 0 40px rgba(61,214,227,.28), 0 0 90px rgba(43,179,192,.12); }
+        45%      { transform: scale(1.14); box-shadow: 0 0 60px rgba(61,214,227,.45), 0 0 130px rgba(43,179,192,.22); }
+      }
+    }
+    .start-title { font-family: 'Lora', Georgia, serif; font-size: clamp(26px, 6vw, 32px); font-weight: 600; line-height: 1.25; margin-bottom: 14px; letter-spacing: -.3px; }
+    .start-sub { font-size: 16px; color: rgba(255,255,255,.75); line-height: 1.65; margin-bottom: 30px; }
+
+    .field { margin-bottom: 14px; text-align: left; }
+    .field label { display: block; font-size: 13px; font-weight: 800; color: rgba(255,255,255,.7); margin-bottom: 6px; letter-spacing: .3px; }
+    .field input {
+      width: 100%; padding: 14px 16px; border-radius: 12px;
+      border: 1.5px solid rgba(255,255,255,.18); background: rgba(255,255,255,.08);
+      font-family: 'Nunito', sans-serif; font-size: 16px; color: var(--cloud);
+    }
+    .field input::placeholder { color: rgba(255,255,255,.35); }
+    .field input:focus { outline: none; border-color: var(--cyan-bright); background: rgba(255,255,255,.12); }
+
+    .who-label { font-size: 13px; font-weight: 800; color: rgba(255,255,255,.7); margin: 22px 0 10px; text-align: left; letter-spacing: .3px; }
+    .who-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 26px; }
+    @media (min-width: 440px) { .who-grid { grid-template-columns: 1fr 1fr; } }
+    .who-btn {
+      padding: 16px 14px; border-radius: 14px; border: 1.5px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.06); color: var(--cloud);
+      font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 700;
+      cursor: pointer; transition: all .15s; text-align: center;
+    }
+    .who-btn:hover { background: rgba(255,255,255,.12); }
+    .who-btn.selected { border-color: var(--cyan-bright); background: rgba(61,214,227,.15); }
+
+    .btn {
+      font-family: 'Nunito', sans-serif; font-size: 16px; font-weight: 800;
+      padding: 15px 26px; border-radius: 100px; border: none; cursor: pointer;
+      transition: transform .12s, box-shadow .2s, background .2s;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-cyan { background: var(--cyan); color: var(--cloud); box-shadow: 0 4px 18px rgba(43,179,192,.35); }
+    .btn-cyan:hover { background: var(--cyan-bright); color: var(--navy-deep); }
+    .btn-cyan:disabled { background: rgba(255,255,255,.15); color: rgba(255,255,255,.4); cursor: not-allowed; box-shadow: none; }
+    .btn-full { width: 100%; }
+    .btn-ghost { background: transparent; color: var(--slate); padding: 12px 16px; box-shadow: none; font-size: 14px; }
+    .btn-ghost:hover { color: var(--ink); background: rgba(27,42,74,.05); }
+
+    /* ── Question card ── */
+    .q-inner { padding: 30px 26px 30px; }
+    .q-eyebrow { font-size: 12px; font-weight: 800; color: var(--cyan); text-transform: uppercase; letter-spacing: 1.4px; margin-bottom: 10px; }
+    .q-text { font-family: 'Lora', Georgia, serif; font-size: clamp(20px, 4.6vw, 24px); font-weight: 600; line-height: 1.35; color: var(--navy); margin-bottom: 22px; letter-spacing: -.2px; }
+    .options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+    .option {
+      background: var(--cloud); border: 2px solid rgba(27,42,74,.10); border-radius: 13px;
+      padding: 14px 16px; text-align: left; width: 100%;
+      font-family: 'Nunito', sans-serif; font-size: 15.5px; color: var(--ink);
+      cursor: pointer; transition: all .13s;
+      display: flex; align-items: center; gap: 12px; line-height: 1.4;
+    }
+    .option:hover { border-color: var(--cyan); background: #FBFEFE; }
+    .option.selected { border-color: var(--cyan); background: var(--cyan-wash); }
+    .opt-dot {
+      width: 18px; height: 18px; border-radius: 50%;
+      border: 2px solid rgba(27,42,74,.22); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; transition: all .13s;
+    }
+    .option.selected .opt-dot { border-color: var(--cyan); background: var(--cyan); }
+    .option.selected .opt-dot::after { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--cloud); }
+
+    .q-nav { display: flex; justify-content: space-between; align-items: center; }
+    .q-nav.end { justify-content: flex-end; }
+
+    /* ── Transition page (carer moment, navy again) ── */
+    .transition-card { background: linear-gradient(160deg, var(--navy) 0%, var(--navy-deep) 100%); color: var(--cloud); border: none; }
+    .transition-inner { padding: 44px 30px; text-align: center; }
+    .orb-small { width: 60px; height: 60px; margin-bottom: 22px; }
+    .transition-title { font-family: 'Lora', Georgia, serif; font-size: clamp(22px, 5vw, 27px); font-weight: 600; line-height: 1.35; margin-bottom: 12px; }
+    .transition-sub { font-size: 15.5px; color: rgba(255,255,255,.72); margin-bottom: 28px; }
+
+    /* ── Typed page ── */
+    .typed-box {
+      width: 100%; min-height: 120px; padding: 14px 16px; border-radius: 13px;
+      border: 2px solid rgba(27,42,74,.10); background: var(--cloud);
+      font-family: 'Nunito', sans-serif; font-size: 15.5px; color: var(--ink);
+      resize: vertical; margin-bottom: 20px; line-height: 1.55;
+    }
+    .typed-box:focus { outline: none; border-color: var(--cyan); }
+
+    /* ── Results ── */
+    .result-hero { background: linear-gradient(160deg, var(--navy) 0%, var(--teal-navy) 130%); color: var(--cloud); padding: 36px 28px 30px; text-align: center; }
+    .result-eyebrow { font-size: 12px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: var(--cyan-bright); margin-bottom: 12px; }
+    .result-name { font-family: 'Lora', Georgia, serif; font-size: clamp(26px, 6vw, 34px); font-weight: 600; letter-spacing: -.3px; line-height: 1.2; }
+    .result-body { padding: 28px 26px 32px; }
+    .result-copy { font-family: 'Lora', Georgia, serif; font-size: 17px; font-style: italic; line-height: 1.7; color: var(--ink); margin-bottom: 22px; padding-left: 14px; border-left: 3px solid var(--cyan); }
+    .nothing-works { font-size: 15px; color: var(--teal-navy); background: var(--cyan-wash); border-radius: 12px; padding: 14px 16px; margin-bottom: 22px; line-height: 1.6; }
+
+    .carer-block { background: var(--mist); border-radius: 14px; padding: 20px 20px; margin-bottom: 24px; }
+    .carer-block-eyebrow { font-size: 12px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: var(--cyan); margin-bottom: 8px; }
+    .carer-state-name { font-family: 'Lora', Georgia, serif; font-size: 21px; font-weight: 600; color: var(--navy); margin-bottom: 8px; }
+    .carer-state-copy { font-size: 15px; color: var(--ink); line-height: 1.6; }
+
+    .result-next { font-size: 15.5px; color: var(--ink); line-height: 1.65; margin-bottom: 22px; }
+    .result-next strong { color: var(--navy); }
+    .restart { text-align: center; margin-top: 18px; }
+    .restart a { font-size: 13px; color: var(--slate); text-decoration: none; }
+    .restart a:hover { color: var(--cyan); }
+
+    /* Accessibility */
+    button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visible {
+      outline: 3px solid var(--cyan-bright); outline-offset: 2px;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .card { animation: rise .35s ease backwards; }
+      @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    }
+  </style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="site-header">
+    <a href="index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;">
+      <div class="logo-mark"><div class="logo-orb"></div></div>
+      <span class="brand-name">Bluzen</span>
+    </a>
+  </header>
+
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-top">
+      <span id="progressLabel"></span><span id="progressPct"></span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+
+  <!-- ═══ START ═══ -->
+  <div class="card start-card" id="screen-start">
+    <div class="start-inner">
+      <div class="orb" aria-hidden="true"></div>
+      <h1 class="start-title">Let's get a clearer picture.</h1>
+      <p class="start-sub">A short check-in. No labels, no right answers. Takes about three minutes.</p>
+
+      <div class="field">
+        <label for="nameInput">Your first name</label>
+        <input type="text" id="nameInput" placeholder="e.g. Sarah" autocomplete="given-name"/>
+      </div>
+      <div class="field">
+        <label for="emailInput">Your email</label>
+        <input type="email" id="emailInput" placeholder="you@email.com" autocomplete="email"/>
+      </div>
+
+      <div class="who-label">Who is this for?</div>
+      <div class="who-grid">
+        <button class="who-btn" id="whoMe" onclick="setPath('me')">For me</button>
+        <button class="who-btn" id="whoCarer" onclick="setPath('carer')">For someone I care for</button>
+      </div>
+
+      <button class="btn btn-cyan btn-full" id="startBtn" onclick="startQuiz()" disabled>Start</button>
+    </div>
+  </div>
+
+  <!-- Question container (built by JS) -->
+  <div id="quizContainer"></div>
+
+  <!-- ═══ RESULT ═══ -->
+  <div class="card hidden" id="screen-result">
+    <div class="result-hero">
+      <div class="result-eyebrow" id="resultEyebrow">Your result</div>
+      <div class="result-name" id="resultName"></div>
+    </div>
+    <div class="result-body">
+      <p class="result-copy" id="resultCopy"></p>
+      <div class="nothing-works hidden" id="nothingWorks">
+        One more thing. You said nothing seems to work lately. That's usually the sign the tank is truly empty, not that you're doing it wrong.
+      </div>
+      <div class="carer-block hidden" id="carerBlock">
+        <div class="carer-block-eyebrow">And you?</div>
+        <div class="carer-state-name" id="carerStateName"></div>
+        <p class="carer-state-copy" id="carerStateCopy"></p>
+      </div>
+      <p class="result-next" id="resultNext"></p>
+      <button class="btn btn-cyan btn-full" onclick="bookCall()">Book a free 15 minute chat</button>
+      <div class="restart"><a href="#" onclick="restart(event)">Take the quiz again</a></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════════════
+   BLUZEN QUIZ — dual path (For me / For someone I care for)
+   Profiles:
+     ME path:    wired, overthinker, empty, juggler, flatlined
+     CARER path (about the person): overloaded, quiet, cautious, big, retreater
+     CARER state (about the carer): stretched / low / emptycarer
+   ═══════════════════════════════════════════════════════════ */
+
+// ── CONFIG: wire these up when ready ──
+// EmailJS (emailjs.com) sends the personalised result email straight to the quiz-taker.
+const EMAILJS_PUBLIC_KEY = "YOUR_EMAILJS_PUBLIC_KEY";
+const EMAILJS_SERVICE_ID = "YOUR_EMAILJS_SERVICE_ID";
+const EMAILJS_TEMPLATE_ME = "YOUR_EMAILJS_TEMPLATE_ID_ME";       // template vars: to_email, to_name, result_name, result_copy, pdf_link
+const EMAILJS_TEMPLATE_CARER = "YOUR_EMAILJS_TEMPLATE_ID_CARER"; // same, plus: carer_state_name, carer_state_copy
+
+// MailerLite embedded-form action URL for the "Quiz Takers" group (list-building only — does not send email).
+// Get this from MailerLite: Forms -> Embedded -> Quiz Takers -> copy the form's action URL.
+const MAILERLITE_ENDPOINT = "";
+
+// Calendly (or similar) booking link for "Book a free 15 minute chat".
+const BOOKING_URL = "";
+
+// One PDF per result profile — replace each placeholder with the real hosted link.
+const PDF_LINKS = {
+  wired:       "REPLACE_WITH_PDF_LINK_wired",
+  overthinker: "REPLACE_WITH_PDF_LINK_overthinker",
+  empty:       "REPLACE_WITH_PDF_LINK_empty",
+  juggler:     "REPLACE_WITH_PDF_LINK_juggler",
+  flatlined:   "REPLACE_WITH_PDF_LINK_flatlined",
+  overloaded:  "REPLACE_WITH_PDF_LINK_overloaded",
+  quiet:       "REPLACE_WITH_PDF_LINK_quiet",
+  cautious:    "REPLACE_WITH_PDF_LINK_cautious",
+  big:         "REPLACE_WITH_PDF_LINK_big",
+  retreater:   "REPLACE_WITH_PDF_LINK_retreater",
+};
+
+if (window.emailjs && !EMAILJS_PUBLIC_KEY.startsWith("YOUR_")) {
+  emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+}
+
+// ── PROFILE DEFINITIONS ──
+const PROFILES = {
+  // "For me" path
+  wired:       { name: "Wired & Tired",      copy: "You're exhausted, but your system won't switch off. Tired and wired at the same time. That's not a character flaw. It's a nervous system that has been on duty for too long." },
+  overthinker: { name: "The Overthinker",    copy: "Your head is doing overtime. Running through everything, checking it twice. It's exhausting, and it usually means your system is trying to feel safe by staying one step ahead." },
+  empty:       { name: "Running on Empty",   copy: "The tank is empty and you're still driving. You're getting through the days, but there's nothing left over. That's not weakness. That's what happens when you give more than you get back for too long." },
+  juggler:     { name: "The Juggler",        copy: "Too many plates, and you're the only one spinning them. You push through because you have to. But pushing through is not the same as being okay." },
+  flatlined:   { name: "Flatlined",          copy: "Things have gone quiet inside. Not calm. Just flat. When everything is too much for too long, the system sometimes turns the volume down on all of it, including the good stuff." },
+  // Carer path (about the person they care for)
+  overloaded:  { name: "The Overloaded One", copy: "The world comes at them louder and brighter than it does for most people. When it all lands at once, their system gets overwhelmed. What can look like difficult behaviour is usually a nervous system doing its best." },
+  quiet:       { name: "The Quiet Struggler",copy: "They hold it together on the outside, then it comes out where they feel safe. Usually at home. Usually with you. That's not manipulation. That's trust." },
+  cautious:    { name: "The Cautious One",   copy: "New things, changes and demands feel risky to them, so they resist. Avoidance isn't defiance. It's protection. Their system is trying to keep them safe." },
+  big:         { name: "Big Feelings",       copy: "Their emotions come in fast and strong, and they don't have the brakes yet. Big reactions are not bad behaviour. They're a system that gets flooded quicker than it can cope." },
+  retreater:   { name: "The Retreater",      copy: "When things get too much, they disappear into themselves. Shutting down is not switching off. It's a system protecting itself the only way it knows." },
+};
+
+const CARER_STATES = [
+  { min: 0, max: 3, name: "Stretched",        copy: "You're coping, but you're carrying a lot. Keep an eye on the tank. It empties quietly." },
+  { min: 4, max: 6, name: "Running Low",      copy: "The reserves are going down faster than they're filling back up. That catches up on people. It doesn't have to catch up on you." },
+  { min: 7, max: 9, name: "Running on Empty", copy: "There's nothing left in the tank, and you're still going. You matter in this too. More than you probably let yourself believe." },
+];
+
+// ── QUESTIONS ──
+// Each option: label + scores object. Carer-path questions use cLabel/cScores where wording or mapping differs.
+const QUESTIONS = [
+  { // Q1 Energy
+    me: "How's your energy, day to day?",
+    carer: "How's their energy, day to day?",
+    options: [
+      { label: "Steady enough, most days",              scores: {},                          cScores: {} },
+      { label: "Up and down. Good days, then crashes",  scores: { juggler: 1 },              cScores: { big: 1 } },
+      { label: "Tired but somehow still wired",         scores: { wired: 2 },                cScores: { overloaded: 2 } },
+      { label: "Flat. Like the tank is empty",          scores: { empty: 2 },                cScores: { retreater: 2 } },
+    ]
+  },
+  { // Q2 Mind
+    me: "How busy is your head?",
+    carer: "How busy or anxious does their mind seem?",
+    options: [
+      { label: "Fairly quiet, mostly",                  scores: {},                                cScores: {} },
+      { label: "Busy, but I manage",                    cLabel: "Busy, but they manage",           scores: { overthinker: 1 },  cScores: { quiet: 1 } },
+      { label: "It rarely stops",                       scores: { overthinker: 2 },                cScores: { overloaded: 2 } },
+      { label: "So full it wears me out",               cLabel: "So full it wears them out",       scores: { overthinker: 2, wired: 1 }, cScores: { overloaded: 2, big: 1 } },
+    ]
+  },
+  { // Q3 Sensory
+    me: "How often does everything feel like too much? The noise, the people, the demands.",
+    carer: "How often does the world seem too loud or too much for them?",
+    options: [
+      { label: "Rarely",                          scores: {},                        cScores: {} },
+      { label: "Sometimes, when things get busy", scores: { wired: 1 },              cScores: { overloaded: 1 } },
+      { label: "Often",                           scores: { wired: 2 },              cScores: { overloaded: 2 } },
+      { label: "Most days",                       scores: { wired: 2, flatlined: 1 },cScores: { overloaded: 2, retreater: 1 } },
+    ]
+  },
+  { // Q4 Sleep
+    me: "How's your sleep at the minute?",
+    carer: "How do they sleep and settle?",
+    options: [
+      { label: "Fine, mostly",                                scores: {},                              cScores: {} },
+      { label: "It takes me ages to switch off",              cLabel: "It takes them ages to settle",  scores: { wired: 2, overthinker: 1 }, cScores: { overloaded: 2, cautious: 1 } },
+      { label: "Broken. Lots of waking up",                   scores: { wired: 1, empty: 1 },          cScores: { big: 1, retreater: 1 } },
+      { label: "I wake up as tired as I went down",           cLabel: "They wake up as tired as they went down", scores: { empty: 2 },   cScores: { retreater: 2 } },
+    ]
+  },
+  { // Q5 Overwhelm — the splitter (5 options)
+    me: "When it all gets too much, what do you tend to do?",
+    carer: "When it all gets too much for them, what tends to happen?",
+    meOptions: [
+      { label: "Push through and keep going",      scores: { juggler: 3 } },
+      { label: "Overthink everything",             scores: { overthinker: 3 } },
+      { label: "Get wound up and can't settle",    scores: { wired: 3 } },
+      { label: "Go quiet and shut down",           scores: { flatlined: 3 } },
+      { label: "Just feel empty",                  scores: { empty: 3 } },
+    ],
+    carerOptions: [
+      { label: "Big reactions. It all comes out at once",   cScores: { big: 3 } },
+      { label: "They go quiet and hold it all in",          cScores: { quiet: 3 } },
+      { label: "They resist, refuse, avoid the thing",      cScores: { cautious: 3 } },
+      { label: "They withdraw into themselves",             cScores: { retreater: 3 } },
+      { label: "All of it. It changes day to day",          cScores: { overloaded: 3 } },
+    ]
+  },
+  { // Q6 Recovery
+    me: "What actually helps you come back to yourself?",
+    carer: "What helps them settle after a hard day?",
+    options: [
+      { label: "Quiet time and space",       scores: {}, cScores: {}, tag: "quiet" },
+      { label: "Getting out and moving",     scores: {}, cScores: {}, tag: "movement" },
+      { label: "Time with someone safe",     scores: {}, cScores: {}, tag: "people" },
+      { label: "Honestly, nothing seems to work lately", cLabel: "Nothing seems to work lately", scores: { empty: 2 }, cScores: { retreater: 2 }, tag: "nothing" },
+    ]
+  },
+  { // Q7 Pattern — amplifier
+    me: "Is this most days, or does it come in waves?",
+    carer: "Is this most days, or does it come in waves?",
+    amplifier: true,
+    options: [
+      { label: "Only now and then",        amp: 0 },
+      { label: "It comes in waves",        amp: 1 },
+      { label: "Most days",                amp: 2 },
+      { label: "It's pretty much constant",amp: 3 },
+    ]
+  },
+  { // Q8 Support
+    me: "What support do you have around you?",
+    carer: "What support do they have around them?",
+    options: [
+      { label: "Good support",                 scores: {},                          cScores: {} },
+      { label: "Some, but not enough",         scores: { empty: 1 },                cScores: { quiet: 1 } },
+      { label: "Very little",                  scores: { empty: 2 },                cScores: { retreater: 2 } },
+      { label: "It's basically just me",       cLabel: "It's basically just us",    scores: { empty: 2, juggler: 1 },    cScores: { retreater: 2, overloaded: 1 } },
+    ]
+  },
+];
+
+// Carer mini-section (carer path only)
+const CARER_QUESTIONS = [
+  {
+    text: "And what about your own sleep?",
+    options: [
+      { label: "Fine, mostly", pts: 0 },
+      { label: "Broken, but I'm coping", pts: 1 },
+      { label: "Running on too little", pts: 2 },
+      { label: "I can't remember a good night", pts: 3 },
+    ]
+  },
+  {
+    text: "When did you last feel properly calm?",
+    options: [
+      { label: "This week", pts: 0 },
+      { label: "A few weeks back", pts: 1 },
+      { label: "I can't remember", pts: 2 },
+      { label: "It's been a very long time", pts: 3 },
+    ]
+  },
+  {
+    text: "Who looks after you?",
+    options: [
+      { label: "I've good people around me", pts: 0 },
+      { label: "One or two, when I ask", pts: 1 },
+      { label: "Not many, really", pts: 2 },
+      { label: "I've never really thought about that", pts: 3 },
+    ]
+  },
+];
+
+// ── STATE ──
+let path = null;                       // 'me' | 'carer'
+let userName = "", userEmail = "";
+const answers = new Array(QUESTIONS.length).fill(null);
+const carerAnswers = new Array(CARER_QUESTIONS.length).fill(null);
+let typedAnswer = "";
+let step = 0;                          // index into the flow
+let flow = [];                         // built at start
+
+// ── START SCREEN LOGIC ──
+function setPath(p) {
+  path = p;
+  document.getElementById('whoMe').classList.toggle('selected', p === 'me');
+  document.getElementById('whoCarer').classList.toggle('selected', p === 'carer');
+  checkStartReady();
+}
+['nameInput','emailInput'].forEach(id => {
+  document.getElementById(id).addEventListener('input', checkStartReady);
+});
+function checkStartReady() {
+  const name = document.getElementById('nameInput').value.trim();
+  const email = document.getElementById('emailInput').value.trim();
+  const ok = name.length > 0 && email.includes('@') && email.includes('.') && path;
+  document.getElementById('startBtn').disabled = !ok;
+}
+
+// Deep-link support: quiz.html?path=me or quiz.html?path=carer preselects the path
+// (used by the homepage's "For me" / "For someone I support" cards).
+(function preselectPathFromQuery() {
+  const requested = new URLSearchParams(window.location.search).get('path');
+  if (requested === 'me' || requested === 'carer') setPath(requested);
+})();
+
+function startQuiz() {
+  userName = document.getElementById('nameInput').value.trim();
+  userEmail = document.getElementById('emailInput').value.trim();
+
+  // Build the flow
+  flow = QUESTIONS.map((_, i) => ({ type: 'q', idx: i }));
+  if (path === 'carer') {
+    flow.push({ type: 'transition' });
+    CARER_QUESTIONS.forEach((_, i) => flow.push({ type: 'cq', idx: i }));
+  }
+  flow.push({ type: 'typed' });
+
+  document.getElementById('screen-start').classList.add('hidden');
+  document.getElementById('progressWrap').classList.add('show');
+  step = 0;
+  renderStep();
+}
+
+// ── RENDERING ──
+function renderStep() {
+  const container = document.getElementById('quizContainer');
+  container.innerHTML = "";
+  const item = flow[step];
+  updateProgress();
+
+  if (item.type === 'q')      renderQuestion(container, item.idx);
+  if (item.type === 'transition') renderTransition(container);
+  if (item.type === 'cq')     renderCarerQuestion(container, item.idx);
+  if (item.type === 'typed')  renderTyped(container);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function questionOptions(q) {
+  if (q.meOptions) return path === 'me' ? q.meOptions : q.carerOptions;
+  return q.options;
+}
+
+function renderQuestion(container, qIdx) {
+  const q = QUESTIONS[qIdx];
+  const opts = questionOptions(q);
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    <div class="q-inner">
+      <div class="q-eyebrow">Question ${qIdx + 1} of ${QUESTIONS.length}</div>
+      <div class="q-text">${path === 'me' ? q.me : q.carer}</div>
+      <div class="options" role="radiogroup">
+        ${opts.map((opt, oIdx) => {
+          const label = (path === 'carer' && opt.cLabel) ? opt.cLabel : opt.label;
+          const sel = answers[qIdx] === oIdx ? 'selected' : '';
+          return `<button class="option ${sel}" role="radio" aria-checked="${answers[qIdx] === oIdx}" onclick="answerQ(${qIdx}, ${oIdx})">
+            <span class="opt-dot"></span><span>${label}</span>
+          </button>`;
+        }).join('')}
+      </div>
+      <div class="q-nav ${step === 0 ? 'end' : ''}">
+        ${step > 0 ? `<button class="btn btn-ghost" onclick="back()">Back</button>` : ''}
+        <button class="btn btn-cyan" id="nextBtn" onclick="next()" ${answers[qIdx] === null ? 'disabled' : ''}>Next</button>
+      </div>
+    </div>`;
+  container.appendChild(card);
+}
+
+function renderTransition(container) {
+  const card = document.createElement('div');
+  card.className = 'card transition-card';
+  card.innerHTML = `
+    <div class="transition-inner">
+      <div class="orb orb-small" aria-hidden="true"></div>
+      <div class="transition-title">Nearly there. Three quick ones about you.</div>
+      <div class="transition-sub">Because you matter in this too.</div>
+      <button class="btn btn-cyan" onclick="next()">Go on</button>
+    </div>`;
+  container.appendChild(card);
+}
+
+function renderCarerQuestion(container, cIdx) {
+  const q = CARER_QUESTIONS[cIdx];
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    <div class="q-inner">
+      <div class="q-eyebrow">About you · ${cIdx + 1} of ${CARER_QUESTIONS.length}</div>
+      <div class="q-text">${q.text}</div>
+      <div class="options" role="radiogroup">
+        ${q.options.map((opt, oIdx) => {
+          const sel = carerAnswers[cIdx] === oIdx ? 'selected' : '';
+          return `<button class="option ${sel}" role="radio" aria-checked="${carerAnswers[cIdx] === oIdx}" onclick="answerC(${cIdx}, ${oIdx})">
+            <span class="opt-dot"></span><span>${opt.label}</span>
+          </button>`;
+        }).join('')}
+      </div>
+      <div class="q-nav">
+        <button class="btn btn-ghost" onclick="back()">Back</button>
+        <button class="btn btn-cyan" id="nextBtn" onclick="next()" ${carerAnswers[cIdx] === null ? 'disabled' : ''}>Next</button>
+      </div>
+    </div>`;
+  container.appendChild(card);
+}
+
+function renderTyped(container) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    <div class="q-inner">
+      <div class="q-eyebrow">Last one</div>
+      <div class="q-text">In your own words, what's the hardest part right now?</div>
+      <textarea class="typed-box" id="typedBox" placeholder="Write as much or as little as you like...">${typedAnswer}</textarea>
+      <div class="q-nav">
+        <button class="btn btn-ghost" onclick="back()">Back</button>
+        <div>
+          <button class="btn btn-ghost" onclick="skipTyped()">Skip this</button>
+          <button class="btn btn-cyan" onclick="finishTyped()">See my result</button>
+        </div>
+      </div>
+    </div>`;
+  container.appendChild(card);
+}
+
+// ── ANSWER HANDLERS ──
+function answerQ(qIdx, oIdx) {
+  answers[qIdx] = oIdx;
+  renderStep();
+}
+function answerC(cIdx, oIdx) {
+  carerAnswers[cIdx] = oIdx;
+  renderStep();
+}
+function next() { if (step < flow.length - 1) { step++; renderStep(); } }
+function back() { if (step > 0) { step--; renderStep(); } }
+function skipTyped() { typedAnswer = ""; showResult(); }
+function finishTyped() {
+  typedAnswer = document.getElementById('typedBox').value.trim();
+  showResult();
+}
+
+function updateProgress() {
+  const total = flow.length;
+  const pct = Math.round(((step + 1) / total) * 100);
+  document.getElementById('progressLabel').textContent = `Step ${step + 1} of ${total}`;
+  document.getElementById('progressPct').textContent = `${pct}%`;
+  document.getElementById('progressFill').style.width = `${pct}%`;
+}
+
+// ── SCORING ──
+function computeResult() {
+  const keys = path === 'me'
+    ? ['wired','overthinker','empty','juggler','flatlined']
+    : ['overloaded','quiet','cautious','big','retreater'];
+  const score = {};
+  keys.forEach(k => score[k] = 0);
+  let nothingWorksFlag = false;
+  let recoveryTag = null;
+
+  QUESTIONS.forEach((q, qIdx) => {
+    const aIdx = answers[qIdx];
+    if (aIdx === null) return;
+    const opts = questionOptions(q);
+    const opt = opts[aIdx];
+
+    if (q.amplifier) {
+      // Q7: add amp points to current leader (random among tied leaders)
+      const amp = opt.amp || 0;
+      if (amp > 0) {
+        const max = Math.max(...keys.map(k => score[k]));
+        const leaders = keys.filter(k => score[k] === max);
+        const pick = leaders[Math.floor(Math.random() * leaders.length)];
+        score[pick] += amp;
+      }
+      return;
+    }
+
+    const s = path === 'me' ? (opt.scores || {}) : (opt.cScores || opt.scores || {});
+    Object.entries(s).forEach(([k, v]) => { if (k in score) score[k] += v; });
+    if (opt.tag === 'nothing') nothingWorksFlag = true;
+    else if (opt.tag) recoveryTag = opt.tag;
+  });
+
+  // Single winner; random among tied
+  const max = Math.max(...keys.map(k => score[k]));
+  const winners = keys.filter(k => score[k] === max);
+  const winner = winners[Math.floor(Math.random() * winners.length)];
+
+  // Carer state
+  let carerState = null;
+  if (path === 'carer') {
+    const total = carerAnswers.reduce((sum, aIdx, i) =>
+      sum + (aIdx !== null ? CARER_QUESTIONS[i].options[aIdx].pts : 0), 0);
+    carerState = CARER_STATES.find(s => total >= s.min && total <= s.max) || CARER_STATES[0];
+  }
+
+  return { winner, score, nothingWorksFlag, recoveryTag, carerState };
+}
+
+// ── RESULT SCREEN ──
+function showResult() {
+  const r = computeResult();
+  const profile = PROFILES[r.winner];
+
+  document.getElementById('progressWrap').classList.remove('show');
+  document.getElementById('quizContainer').innerHTML = "";
+
+  document.getElementById('resultEyebrow').textContent =
+    path === 'carer' ? "They sound like" : "You're running";
+  document.getElementById('resultName').textContent = profile.name;
+  document.getElementById('resultCopy').textContent = profile.copy;
+
+  // "Nothing works" acknowledgment — for the me path landing on empty, or carer path landing retreater
+  const showNothing = r.nothingWorksFlag && (r.winner === 'empty' || r.winner === 'retreater');
+  document.getElementById('nothingWorks').classList.toggle('hidden', !showNothing);
+
+  // Carer state block
+  const carerBlock = document.getElementById('carerBlock');
+  if (path === 'carer' && r.carerState) {
+    document.getElementById('carerStateName').textContent = r.carerState.name;
+    document.getElementById('carerStateCopy').textContent = r.carerState.copy;
+    carerBlock.classList.remove('hidden');
+  } else {
+    carerBlock.classList.add('hidden');
+  }
+
+  document.getElementById('resultNext').innerHTML =
+    path === 'carer'
+      ? `<strong>${userName}</strong>, your full breakdown for both of you is on its way to your email, including one thing you can try tonight and how to book a free 15 minute chat with me.`
+      : `<strong>${userName}</strong>, your full breakdown is on its way to your email, including one thing you can try tonight and how to book a free 15 minute chat with me.`;
+
+  submitToEmailList(r);
+  document.getElementById('screen-result').classList.remove('hidden');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── MAILERLITE (list-building only — does not send any email itself) ──
+// Posts via a hidden form + iframe so this works cross-origin with no CORS setup,
+// the same way MailerLite's own embedded-form snippets work.
+function submitToMailerLite(actionUrl, fields) {
+  if (!actionUrl) return;
+  const iframeName = 'ml-submit-' + Date.now();
+  const iframe = document.createElement('iframe');
+  iframe.name = iframeName;
+  iframe.style.display = 'none';
+  document.body.appendChild(iframe);
+
+  const form = document.createElement('form');
+  form.action = actionUrl;
+  form.method = 'POST';
+  form.target = iframeName;
+  form.style.display = 'none';
+
+  Object.entries(fields).forEach(([key, value]) => {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = key;
+    input.value = value ?? '';
+    form.appendChild(input);
+  });
+
+  document.body.appendChild(form);
+  form.submit();
+  setTimeout(() => { form.remove(); iframe.remove(); }, 3000);
+}
+
+// ── EMAILJS (sends the personalised result straight to the quiz-taker) ──
+function sendResultEmail(result) {
+  if (!window.emailjs || EMAILJS_PUBLIC_KEY.startsWith("YOUR_")) {
+    console.warn("EmailJS isn't configured yet — no result email was sent. Set the EMAILJS_* constants near the top of quiz.html.");
+    return;
+  }
+  const profile = PROFILES[result.winner];
+  const templateId = path === 'carer' ? EMAILJS_TEMPLATE_CARER : EMAILJS_TEMPLATE_ME;
+  const params = {
+    to_email: userEmail,
+    to_name: userName,
+    result_name: profile.name,
+    result_copy: profile.copy,
+    pdf_link: PDF_LINKS[result.winner] || '',
+    carer_state_name: result.carerState ? result.carerState.name : '',
+    carer_state_copy: result.carerState ? result.carerState.copy : '',
+  };
+  emailjs.send(EMAILJS_SERVICE_ID, templateId, params)
+    .catch(err => console.error("EmailJS quiz result send failed:", err));
+}
+
+// ── SUBMISSION: fires both the email send and the list add ──
+function submitToEmailList(result) {
+  const payload = {
+    name: userName,
+    email: userEmail,
+    path: path,
+    profile: result.winner,
+    profileName: PROFILES[result.winner].name,
+    carerState: result.carerState ? result.carerState.name : null,
+    recoveryTag: result.recoveryTag,
+    nothingWorks: result.nothingWorksFlag,
+    hardestPart: typedAnswer,
+    timestamp: new Date().toISOString(),
+  };
+  console.log("Quiz payload:", payload);
+
+  sendResultEmail(result);
+
+  submitToMailerLite(MAILERLITE_ENDPOINT, {
+    email: userEmail,
+    name: userName,
+    quiz_result: PROFILES[result.winner].name,
+    carer_state: result.carerState ? result.carerState.name : '',
+  });
+}
+
+function bookCall() {
+  if (BOOKING_URL) { window.open(BOOKING_URL, '_blank'); }
+  else { alert("Booking link coming soon. For now, the full details are in the email on its way to you."); }
+}
+
+function restart(e) {
+  if (e) e.preventDefault();
+  path = null; userName = ""; userEmail = ""; typedAnswer = ""; step = 0; flow = [];
+  answers.fill(null); carerAnswers.fill(null);
+  document.getElementById('screen-result').classList.add('hidden');
+  document.getElementById('quizContainer').innerHTML = "";
+  document.getElementById('nameInput').value = "";
+  document.getElementById('emailInput').value = "";
+  document.getElementById('whoMe').classList.remove('selected');
+  document.getElementById('whoCarer').classList.remove('selected');
+  document.getElementById('startBtn').disabled = true;
+  document.getElementById('screen-start').classList.remove('hidden');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+
+</body>
+</html>
