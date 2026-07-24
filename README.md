@@ -28,23 +28,13 @@ Submitting into that isn't possible from client-side JS, so this goes through a 
 proxy instead — a [Cloudflare Worker](https://workers.cloudflare.com) (free tier) that holds your
 MailerLite API token as a secret and forwards signups server-side.
 
-**Done:** the proxy code is written and the three `GROUP_IDS` are filled in
-(`cloudflare-worker/mailerlite-proxy.js`). **This part has to be done by you directly** — deploying
-to Cloudflare means creating a third-party account, and an API token/secret shouldn't be handled by
-anyone but you:
+**Done.** The proxy is written (`cloudflare-worker/mailerlite-proxy.js`, `GROUP_IDS` filled in),
+deployed to Cloudflare with `MAILERLITE_API_TOKEN` set as an encrypted secret (never in the code),
+and its live URL is wired into `MAILERLITE_WORKER_URL` in both `assets/app.js` and `quiz.html`.
 
-1. Create a free Cloudflare account, go to **Workers & Pages → Create → Create Worker**.
-2. Paste the full contents of `cloudflare-worker/mailerlite-proxy.js` into the editor and deploy.
-3. In MailerLite: **Integrations → API**, generate a token.
-4. In the Worker's **Settings → Variables**, add an encrypted secret named `MAILERLITE_API_TOKEN`
-   with that token. (Don't put it in the code itself, and don't send it to anyone else — keep it
-   only in Cloudflare's secret store.)
-5. Redeploy the Worker so the secret takes effect.
-6. Copy the Worker's URL (looks like `https://mailerlite-proxy.<you>.workers.dev`) and send it over
-   — it goes into `MAILERLITE_WORKER_URL` in both `assets/app.js` and `quiz.html`.
-
-Until this is set up, sleep-audio signups show a clear "not connected yet" message, and quiz
-completions log a console warning — neither silently loses data or crashes.
+If the Worker ever needs redeploying (e.g. updating `GROUP_IDS` or `ALLOWED_ORIGINS`), paste the
+updated file into the Cloudflare dashboard's Worker editor and redeploy — the secret persists
+across redeploys.
 
 The 10-PDF-per-result and "which PDF goes with which profile" logic lives entirely in MailerLite's
 email editor (conditional content keyed off the `quiz_result` field), not in this code — that's your
@@ -88,8 +78,6 @@ Quiz scoring, copy, and result profiles live entirely inside `quiz.html`.
 
 ## Open items
 
-- **Deploy the Cloudflare Worker** (see MailerLite section above) — in progress; send over the
-  deployed Worker URL once it's live so it can be wired into `assets/app.js` and `quiz.html`.
 - **Domain:** confirmed as `www.bluzenfocus.net` / `bluzenfocus.net` — the one live and
   DNS-configured since the start of the project. (An earlier message said `bluzen.net`; that was
   a mistake and has been reverted.) `CNAME` and the Worker's `ALLOWED_ORIGINS` both point at this.

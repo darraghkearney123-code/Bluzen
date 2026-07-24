@@ -10,7 +10,7 @@
   // into the right group. MailerLite's plan doesn't expose an embeddable form or API endpoint
   // safe to call directly from the browser, so this goes through a small serverless proxy
   // instead (see /cloudflare-worker/mailerlite-proxy.js and the README for setup).
-  const MAILERLITE_WORKER_URL = "REPLACE_WITH_YOUR_WORKER_URL"; // e.g. https://mailerlite-proxy.you.workers.dev
+  const MAILERLITE_WORKER_URL = "https://mailerlite-proxy.darraghkearney123.workers.dev";
 
   const state = {
     sleepSubmitted: false,
