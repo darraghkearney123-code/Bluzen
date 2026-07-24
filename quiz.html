@@ -250,14 +250,20 @@
         <p class="carer-state-copy" id="carerStateCopy"></p>
       </div>
       <p class="result-next" id="resultNext"></p>
-      <button class="btn btn-cyan btn-full" onclick="bookCall()">Book a free 15 minute chat</button>
+      <button class="btn btn-cyan btn-full" onclick="bookCall()">Book a free 30 minute chat</button>
       <div class="restart"><a href="#" onclick="restart(event)">Take the quiz again</a></div>
     </div>
   </div>
 
+  <!--
+    TODO: paste the MailerLite embed code for the "Quiz Completed" group form here
+    (MailerLite -> Forms -> Embedded -> Quiz Completed -> "Embed" tab). It renders invisibly —
+    the quiz drives it entirely via JS (see MAILERLITE_EMBEDDED / submitToMailerLite in the
+    script below). Once pasted, set MAILERLITE_EMBEDDED = true near the top of the script.
+  -->
+
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script>
 /* ═══════════════════════════════════════════════════════════
    BLUZEN QUIZ — dual path (For me / For someone I care for)
@@ -267,37 +273,24 @@
      CARER state (about the carer): stretched / low / emptycarer
    ═══════════════════════════════════════════════════════════ */
 
-// ── CONFIG: wire these up when ready ──
-// EmailJS (emailjs.com) sends the personalised result email straight to the quiz-taker.
-const EMAILJS_PUBLIC_KEY = "YOUR_EMAILJS_PUBLIC_KEY";
-const EMAILJS_SERVICE_ID = "YOUR_EMAILJS_SERVICE_ID";
-const EMAILJS_TEMPLATE_ME = "YOUR_EMAILJS_TEMPLATE_ID_ME";       // template vars: to_email, to_name, result_name, result_copy, pdf_link
-const EMAILJS_TEMPLATE_CARER = "YOUR_EMAILJS_TEMPLATE_ID_CARER"; // same, plus: carer_state_name, carer_state_copy
+// ── CONFIG ──
+// MailerLite sends the actual result email itself, via its own automation (locked copy,
+// triggered when this quiz adds someone to the "Quiz Completed" group). This code's only job
+// is to get the visitor's answers into that group with the right fields — see MAILERLITE_EMBED below.
+//
+// TODO: paste the real MailerLite EMBED CODE for the "Quiz Completed" group form here
+// (MailerLite -> Forms -> Embedded -> Quiz Completed -> "Embed" tab, NOT the "Share" link).
+// It's normally a <div> plus a <script> tag pair. Paste both, replacing
+// this comment, anywhere in the page body (e.g. just above the closing </div> of .wrap works fine) —
+// it renders invisibly since we drive it entirely from JS. Once it's here, remove the "not embedded
+// yet" console warning below by leaving MAILERLITE_EMBEDDED = true.
+const MAILERLITE_EMBEDDED = false;
 
-// MailerLite embedded-form action URL for the "Quiz Takers" group (list-building only — does not send email).
-// Get this from MailerLite: Forms -> Embedded -> Quiz Takers -> copy the form's action URL.
-const MAILERLITE_ENDPOINT = "";
-
-// Calendly (or similar) booking link for "Book a free 15 minute chat".
-const BOOKING_URL = "";
-
-// One PDF per result profile — replace each placeholder with the real hosted link.
-const PDF_LINKS = {
-  wired:       "REPLACE_WITH_PDF_LINK_wired",
-  overthinker: "REPLACE_WITH_PDF_LINK_overthinker",
-  empty:       "REPLACE_WITH_PDF_LINK_empty",
-  juggler:     "REPLACE_WITH_PDF_LINK_juggler",
-  flatlined:   "REPLACE_WITH_PDF_LINK_flatlined",
-  overloaded:  "REPLACE_WITH_PDF_LINK_overloaded",
-  quiet:       "REPLACE_WITH_PDF_LINK_quiet",
-  cautious:    "REPLACE_WITH_PDF_LINK_cautious",
-  big:         "REPLACE_WITH_PDF_LINK_big",
-  retreater:   "REPLACE_WITH_PDF_LINK_retreater",
-};
-
-if (window.emailjs && !EMAILJS_PUBLIC_KEY.startsWith("YOUR_")) {
-  emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
-}
+// Calendly booking link for "Book a free 30 minute chat".
+// Canon's discovery call is locked at 15 minutes — this site currently points at your live
+// 30-minute Calendly event. If you create a matching 15-minute event later, update this URL
+// and change the button/result text below back to "15 minute".
+const BOOKING_URL = "https://calendly.com/darraghkearney123/30min";
 
 // ── PROFILE DEFINITIONS ──
 const PROFILES = {
@@ -702,89 +695,59 @@ function showResult() {
 
   document.getElementById('resultNext').innerHTML =
     path === 'carer'
-      ? `<strong>${userName}</strong>, your full breakdown for both of you is on its way to your email, including one thing you can try tonight and how to book a free 15 minute chat with me.`
-      : `<strong>${userName}</strong>, your full breakdown is on its way to your email, including one thing you can try tonight and how to book a free 15 minute chat with me.`;
+      ? `<strong>${userName}</strong>, your full breakdown for both of you is on its way to your email, including one thing you can try tonight and how to book a free 30 minute chat with me.`
+      : `<strong>${userName}</strong>, your full breakdown is on its way to your email, including one thing you can try tonight and how to book a free 30 minute chat with me.`;
 
-  submitToEmailList(r);
+  submitToMailerLite(r);
   document.getElementById('screen-result').classList.remove('hidden');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ── MAILERLITE (list-building only — does not send any email itself) ──
-// Posts via a hidden form + iframe so this works cross-origin with no CORS setup,
-// the same way MailerLite's own embedded-form snippets work.
-function submitToMailerLite(actionUrl, fields) {
-  if (!actionUrl) return;
-  const iframeName = 'ml-submit-' + Date.now();
-  const iframe = document.createElement('iframe');
-  iframe.name = iframeName;
-  iframe.style.display = 'none';
-  document.body.appendChild(iframe);
-
-  const form = document.createElement('form');
-  form.action = actionUrl;
-  form.method = 'POST';
-  form.target = iframeName;
-  form.style.display = 'none';
-
-  Object.entries(fields).forEach(([key, value]) => {
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = key;
-    input.value = value ?? '';
-    form.appendChild(input);
-  });
-
-  document.body.appendChild(form);
-  form.submit();
-  setTimeout(() => { form.remove(); iframe.remove(); }, 3000);
-}
-
-// ── EMAILJS (sends the personalised result straight to the quiz-taker) ──
-function sendResultEmail(result) {
-  if (!window.emailjs || EMAILJS_PUBLIC_KEY.startsWith("YOUR_")) {
-    console.warn("EmailJS isn't configured yet — no result email was sent. Set the EMAILJS_* constants near the top of quiz.html.");
+// ── MAILERLITE (this is what actually delivers the result — via its own locked automation) ──
+// Writes the visitor's answers into the real MailerLite embedded form (pasted in as
+// MAILERLITE_EMBEDDED above) as hidden fields, then submits it, adding them to "Quiz Completed"
+// and firing the automation. MailerLite's embed renders asynchronously, so this retries a few
+// times before giving up quietly — never throws, never blocks the result screen.
+function injectFieldsAndSubmit(fields, attemptsLeft = 8) {
+  const form = document.querySelector('.ml-embedded form, .ml-form-embedWrapper form, form[data-code]');
+  if (!form) {
+    if (attemptsLeft > 0) setTimeout(() => injectFieldsAndSubmit(fields, attemptsLeft - 1), 400);
+    else console.warn("MailerLite form never appeared in the page — result was not sent. Check that the embed code from MailerLite (Forms -> Embedded -> Quiz Completed) is pasted into quiz.html.");
     return;
   }
-  const profile = PROFILES[result.winner];
-  const templateId = path === 'carer' ? EMAILJS_TEMPLATE_CARER : EMAILJS_TEMPLATE_ME;
-  const params = {
-    to_email: userEmail,
-    to_name: userName,
-    result_name: profile.name,
-    result_copy: profile.copy,
-    pdf_link: PDF_LINKS[result.winner] || '',
-    carer_state_name: result.carerState ? result.carerState.name : '',
-    carer_state_copy: result.carerState ? result.carerState.copy : '',
-  };
-  emailjs.send(EMAILJS_SERVICE_ID, templateId, params)
-    .catch(err => console.error("EmailJS quiz result send failed:", err));
+  Object.entries(fields).forEach(([key, value]) => {
+    let input = form.querySelector(`[name="fields[${key}]"], [name="${key}"]`);
+    if (!input) {
+      input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = `fields[${key}]`;
+      form.appendChild(input);
+    }
+    input.value = value ?? '';
+  });
+  if (typeof form.requestSubmit === 'function') form.requestSubmit();
+  else form.submit();
 }
 
-// ── SUBMISSION: fires both the email send and the list add ──
-function submitToEmailList(result) {
+// Custom fields must match MailerLite exactly: profile, path, carer_state, carer_state_text, hardest_part.
+// Group "Quiz Completed" is what triggers the locked result-email automation — see bluzen-email.
+function submitToMailerLite(result) {
   const payload = {
     name: userName,
     email: userEmail,
     path: path,
-    profile: result.winner,
-    profileName: PROFILES[result.winner].name,
-    carerState: result.carerState ? result.carerState.name : null,
-    recoveryTag: result.recoveryTag,
-    nothingWorks: result.nothingWorksFlag,
-    hardestPart: typedAnswer,
-    timestamp: new Date().toISOString(),
+    profile: PROFILES[result.winner].name,
+    carer_state: result.carerState ? result.carerState.name : "",
+    carer_state_text: result.carerState ? result.carerState.copy : "",
+    hardest_part: typedAnswer,
   };
-  console.log("Quiz payload:", payload);
+  console.log("Quiz payload for MailerLite:", payload);
 
-  sendResultEmail(result);
-
-  submitToMailerLite(MAILERLITE_ENDPOINT, {
-    email: userEmail,
-    name: userName,
-    quiz_result: PROFILES[result.winner].name,
-    carer_state: result.carerState ? result.carerState.name : '',
-  });
+  if (!MAILERLITE_EMBEDDED) {
+    console.warn("MailerLite embed isn't pasted into quiz.html yet — result was not sent to MailerLite.");
+    return;
+  }
+  injectFieldsAndSubmit(payload);
 }
 
 function bookCall() {

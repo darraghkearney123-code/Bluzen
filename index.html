@@ -70,11 +70,7 @@
         <div data-when="audioNotSubmitted">
           <form data-action="submitAudio" id="sleep-form">
             <h3 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:600;font-size:26px;color:#EAF4F8;margin:0 0 8px;">Get the sleep audio, free</h3>
-            <p style="font-size:16px;line-height:1.55;color:#9AB2C6;margin:0 0 28px;">Enter your details and it lands in your inbox in a minute or two.</p>
-            <div style="margin-bottom:18px;">
-              <label style="display:block;font-family:'Bricolage Grotesque',sans-serif;font-size:13px;letter-spacing:0.03em;color:#C2D4E0;margin-bottom:9px;">First name</label>
-              <input type="text" name="first_name" required="" placeholder="Your first name" style="width:100%;background:#0F1F38;border:1px solid rgba(154,178,198,0.22);border-radius:12px;padding:14px 16px;color:#EAF4F8;font-family:'Lora',serif;font-size:16px;outline:none;transition:border-color .2s ease;" class="bz-f23">
-            </div>
+            <p style="font-size:16px;line-height:1.55;color:#9AB2C6;margin:0 0 28px;">Enter your email and it lands in your inbox in a minute or two.</p>
             <div style="margin-bottom:26px;">
               <label style="display:block;font-family:'Bricolage Grotesque',sans-serif;font-size:13px;letter-spacing:0.03em;color:#C2D4E0;margin-bottom:9px;">Email address</label>
               <input type="email" name="email" required="" placeholder="you@example.com" style="width:100%;background:#0F1F38;border:1px solid rgba(154,178,198,0.22);border-radius:12px;padding:14px 16px;color:#EAF4F8;font-family:'Lora',serif;font-size:16px;outline:none;transition:border-color .2s ease;" class="bz-f24">
@@ -299,9 +295,6 @@
       <form data-action="submitAudio" id="sleep-popup-form">
         <h3 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:600;font-size:21px;color:#EAF4F8;margin:0 8px 8px 0;">Get the sleep audio, free</h3>
         <p style="font-size:15px;line-height:1.55;color:#9AB2C6;margin:0 24px 20px 0;">A 30-minute sleep hypnosis session, straight to your inbox.</p>
-        <div style="margin-bottom:14px;">
-          <input type="text" name="first_name" required="" placeholder="Your first name" style="width:100%;background:#0F1F38;border:1px solid rgba(154,178,198,0.22);border-radius:12px;padding:12px 14px;color:#EAF4F8;font-family:'Lora',serif;font-size:15px;outline:none;transition:border-color .2s ease;" class="bz-f28">
-        </div>
         <div style="margin-bottom:18px;">
           <input type="email" name="email" required="" placeholder="you@example.com" style="width:100%;background:#0F1F38;border:1px solid rgba(154,178,198,0.22);border-radius:12px;padding:12px 14px;color:#EAF4F8;font-family:'Lora',serif;font-size:15px;outline:none;transition:border-color .2s ease;" class="bz-f29">
         </div>
@@ -310,10 +303,15 @@
     </div>
   </div>
 
+  <!--
+    TODO: paste MailerLite's embed code into each container below (Forms -> Embedded -> [group]
+    -> "Embed" tab, not the "Share" link). Both render invisibly — assets/app.js drives them.
+  -->
+  <div id="ml-embed-sleep" style="display:none;"><!-- "Sleep Audio" group embed goes here --></div>
+  <div id="ml-embed-waitlist" style="display:none;"><!-- "Library Waitlist" group embed goes here (optional) --></div>
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script src="assets/app.js" defer></script>
 </body>
 </html>

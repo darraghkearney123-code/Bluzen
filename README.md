@@ -4,54 +4,57 @@ The Bluzen website — static pages (`index.html`, `quiz.html` + `assets/`), no 
 
 ## Before you go live
 
-Three services need connecting. Until each is set up, that piece shows a friendly inline message
-instead of failing silently or crashing.
-
 ### 1. Formspree — waitlist & contact forms (`assets/app.js`)
 
-These two forms just need to land in your inbox.
+These two just need to land in your inbox.
 
-1. Create a free account at [formspree.io](https://formspree.io) and a new form.
+1. Create a free account at [formspree.io](https://formspree.io) and a new form (this needs your
+   account email verified before you can create a form).
 2. Copy its endpoint (looks like `https://formspree.io/f/abcd1234`).
 3. In `assets/app.js`, replace `FORMSPREE_ENDPOINT` with that URL. Both forms share it — a hidden
    `form_name` field (`library_waitlist` or `contact`) tells them apart in your inbox.
 
-### 2. EmailJS — sleep audio & quiz result emails (`assets/app.js` and `quiz.html`)
+### 2. MailerLite — sleep audio & quiz result emails (this is what actually sends them)
 
-These need to send a personalised email straight to the visitor, so they use
-[EmailJS](https://emailjs.com) instead of Formspree.
+Per the Bluzen canon, MailerLite's own automations send both of these emails (locked copy, `{$name}`
+and `{$carer_state_text}` merge tags) — the site's job is only to get each visitor into the right
+group with the right fields. **Groups created:** `Sleep Audio`, `Library Waitlist`, `Quiz Takers`.
 
-1. Create a free EmailJS account.
-2. Under **Email Services**, connect the inbox you want emails to send *from*.
-3. Under **Email Templates**, create three templates with these exact variable names:
-   - **Sleep audio** — `{{to_email}}`, `{{to_name}}`, `{{audio_link}}`
-   - **Quiz result (me path)** — `{{to_email}}`, `{{to_name}}`, `{{result_name}}`, `{{result_copy}}`, `{{pdf_link}}`
-   - **Quiz result (carer path)** — same as above, plus `{{carer_state_name}}`, `{{carer_state_copy}}`
-4. Wire up the keys:
-   - In `assets/app.js`: `EMAILJS_PUBLIC_KEY`, `EMAILJS_SERVICE_ID`, `EMAILJS_SLEEP_TEMPLATE_ID`, and
-     `SLEEP_AUDIO_LINK` (the actual link to the audio file).
-   - In `quiz.html`: the same `EMAILJS_PUBLIC_KEY`/`EMAILJS_SERVICE_ID`, plus `EMAILJS_TEMPLATE_ME`,
-     `EMAILJS_TEMPLATE_CARER`, and `PDF_LINKS` (one URL per result — there are 10 placeholders to fill in,
-     one for each of the five "for me" and five "for someone I care for" outcomes).
+Two things still need lining up against canon before this works:
 
-Free tier covers 200 emails/month.
+- **Rename the `Quiz Takers` group to `Quiz Completed`** — that's the exact group name the locked
+  result-email automation triggers on. (The group/form's internal ID doesn't change, so nothing else
+  needs updating once it's renamed.)
+- **Custom fields must be exactly:** `profile`, `path`, `carer_state`, `carer_state_text`,
+  `hardest_part`. Currently `quiz_result` and `carer_state` exist — add the three missing ones and
+  rename `quiz_result` → `profile` so the names match exactly (MailerLite segmentation/automations
+  break silently on a mismatch, so this has to be exact).
 
-### 3. MailerLite — building your subscriber lists (optional, list-building only)
+Then, for each of the three groups, get the real **embed code** — MailerLite → Forms → Embedded →
+(group) → the **"Embed"** tab, not "Share" (a share link is a hosted page, not something this code
+can submit into). It's normally a `<div>` plus a `<script>` tag. Paste it in:
 
-Sleep-audio signups and quiz-takers can also be added to MailerLite groups, purely so you have an
-audience to email later (e.g. when the Library launches). This is separate from the actual sending
-above — MailerLite doesn't send anything here, EmailJS does.
+- **Sleep Audio** → into `#ml-embed-sleep` in `index.html`, then set `MAILERLITE_SLEEP_EMBEDDED = true` in `assets/app.js`.
+- **Library Waitlist** (optional, just for building an audience ahead of launch) → into `#ml-embed-waitlist` in `index.html`, then set `MAILERLITE_WAITLIST_EMBEDDED = true` in `assets/app.js`.
+- **Quiz Completed** → anywhere in the body of `quiz.html` (a placeholder comment marks a good spot), then set `MAILERLITE_EMBEDDED = true` near the top of its script.
 
-1. In MailerLite, create groups (e.g. `Sleep Audio`, `Quiz Takers`).
-2. For each, go to **Forms → Embedded**, create a basic form, and copy its submit/action URL.
-3. Paste that URL into `MAILERLITE_SLEEP_ENDPOINT` in `assets/app.js`, and `MAILERLITE_ENDPOINT` in `quiz.html`.
+Each embed renders invisibly — the site fills in the hidden fields and submits it automatically, the
+visitor never sees a second form. Until each embed is pasted in, that flow shows/logs a clear
+"not connected yet" message instead of silently losing signups.
 
-Leave these blank to skip MailerLite entirely — everything else still works.
+The 10-PDF-per-result and "which PDF goes with which profile" logic lives entirely in MailerLite's
+email editor (conditional content keyed off the `profile` field), not in this code — that's your
+side to build once the PDFs exist.
 
-### The Calendly (or similar) booking link
+### 3. Calendly
 
-In `quiz.html`, set `BOOKING_URL` so "Book a free 15 minute chat" on the result screen opens your
-real booking page. Until then it shows a placeholder message instead of a dead link.
+Wired in: `BOOKING_URL` in `quiz.html` points at `https://calendly.com/darraghkearney123/30min`, and
+the button/result text now say "30 minute" to match. **Flag:** canon locks the discovery call at 15
+minutes (it's part of the priced offer, and the locked result-email copy itself says "free 15 minute
+call") — so there's now a real mismatch between the live Calendly event and the locked email
+wording. Either create a matching 15-minute Calendly event and I'll point `BOOKING_URL` at that
+instead, or treat 30 minutes as the new standard (which would mean revisiting the locked email copy
+too, since that's a separate approval step, not something to change silently).
 
 ## Running locally
 
