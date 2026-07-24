@@ -255,13 +255,6 @@
     </div>
   </div>
 
-  <!--
-    TODO: paste the MailerLite embed code for the "Quiz Completed" group form here
-    (MailerLite -> Forms -> Embedded -> Quiz Completed -> "Embed" tab). It renders invisibly —
-    the quiz drives it entirely via JS (see MAILERLITE_EMBEDDED / submitToMailerLite in the
-    script below). Once pasted, set MAILERLITE_EMBEDDED = true near the top of the script.
-  -->
-
 </div>
 
 <script>
@@ -275,16 +268,11 @@
 
 // ── CONFIG ──
 // MailerLite sends the actual result email itself, via its own automation (locked copy,
-// triggered when this quiz adds someone to the "Quiz Completed" group). This code's only job
-// is to get the visitor's answers into that group with the right fields — see MAILERLITE_EMBED below.
-//
-// TODO: paste the real MailerLite EMBED CODE for the "Quiz Completed" group form here
-// (MailerLite -> Forms -> Embedded -> Quiz Completed -> "Embed" tab, NOT the "Share" link).
-// It's normally a <div> plus a <script> tag pair. Paste both, replacing
-// this comment, anywhere in the page body (e.g. just above the closing </div> of .wrap works fine) —
-// it renders invisibly since we drive it entirely from JS. Once it's here, remove the "not embedded
-// yet" console warning below by leaving MAILERLITE_EMBEDDED = true.
-const MAILERLITE_EMBEDDED = false;
+// triggered when this quiz adds someone to the "Quiz Completed" group). This code's only job is
+// to get the visitor's answers there. MailerLite's plan doesn't expose an embeddable form or API
+// endpoint safe to call directly from the browser, so this goes through a small serverless proxy
+// instead (see /cloudflare-worker/mailerlite-proxy.js and the README for setup).
+const MAILERLITE_WORKER_URL = "REPLACE_WITH_YOUR_WORKER_URL"; // e.g. https://mailerlite-proxy.you.workers.dev
 
 // Calendly booking link for "Book a free 30 minute chat".
 // Canon's discovery call is locked at 15 minutes — this site currently points at your live
@@ -704,50 +692,34 @@ function showResult() {
 }
 
 // ── MAILERLITE (this is what actually delivers the result — via its own locked automation) ──
-// Writes the visitor's answers into the real MailerLite embedded form (pasted in as
-// MAILERLITE_EMBEDDED above) as hidden fields, then submits it, adding them to "Quiz Completed"
-// and firing the automation. MailerLite's embed renders asynchronously, so this retries a few
-// times before giving up quietly — never throws, never blocks the result screen.
-function injectFieldsAndSubmit(fields, attemptsLeft = 8) {
-  const form = document.querySelector('.ml-embedded form, .ml-form-embedWrapper form, form[data-code]');
-  if (!form) {
-    if (attemptsLeft > 0) setTimeout(() => injectFieldsAndSubmit(fields, attemptsLeft - 1), 400);
-    else console.warn("MailerLite form never appeared in the page — result was not sent. Check that the embed code from MailerLite (Forms -> Embedded -> Quiz Completed) is pasted into quiz.html.");
-    return;
-  }
-  Object.entries(fields).forEach(([key, value]) => {
-    let input = form.querySelector(`[name="fields[${key}]"], [name="${key}"]`);
-    if (!input) {
-      input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = `fields[${key}]`;
-      form.appendChild(input);
-    }
-    input.value = value ?? '';
-  });
-  if (typeof form.requestSubmit === 'function') form.requestSubmit();
-  else form.submit();
-}
-
-// Custom fields must match MailerLite exactly: profile, path, carer_state, carer_state_text, hardest_part.
-// Group "Quiz Completed" is what triggers the locked result-email automation — see bluzen-email.
+// Sends the visitor's answers to the serverless proxy (see /cloudflare-worker), which adds them
+// to the "Quiz Completed" group and fires the result automation. Never throws, never blocks the
+// result screen — if this fails, the visitor still sees their result either way.
+//
+// Field keys sent here must match MailerLite's actual field keys, which are NOT always the same
+// as their display names. Canon's "profile" field was renamed from "quiz_result" as a display
+// name only — MailerLite kept the underlying key/merge-tag as quiz_result, so that's what's sent
+// below. If the field ever gets recreated with a true "profile" key, change the key here to match.
 function submitToMailerLite(result) {
-  const payload = {
+  const fields = {
     name: userName,
-    email: userEmail,
     path: path,
-    profile: PROFILES[result.winner].name,
+    quiz_result: PROFILES[result.winner].name, // canon calls this "profile"; MailerLite's real key is quiz_result
     carer_state: result.carerState ? result.carerState.name : "",
     carer_state_text: result.carerState ? result.carerState.copy : "",
     hardest_part: typedAnswer,
   };
-  console.log("Quiz payload for MailerLite:", payload);
+  console.log("Quiz payload for MailerLite:", { email: userEmail, fields });
 
-  if (!MAILERLITE_EMBEDDED) {
-    console.warn("MailerLite embed isn't pasted into quiz.html yet — result was not sent to MailerLite.");
+  if (MAILERLITE_WORKER_URL.startsWith("REPLACE_WITH_")) {
+    console.warn("MailerLite proxy isn't set up yet — result was not sent to MailerLite. See cloudflare-worker/mailerlite-proxy.js.");
     return;
   }
-  injectFieldsAndSubmit(payload);
+  fetch(MAILERLITE_WORKER_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ group: "quiz_completed", email: userEmail, fields })
+  }).catch(err => console.error("MailerLite proxy call failed:", err));
 }
 
 function bookCall() {

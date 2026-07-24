@@ -6,44 +6,45 @@ The Bluzen website — static pages (`index.html`, `quiz.html` + `assets/`), no 
 
 ### 1. Formspree — waitlist & contact forms (`assets/app.js`)
 
-These two just need to land in your inbox.
-
-1. Create a free account at [formspree.io](https://formspree.io) and a new form (this needs your
-   account email verified before you can create a form).
-2. Copy its endpoint (looks like `https://formspree.io/f/abcd1234`).
-3. In `assets/app.js`, replace `FORMSPREE_ENDPOINT` with that URL. Both forms share it — a hidden
-   `form_name` field (`library_waitlist` or `contact`) tells them apart in your inbox.
+**Done.** `FORMSPREE_ENDPOINT` is set. Both forms share it — a hidden `form_name` field
+(`library_waitlist` or `contact`) tells them apart in your inbox.
 
 ### 2. MailerLite — sleep audio & quiz result emails (this is what actually sends them)
 
 Per the Bluzen canon, MailerLite's own automations send both of these emails (locked copy, `{$name}`
 and `{$carer_state_text}` merge tags) — the site's job is only to get each visitor into the right
-group with the right fields. **Groups created:** `Sleep Audio`, `Library Waitlist`, `Quiz Takers`.
+group with the right fields.
 
-Two things still need lining up against canon before this works:
+**Done:** group renamed to `Quiz Completed`; custom fields `path`, `carer_state_text`, `hardest_part`
+added; `carer_state` already existed. One naming note: the `profile` field's merge tag stayed
+`{$quiz_result}` even after the display-name rename (MailerLite quirk) — the code below sends the
+value under the key `quiz_result` to match, so use `{$quiz_result}` in the automation email, not
+`{$profile}`. If you'd rather have a true `profile` key, delete and recreate that field with the
+exact name, then change the one `quiz_result:` line each in `quiz.html` and note this changes.
 
-- **Rename the `Quiz Takers` group to `Quiz Completed`** — that's the exact group name the locked
-  result-email automation triggers on. (The group/form's internal ID doesn't change, so nothing else
-  needs updating once it's renamed.)
-- **Custom fields must be exactly:** `profile`, `path`, `carer_state`, `carer_state_text`,
-  `hardest_part`. Currently `quiz_result` and `carer_state` exist — add the three missing ones and
-  rename `quiz_result` → `profile` so the names match exactly (MailerLite segmentation/automations
-  break silently on a mismatch, so this has to be exact).
+**Still needed — this MailerLite plan doesn't expose an embeddable form or POST endpoint** (checked
+thoroughly: only a hosted "Share URL" per form, no raw embed code or action URL anywhere in the
+account). Submitting into that isn't possible from client-side JS, so this goes through a tiny
+serverless proxy instead — a [Cloudflare Worker](https://workers.cloudflare.com) (free tier) that
+holds your MailerLite API token as a secret and forwards signups server-side. Code's ready at
+`cloudflare-worker/mailerlite-proxy.js`; to deploy:
 
-Then, for each of the three groups, get the real **embed code** — MailerLite → Forms → Embedded →
-(group) → the **"Embed"** tab, not "Share" (a share link is a hosted page, not something this code
-can submit into). It's normally a `<div>` plus a `<script>` tag. Paste it in:
+1. Create a free Cloudflare account, go to **Workers & Pages → Create → Create Worker**.
+2. Paste the contents of `cloudflare-worker/mailerlite-proxy.js` into the editor and deploy.
+3. Fill in `GROUP_IDS` at the top with your three MailerLite group IDs (visible in each group's
+   dashboard URL, or via `GET /api/groups` with your API token) and redeploy.
+4. In MailerLite: **Integrations → API**, generate a token.
+5. In the Worker's **Settings → Variables**, add an encrypted secret named `MAILERLITE_API_TOKEN`
+   with that token. (Don't put it in the code itself, and don't send it to me — keep it only in
+   Cloudflare's secret store.)
+6. Copy the Worker's URL (`https://mailerlite-proxy.<you>.workers.dev`) into `MAILERLITE_WORKER_URL`
+   in both `assets/app.js` and `quiz.html`.
 
-- **Sleep Audio** → into `#ml-embed-sleep` in `index.html`, then set `MAILERLITE_SLEEP_EMBEDDED = true` in `assets/app.js`.
-- **Library Waitlist** (optional, just for building an audience ahead of launch) → into `#ml-embed-waitlist` in `index.html`, then set `MAILERLITE_WAITLIST_EMBEDDED = true` in `assets/app.js`.
-- **Quiz Completed** → anywhere in the body of `quiz.html` (a placeholder comment marks a good spot), then set `MAILERLITE_EMBEDDED = true` near the top of its script.
-
-Each embed renders invisibly — the site fills in the hidden fields and submits it automatically, the
-visitor never sees a second form. Until each embed is pasted in, that flow shows/logs a clear
-"not connected yet" message instead of silently losing signups.
+Until this is set up, sleep-audio signups show a clear "not connected yet" message, and quiz
+completions log a console warning — neither silently loses data or crashes.
 
 The 10-PDF-per-result and "which PDF goes with which profile" logic lives entirely in MailerLite's
-email editor (conditional content keyed off the `profile` field), not in this code — that's your
+email editor (conditional content keyed off the `quiz_result` field), not in this code — that's your
 side to build once the PDFs exist.
 
 ### 3. Calendly
@@ -81,5 +82,15 @@ Then open `http://localhost:8000`.
 - `assets/styles.css` — shared styles, hover/focus states, and animations for `index.html`.
 - `assets/app.js` — `index.html`'s interactivity: nav, forms, the sleep-audio popup.
 - `assets/*.png` — logo assets.
+- `cloudflare-worker/mailerlite-proxy.js` — the small serverless proxy that gets signups into
+  MailerLite (see setup above). Deployed separately from the site itself; not served by GitHub Pages.
 
-Quiz scoring, copy, and result profiles live entirely inside `quiz.html` — no separate backend.
+Quiz scoring, copy, and result profiles live entirely inside `quiz.html`.
+
+## Open items (pending confirmation, not yet acted on)
+
+- **Domain:** canon locks `bluzen.ie`; the live `CNAME` points at `www.bluzenfocus.net`. Being
+  confirmed directly with Darragh.
+- **Discovery call length:** canon locks 15 minutes (also in the locked result-email copy); the live
+  Calendly event and this site currently say 30, matching what's actually bookable. Being confirmed
+  directly with Darragh.
