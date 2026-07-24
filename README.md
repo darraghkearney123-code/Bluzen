@@ -52,11 +52,9 @@ side to build once the PDFs exist.
 
 ### 3. Calendly
 
-Confirmed: the call is 15 minutes, matching canon — button and result-screen copy in `quiz.html` say
-"15 minute" again. `BOOKING_URL` is currently blank (so "Book a free 15 minute chat" shows a friendly
-"booking link coming soon" message instead of a wrong link) — the link on file,
-`.../darraghkearney123/30min`, is a 30-minute event and would be the wrong one. Send over the actual
-15-minute Calendly event URL and I'll wire it in.
+**Done.** Confirmed 15 minutes, matching canon. `BOOKING_URL` is set to
+`https://calendly.com/darraghkearney123/30min` — the URL slug still says "30min" (an old path, left
+as-is) but that event has been reconfigured to a genuine 15-minute consult, confirmed live.
 
 ## Running locally
 
@@ -90,9 +88,11 @@ Quiz scoring, copy, and result profiles live entirely inside `quiz.html`.
 
 ## Open items
 
-- **Deploy the Cloudflare Worker** (see MailerLite section above) and send over its URL.
-- **The 15-minute Calendly event URL** — `BOOKING_URL` is blank until this arrives.
-- **Domain:** confirmed as `bluzen.net` — `CNAME` and the Worker's `ALLOWED_ORIGINS` are set to
-  that. Note this still differs from the `bluzen.ie` domain locked in the canon docs, worth
-  reconciling there at some point but not a website blocker.
+- **Deploy the Cloudflare Worker** (see MailerLite section above) — in progress; send over the
+  deployed Worker URL once it's live so it can be wired into `assets/app.js` and `quiz.html`.
+- **Domain:** confirmed as `www.bluzenfocus.net` / `bluzenfocus.net` — the one live and
+  DNS-configured since the start of the project. (An earlier message said `bluzen.net`; that was
+  a mistake and has been reverted.) `CNAME` and the Worker's `ALLOWED_ORIGINS` both point at this.
+  Still differs from the `bluzen.ie` domain locked in the canon docs — worth reconciling there at
+  some point, not a website blocker.
 - The 10 result PDFs and the sleep-audio file — you're creating these now, no action needed yet.

@@ -29,8 +29,8 @@ const GROUP_IDS = {
 // Worker (and your MailerLite API quota) even if they find its URL. Include every real origin
 // the site is served from (custom domain, GitHub Pages subdomain, localhost while testing, etc).
 const ALLOWED_ORIGINS = [
-  "https://bluzen.net",
-  "https://www.bluzen.net",
+  "https://www.bluzenfocus.net",
+  "https://bluzenfocus.net",
 ];
 
 function corsHeaders(origin) {

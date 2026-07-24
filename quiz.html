@@ -274,10 +274,10 @@
 // instead (see /cloudflare-worker/mailerlite-proxy.js and the README for setup).
 const MAILERLITE_WORKER_URL = "REPLACE_WITH_YOUR_WORKER_URL"; // e.g. https://mailerlite-proxy.you.workers.dev
 
-// Calendly booking link for "Book a free 15 minute chat" — confirmed as the correct length,
-// matching canon. TODO: paste the actual 15-minute Calendly event URL here once you have it
-// (the one on file, .../darraghkearney123/30min, is a 30-minute event and would be wrong here).
-const BOOKING_URL = "";
+// Calendly booking link for "Book a free 15 minute chat". Note: the URL slug still says
+// "30min" (an old path, left as-is) but this event is confirmed reconfigured to a real
+// 15-minute consult — matches canon.
+const BOOKING_URL = "https://calendly.com/darraghkearney123/30min";
 
 // ── PROFILE DEFINITIONS ──
 const PROFILES = {
