@@ -250,7 +250,7 @@
         <p class="carer-state-copy" id="carerStateCopy"></p>
       </div>
       <p class="result-next" id="resultNext"></p>
-      <button class="btn btn-cyan btn-full" onclick="bookCall()">Book a free 30 minute chat</button>
+      <button class="btn btn-cyan btn-full" onclick="bookCall()">Book a free 15 minute chat</button>
       <div class="restart"><a href="#" onclick="restart(event)">Take the quiz again</a></div>
     </div>
   </div>
@@ -274,11 +274,10 @@
 // instead (see /cloudflare-worker/mailerlite-proxy.js and the README for setup).
 const MAILERLITE_WORKER_URL = "REPLACE_WITH_YOUR_WORKER_URL"; // e.g. https://mailerlite-proxy.you.workers.dev
 
-// Calendly booking link for "Book a free 30 minute chat".
-// Canon's discovery call is locked at 15 minutes — this site currently points at your live
-// 30-minute Calendly event. If you create a matching 15-minute event later, update this URL
-// and change the button/result text below back to "15 minute".
-const BOOKING_URL = "https://calendly.com/darraghkearney123/30min";
+// Calendly booking link for "Book a free 15 minute chat" — confirmed as the correct length,
+// matching canon. TODO: paste the actual 15-minute Calendly event URL here once you have it
+// (the one on file, .../darraghkearney123/30min, is a 30-minute event and would be wrong here).
+const BOOKING_URL = "";
 
 // ── PROFILE DEFINITIONS ──
 const PROFILES = {
@@ -683,8 +682,8 @@ function showResult() {
 
   document.getElementById('resultNext').innerHTML =
     path === 'carer'
-      ? `<strong>${userName}</strong>, your full breakdown for both of you is on its way to your email, including one thing you can try tonight and how to book a free 30 minute chat with me.`
-      : `<strong>${userName}</strong>, your full breakdown is on its way to your email, including one thing you can try tonight and how to book a free 30 minute chat with me.`;
+      ? `<strong>${userName}</strong>, your full breakdown for both of you is on its way to your email, including one thing you can try tonight and how to book a free 15 minute chat with me.`
+      : `<strong>${userName}</strong>, your full breakdown is on its way to your email, including one thing you can try tonight and how to book a free 15 minute chat with me.`;
 
   submitToMailerLite(r);
   document.getElementById('screen-result').classList.remove('hidden');

@@ -20,17 +20,17 @@
  */
 
 const GROUP_IDS = {
-  sleep_audio: "REPLACE_WITH_SLEEP_AUDIO_GROUP_ID",
-  library_waitlist: "REPLACE_WITH_LIBRARY_WAITLIST_GROUP_ID",
-  quiz_completed: "REPLACE_WITH_QUIZ_COMPLETED_GROUP_ID",
+  sleep_audio: "193902288441443604",
+  library_waitlist: "193902319779185980",
+  quiz_completed: "193902340490659106",
 };
 
 // Only requests from these origins are served — keeps random third parties from using your
 // Worker (and your MailerLite API quota) even if they find its URL. Include every real origin
 // the site is served from (custom domain, GitHub Pages subdomain, localhost while testing, etc).
 const ALLOWED_ORIGINS = [
-  "https://www.bluzenfocus.net",
-  "https://bluzenfocus.net",
+  "https://bluzen.net",
+  "https://www.bluzen.net",
 ];
 
 function corsHeaders(origin) {

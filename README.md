@@ -22,23 +22,26 @@ value under the key `quiz_result` to match, so use `{$quiz_result}` in the autom
 `{$profile}`. If you'd rather have a true `profile` key, delete and recreate that field with the
 exact name, then change the one `quiz_result:` line each in `quiz.html` and note this changes.
 
-**Still needed — this MailerLite plan doesn't expose an embeddable form or POST endpoint** (checked
-thoroughly: only a hosted "Share URL" per form, no raw embed code or action URL anywhere in the
-account). Submitting into that isn't possible from client-side JS, so this goes through a tiny
-serverless proxy instead — a [Cloudflare Worker](https://workers.cloudflare.com) (free tier) that
-holds your MailerLite API token as a secret and forwards signups server-side. Code's ready at
-`cloudflare-worker/mailerlite-proxy.js`; to deploy:
+**This MailerLite plan doesn't expose an embeddable form or POST endpoint** (checked thoroughly:
+only a hosted "Share URL" per form, no raw embed code or action URL anywhere in the account).
+Submitting into that isn't possible from client-side JS, so this goes through a tiny serverless
+proxy instead — a [Cloudflare Worker](https://workers.cloudflare.com) (free tier) that holds your
+MailerLite API token as a secret and forwards signups server-side.
+
+**Done:** the proxy code is written and the three `GROUP_IDS` are filled in
+(`cloudflare-worker/mailerlite-proxy.js`). **This part has to be done by you directly** — deploying
+to Cloudflare means creating a third-party account, and an API token/secret shouldn't be handled by
+anyone but you:
 
 1. Create a free Cloudflare account, go to **Workers & Pages → Create → Create Worker**.
-2. Paste the contents of `cloudflare-worker/mailerlite-proxy.js` into the editor and deploy.
-3. Fill in `GROUP_IDS` at the top with your three MailerLite group IDs (visible in each group's
-   dashboard URL, or via `GET /api/groups` with your API token) and redeploy.
-4. In MailerLite: **Integrations → API**, generate a token.
-5. In the Worker's **Settings → Variables**, add an encrypted secret named `MAILERLITE_API_TOKEN`
-   with that token. (Don't put it in the code itself, and don't send it to me — keep it only in
-   Cloudflare's secret store.)
-6. Copy the Worker's URL (`https://mailerlite-proxy.<you>.workers.dev`) into `MAILERLITE_WORKER_URL`
-   in both `assets/app.js` and `quiz.html`.
+2. Paste the full contents of `cloudflare-worker/mailerlite-proxy.js` into the editor and deploy.
+3. In MailerLite: **Integrations → API**, generate a token.
+4. In the Worker's **Settings → Variables**, add an encrypted secret named `MAILERLITE_API_TOKEN`
+   with that token. (Don't put it in the code itself, and don't send it to anyone else — keep it
+   only in Cloudflare's secret store.)
+5. Redeploy the Worker so the secret takes effect.
+6. Copy the Worker's URL (looks like `https://mailerlite-proxy.<you>.workers.dev`) and send it over
+   — it goes into `MAILERLITE_WORKER_URL` in both `assets/app.js` and `quiz.html`.
 
 Until this is set up, sleep-audio signups show a clear "not connected yet" message, and quiz
 completions log a console warning — neither silently loses data or crashes.
@@ -49,13 +52,11 @@ side to build once the PDFs exist.
 
 ### 3. Calendly
 
-Wired in: `BOOKING_URL` in `quiz.html` points at `https://calendly.com/darraghkearney123/30min`, and
-the button/result text now say "30 minute" to match. **Flag:** canon locks the discovery call at 15
-minutes (it's part of the priced offer, and the locked result-email copy itself says "free 15 minute
-call") — so there's now a real mismatch between the live Calendly event and the locked email
-wording. Either create a matching 15-minute Calendly event and I'll point `BOOKING_URL` at that
-instead, or treat 30 minutes as the new standard (which would mean revisiting the locked email copy
-too, since that's a separate approval step, not something to change silently).
+Confirmed: the call is 15 minutes, matching canon — button and result-screen copy in `quiz.html` say
+"15 minute" again. `BOOKING_URL` is currently blank (so "Book a free 15 minute chat" shows a friendly
+"booking link coming soon" message instead of a wrong link) — the link on file,
+`.../darraghkearney123/30min`, is a 30-minute event and would be the wrong one. Send over the actual
+15-minute Calendly event URL and I'll wire it in.
 
 ## Running locally
 
@@ -87,10 +88,11 @@ Then open `http://localhost:8000`.
 
 Quiz scoring, copy, and result profiles live entirely inside `quiz.html`.
 
-## Open items (pending confirmation, not yet acted on)
+## Open items
 
-- **Domain:** canon locks `bluzen.ie`; the live `CNAME` points at `www.bluzenfocus.net`. Being
-  confirmed directly with Darragh.
-- **Discovery call length:** canon locks 15 minutes (also in the locked result-email copy); the live
-  Calendly event and this site currently say 30, matching what's actually bookable. Being confirmed
-  directly with Darragh.
+- **Deploy the Cloudflare Worker** (see MailerLite section above) and send over its URL.
+- **The 15-minute Calendly event URL** — `BOOKING_URL` is blank until this arrives.
+- **Domain:** confirmed as `bluzen.net` — `CNAME` and the Worker's `ALLOWED_ORIGINS` are set to
+  that. Note this still differs from the `bluzen.ie` domain locked in the canon docs, worth
+  reconciling there at some point but not a website blocker.
+- The 10 result PDFs and the sleep-audio file — you're creating these now, no action needed yet.
