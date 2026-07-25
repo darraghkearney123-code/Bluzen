@@ -8,181 +8,191 @@
   <link rel="icon" href="assets/bluzen-mark-cyan.png">
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Lora:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet"/>
   <style>
     :root {
-      --navy:        #1B2A4A;
-      --navy-deep:   #14203A;
-      --ink:         #1A2332;
-      --cyan:        #2BB3C0;
-      --cyan-bright: #3DD6E3;
-      --teal-navy:   #14506B;
-      --slate:       #5A6B7B;
-      --mist:        #F4F8FA;
-      --cyan-wash:   #DCF2F5;
-      --cloud:       #FFFFFF;
-      --border:      rgba(27,42,74,.08);
-      --radius:      16px;
-      --radius-lg:   22px;
-      --shadow-sm:   0 2px 12px rgba(27,42,74,.06);
-      --shadow-md:   0 8px 30px rgba(27,42,74,.10);
+      /* Matches the main site (index.html) */
+      --bg:           #0A1628;
+      --panel:        #0F1F38;
+      --panel-deep:   #06101F;
+      --cyan:         #4FD9E8;
+      --cyan-bright:  #7FE9F5;
+      --teal-navy:    #14506B;
+      --on-cyan:      #06131F;
+      --text:         #EAF4F8;
+      --body:         #C2D4E0;
+      --muted:        #9AB2C6;
+      --dim:          #8FA6B8;
+      --placeholder:  #6E869A;
+      --border:       rgba(154,178,198,.16);
+      --border-soft:  rgba(154,178,198,.10);
+      --border-input: rgba(154,178,198,.22);
+      --radius:       16px;
+      --radius-lg:    22px;
+      --shadow-sm:    0 2px 14px rgba(0,0,0,.28);
+      --shadow-md:    0 16px 40px rgba(0,0,0,.35);
+      --head:         'Bricolage Grotesque', sans-serif;
+      --serif:        'Lora', Georgia, serif;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
     body {
-      font-family: 'Nunito', system-ui, sans-serif;
-      background: var(--mist);
-      color: var(--ink);
+      font-family: var(--serif);
+      background: var(--bg);
+      color: var(--body);
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
       min-height: 100vh;
+      overflow-x: hidden;
     }
+    ::selection { background: var(--cyan); color: var(--on-cyan); }
 
     .wrap { max-width: 560px; margin: 0 auto; padding: 20px 18px 64px; }
 
     /* ── Header ── */
-    .site-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
-    .logo-mark {
-      width: 42px; height: 42px; border-radius: 12px;
-      background: linear-gradient(135deg, var(--navy), var(--teal-navy));
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .logo-orb { width: 18px; height: 18px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, var(--cyan-bright), var(--cyan) 70%); }
-    .brand-name { font-family: 'Lora', Georgia, serif; font-size: 21px; font-weight: 600; color: var(--navy); letter-spacing: -.3px; }
+    .site-header { display: flex; align-items: center; gap: 11px; margin-bottom: 24px; }
+    .logo-img { height: 34px; width: auto; display: block; flex-shrink: 0; }
+    .brand-name { font-family: var(--head); font-size: 22px; font-weight: 700; color: var(--text); letter-spacing: -.01em; }
 
     /* ── Progress ── */
     .progress-wrap { margin-bottom: 20px; display: none; }
     .progress-wrap.show { display: block; }
-    .progress-top { display: flex; justify-content: space-between; font-size: 12px; color: var(--slate); font-weight: 700; margin-bottom: 6px; }
-    .progress-bar { height: 5px; background: rgba(27,42,74,.08); border-radius: 100px; overflow: hidden; }
+    .progress-top { display: flex; justify-content: space-between; font-family: var(--head); font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 6px; }
+    .progress-bar { height: 5px; background: rgba(154,178,198,.14); border-radius: 100px; overflow: hidden; }
     .progress-fill { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--cyan-bright)); border-radius: 100px; transition: width .4s ease; width: 0%; }
 
     /* ── Cards ── */
-    .card { background: var(--cloud); border-radius: var(--radius-lg); border: 1px solid var(--border); box-shadow: var(--shadow-sm); overflow: hidden; }
+    .card { background: var(--panel); border-radius: var(--radius-lg); border: 1px solid var(--border); box-shadow: var(--shadow-sm); overflow: hidden; }
     .hidden { display: none !important; }
 
-    /* ── Start screen (navy moment) ── */
-    .start-card { background: linear-gradient(160deg, var(--navy) 0%, var(--navy-deep) 100%); color: var(--cloud); border: none; }
+    /* ── Start screen ── */
+    .start-card { background: linear-gradient(160deg, var(--panel) 0%, var(--bg) 100%); color: var(--text); border: 1px solid var(--border); }
     .start-inner { padding: 44px 30px 36px; text-align: center; }
     .orb {
       width: 92px; height: 92px; border-radius: 50%;
       margin: 0 auto 26px;
       background: radial-gradient(circle at 35% 32%, var(--cyan-bright) 0%, var(--cyan) 55%, var(--teal-navy) 100%);
-      box-shadow: 0 0 50px rgba(61,214,227,.35), 0 0 100px rgba(43,179,192,.15);
+      box-shadow: 0 0 50px rgba(79,217,232,.35), 0 0 100px rgba(79,217,232,.15);
     }
     @media (prefers-reduced-motion: no-preference) {
       .orb { animation: breathe 6s ease-in-out infinite; }
       @keyframes breathe {
-        0%, 100% { transform: scale(1);   box-shadow: 0 0 40px rgba(61,214,227,.28), 0 0 90px rgba(43,179,192,.12); }
-        45%      { transform: scale(1.14); box-shadow: 0 0 60px rgba(61,214,227,.45), 0 0 130px rgba(43,179,192,.22); }
+        0%, 100% { transform: scale(1);   box-shadow: 0 0 40px rgba(79,217,232,.28), 0 0 90px rgba(79,217,232,.12); }
+        45%      { transform: scale(1.14); box-shadow: 0 0 60px rgba(79,217,232,.45), 0 0 130px rgba(79,217,232,.22); }
       }
     }
-    .start-title { font-family: 'Lora', Georgia, serif; font-size: clamp(26px, 6vw, 32px); font-weight: 600; line-height: 1.25; margin-bottom: 14px; letter-spacing: -.3px; }
-    .start-sub { font-size: 16px; color: rgba(255,255,255,.75); line-height: 1.65; margin-bottom: 30px; }
+    .start-title { font-family: var(--head); font-size: clamp(26px, 6vw, 32px); font-weight: 600; line-height: 1.15; margin-bottom: 14px; letter-spacing: -.02em; color: var(--text); }
+    .start-sub { font-size: 16px; color: var(--muted); line-height: 1.65; margin-bottom: 30px; }
 
     .field { margin-bottom: 14px; text-align: left; }
-    .field label { display: block; font-size: 13px; font-weight: 800; color: rgba(255,255,255,.7); margin-bottom: 6px; letter-spacing: .3px; }
+    .field label { display: block; font-family: var(--head); font-size: 13px; font-weight: 600; color: var(--body); margin-bottom: 8px; letter-spacing: .03em; }
     .field input {
       width: 100%; padding: 14px 16px; border-radius: 12px;
-      border: 1.5px solid rgba(255,255,255,.18); background: rgba(255,255,255,.08);
-      font-family: 'Nunito', sans-serif; font-size: 16px; color: var(--cloud);
+      border: 1px solid var(--border-input); background: var(--bg);
+      font-family: var(--serif); font-size: 16px; color: var(--text);
+      transition: border-color .2s ease;
     }
-    .field input::placeholder { color: rgba(255,255,255,.35); }
-    .field input:focus { outline: none; border-color: var(--cyan-bright); background: rgba(255,255,255,.12); }
+    .field input::placeholder { color: var(--placeholder); }
+    .field input:focus { outline: none; border-color: var(--cyan); }
 
-    .who-label { font-size: 13px; font-weight: 800; color: rgba(255,255,255,.7); margin: 22px 0 10px; text-align: left; letter-spacing: .3px; }
+    .who-label { font-family: var(--head); font-size: 13px; font-weight: 600; color: var(--body); margin: 22px 0 10px; text-align: left; letter-spacing: .03em; }
     .who-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 26px; }
     @media (min-width: 440px) { .who-grid { grid-template-columns: 1fr 1fr; } }
     .who-btn {
-      padding: 16px 14px; border-radius: 14px; border: 1.5px solid rgba(255,255,255,.18);
-      background: rgba(255,255,255,.06); color: var(--cloud);
-      font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 700;
+      padding: 16px 14px; border-radius: 14px; border: 1px solid var(--border-input);
+      background: var(--bg); color: var(--body);
+      font-family: var(--head); font-size: 15px; font-weight: 600;
       cursor: pointer; transition: all .15s; text-align: center;
     }
-    .who-btn:hover { background: rgba(255,255,255,.12); }
-    .who-btn.selected { border-color: var(--cyan-bright); background: rgba(61,214,227,.15); }
+    .who-btn:hover { border-color: rgba(79,217,232,.5); color: var(--text); }
+    .who-btn.selected { border-color: var(--cyan); background: rgba(79,217,232,.12); color: var(--text); }
 
     .btn {
-      font-family: 'Nunito', sans-serif; font-size: 16px; font-weight: 800;
-      padding: 15px 26px; border-radius: 100px; border: none; cursor: pointer;
-      transition: transform .12s, box-shadow .2s, background .2s;
+      font-family: var(--head); font-size: 16px; font-weight: 600;
+      padding: 15px 26px; border-radius: 999px; border: none; cursor: pointer;
+      transition: transform .25s ease, box-shadow .25s ease, background .2s, color .2s;
       display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     }
     .btn:active { transform: scale(.97); }
-    .btn-cyan { background: var(--cyan); color: var(--cloud); box-shadow: 0 4px 18px rgba(43,179,192,.35); }
-    .btn-cyan:hover { background: var(--cyan-bright); color: var(--navy-deep); }
-    .btn-cyan:disabled { background: rgba(255,255,255,.15); color: rgba(255,255,255,.4); cursor: not-allowed; box-shadow: none; }
+    .btn-cyan { background: var(--cyan); color: var(--on-cyan); box-shadow: 0 4px 18px rgba(79,217,232,.28); }
+    .btn-cyan:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(79,217,232,.30); }
+    .btn-cyan:disabled { background: rgba(154,178,198,.15); color: rgba(234,244,248,.4); cursor: not-allowed; box-shadow: none; transform: none; }
     .btn-full { width: 100%; }
-    .btn-ghost { background: transparent; color: var(--slate); padding: 12px 16px; box-shadow: none; font-size: 14px; }
-    .btn-ghost:hover { color: var(--ink); background: rgba(27,42,74,.05); }
+    .btn-ghost { background: transparent; color: var(--muted); padding: 12px 16px; box-shadow: none; font-size: 14px; }
+    .btn-ghost:hover { color: var(--text); background: rgba(154,178,198,.08); transform: none; box-shadow: none; }
 
     /* ── Question card ── */
     .q-inner { padding: 30px 26px 30px; }
-    .q-eyebrow { font-size: 12px; font-weight: 800; color: var(--cyan); text-transform: uppercase; letter-spacing: 1.4px; margin-bottom: 10px; }
-    .q-text { font-family: 'Lora', Georgia, serif; font-size: clamp(20px, 4.6vw, 24px); font-weight: 600; line-height: 1.35; color: var(--navy); margin-bottom: 22px; letter-spacing: -.2px; }
+    .q-eyebrow { font-family: var(--head); font-size: 12px; font-weight: 600; color: var(--cyan); text-transform: uppercase; letter-spacing: .2em; margin-bottom: 10px; }
+    .q-text { font-family: var(--head); font-size: clamp(20px, 4.6vw, 24px); font-weight: 600; line-height: 1.3; color: var(--text); margin-bottom: 22px; letter-spacing: -.02em; }
     .options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
     .option {
-      background: var(--cloud); border: 2px solid rgba(27,42,74,.10); border-radius: 13px;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 13px;
       padding: 14px 16px; text-align: left; width: 100%;
-      font-family: 'Nunito', sans-serif; font-size: 15.5px; color: var(--ink);
+      font-family: var(--serif); font-size: 15.5px; color: var(--body);
       cursor: pointer; transition: all .13s;
-      display: flex; align-items: center; gap: 12px; line-height: 1.4;
+      display: flex; align-items: center; gap: 12px; line-height: 1.45;
     }
-    .option:hover { border-color: var(--cyan); background: #FBFEFE; }
-    .option.selected { border-color: var(--cyan); background: var(--cyan-wash); }
+    .option:hover { border-color: rgba(79,217,232,.5); background: rgba(79,217,232,.05); color: var(--text); }
+    .option.selected { border-color: var(--cyan); background: rgba(79,217,232,.10); color: var(--text); }
     .opt-dot {
       width: 18px; height: 18px; border-radius: 50%;
-      border: 2px solid rgba(27,42,74,.22); flex-shrink: 0;
+      border: 2px solid rgba(154,178,198,.35); flex-shrink: 0;
       display: flex; align-items: center; justify-content: center; transition: all .13s;
     }
     .option.selected .opt-dot { border-color: var(--cyan); background: var(--cyan); }
-    .option.selected .opt-dot::after { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--cloud); }
+    .option.selected .opt-dot::after { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--on-cyan); }
 
-    .q-nav { display: flex; justify-content: space-between; align-items: center; }
+    .q-nav { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
     .q-nav.end { justify-content: flex-end; }
 
-    /* ── Transition page (carer moment, navy again) ── */
-    .transition-card { background: linear-gradient(160deg, var(--navy) 0%, var(--navy-deep) 100%); color: var(--cloud); border: none; }
+    /* ── Transition page (carer moment) ── */
+    .transition-card { background: linear-gradient(160deg, var(--panel) 0%, var(--bg) 100%); color: var(--text); border: 1px solid var(--border); }
     .transition-inner { padding: 44px 30px; text-align: center; }
     .orb-small { width: 60px; height: 60px; margin-bottom: 22px; }
-    .transition-title { font-family: 'Lora', Georgia, serif; font-size: clamp(22px, 5vw, 27px); font-weight: 600; line-height: 1.35; margin-bottom: 12px; }
-    .transition-sub { font-size: 15.5px; color: rgba(255,255,255,.72); margin-bottom: 28px; }
+    .transition-title { font-family: var(--head); font-size: clamp(22px, 5vw, 27px); font-weight: 600; line-height: 1.25; margin-bottom: 12px; color: var(--text); letter-spacing: -.02em; }
+    .transition-sub { font-size: 15.5px; color: var(--muted); margin-bottom: 28px; }
 
     /* ── Typed page ── */
     .typed-box {
       width: 100%; min-height: 120px; padding: 14px 16px; border-radius: 13px;
-      border: 2px solid rgba(27,42,74,.10); background: var(--cloud);
-      font-family: 'Nunito', sans-serif; font-size: 15.5px; color: var(--ink);
+      border: 1px solid var(--border-input); background: var(--bg);
+      font-family: var(--serif); font-size: 15.5px; color: var(--text);
       resize: vertical; margin-bottom: 20px; line-height: 1.55;
+      transition: border-color .2s ease;
     }
+    .typed-box::placeholder { color: var(--placeholder); }
     .typed-box:focus { outline: none; border-color: var(--cyan); }
 
     /* ── Results ── */
-    .result-hero { background: linear-gradient(160deg, var(--navy) 0%, var(--teal-navy) 130%); color: var(--cloud); padding: 36px 28px 30px; text-align: center; }
-    .result-eyebrow { font-size: 12px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: var(--cyan-bright); margin-bottom: 12px; }
-    .result-name { font-family: 'Lora', Georgia, serif; font-size: clamp(26px, 6vw, 34px); font-weight: 600; letter-spacing: -.3px; line-height: 1.2; }
+    .result-hero { background: linear-gradient(160deg, var(--panel) 0%, var(--teal-navy) 160%); color: var(--text); padding: 36px 28px 30px; text-align: center; }
+    .result-eyebrow { font-family: var(--head); font-size: 12px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--cyan); margin-bottom: 12px; }
+    .result-name { font-family: var(--head); font-size: clamp(26px, 6vw, 34px); font-weight: 600; letter-spacing: -.02em; line-height: 1.15; color: var(--text); }
     .result-body { padding: 28px 26px 32px; }
-    .result-copy { font-family: 'Lora', Georgia, serif; font-size: 17px; font-style: italic; line-height: 1.7; color: var(--ink); margin-bottom: 22px; padding-left: 14px; border-left: 3px solid var(--cyan); }
-    .nothing-works { font-size: 15px; color: var(--teal-navy); background: var(--cyan-wash); border-radius: 12px; padding: 14px 16px; margin-bottom: 22px; line-height: 1.6; }
+    .result-copy { font-family: var(--serif); font-size: 17px; font-style: italic; line-height: 1.7; color: var(--body); margin-bottom: 22px; padding-left: 14px; border-left: 3px solid var(--cyan); }
+    .nothing-works { font-size: 15px; color: var(--body); background: rgba(79,217,232,.08); border: 1px solid rgba(79,217,232,.20); border-radius: 12px; padding: 14px 16px; margin-bottom: 22px; line-height: 1.6; }
 
-    .carer-block { background: var(--mist); border-radius: 14px; padding: 20px 20px; margin-bottom: 24px; }
-    .carer-block-eyebrow { font-size: 12px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: var(--cyan); margin-bottom: 8px; }
-    .carer-state-name { font-family: 'Lora', Georgia, serif; font-size: 21px; font-weight: 600; color: var(--navy); margin-bottom: 8px; }
-    .carer-state-copy { font-size: 15px; color: var(--ink); line-height: 1.6; }
+    .carer-block { background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 24px; }
+    .carer-block-eyebrow { font-family: var(--head); font-size: 12px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--cyan); margin-bottom: 8px; }
+    .carer-state-name { font-family: var(--head); font-size: 21px; font-weight: 600; color: var(--text); margin-bottom: 8px; letter-spacing: -.01em; }
+    .carer-state-copy { font-size: 15px; color: var(--body); line-height: 1.6; }
 
-    .result-next { font-size: 15.5px; color: var(--ink); line-height: 1.65; margin-bottom: 22px; }
-    .result-next strong { color: var(--navy); }
+    .result-next { font-size: 15.5px; color: var(--body); line-height: 1.65; margin-bottom: 22px; }
+    .result-next strong { color: var(--text); }
     .restart { text-align: center; margin-top: 18px; }
-    .restart a { font-size: 13px; color: var(--slate); text-decoration: none; }
+    .restart a { font-family: var(--head); font-size: 13px; color: var(--muted); text-decoration: none; }
     .restart a:hover { color: var(--cyan); }
 
     /* Accessibility */
     button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visible {
-      outline: 3px solid var(--cyan-bright); outline-offset: 2px;
+      outline: 2px solid var(--cyan); outline-offset: 2px;
     }
     @media (prefers-reduced-motion: no-preference) {
       .card { animation: rise .35s ease backwards; }
       @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .orb { animation: none !important; }
     }
   </style>
 </head>
@@ -191,8 +201,8 @@
 <div class="wrap">
 
   <header class="site-header">
-    <a href="index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;">
-      <div class="logo-mark"><div class="logo-orb"></div></div>
+    <a href="index.html" style="display:flex;align-items:center;gap:11px;text-decoration:none;color:inherit;">
+      <img class="logo-img" src="assets/bluzen-mark-cyan.png" alt="Bluzen"/>
       <span class="brand-name">Bluzen</span>
     </a>
   </header>
@@ -273,6 +283,11 @@
 // endpoint safe to call directly from the browser, so this goes through a small serverless proxy
 // instead (see /cloudflare-worker/mailerlite-proxy.js and the README for setup).
 const MAILERLITE_WORKER_URL = "https://mailerlite-proxy.darraghkearney123.workers.dev";
+
+// Formspree — receives the full question-by-question transcript of each completion, straight to
+// Darragh's inbox. MailerLite only stores the handful of fields its automation needs; this is the
+// complete record, with no custom-field limits or truncation.
+const FORMSPREE_ENDPOINT = "https://formspree.io/f/xwvgweed";
 
 // Calendly booking link for "Book a free 15 minute chat". Note: the URL slug still says
 // "30min" (an old path, left as-is) but this event is confirmed reconfigured to a real
@@ -685,9 +700,80 @@ function showResult() {
       ? `<strong>${userName}</strong>, your full breakdown for both of you is on its way to your email, including one thing you can try tonight and how to book a free 15 minute chat with me.`
       : `<strong>${userName}</strong>, your full breakdown is on its way to your email, including one thing you can try tonight and how to book a free 15 minute chat with me.`;
 
-  submitToMailerLite(r);
+  const answerLog = buildAnswerLog();
+  submitToMailerLite(r, answerLog);
+  emailFullTranscript(r, answerLog);
   document.getElementById('screen-result').classList.remove('hidden');
   window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── FULL ANSWER CAPTURE ──
+// Every question actually shown, with the exact wording the visitor saw (the two paths reword
+// most questions) and the option they picked. Used for both the MailerLite fields and the
+// transcript emailed to Darragh.
+function buildAnswerLog() {
+  const rows = [];
+
+  QUESTIONS.forEach((q, i) => {
+    const aIdx = answers[i];
+    let picked = "(not answered)";
+    if (aIdx !== null) {
+      const opt = questionOptions(q)[aIdx];
+      picked = (path === 'carer' && opt.cLabel) ? opt.cLabel : opt.label;
+    }
+    rows.push({ key: `q${i + 1}`, label: `Q${i + 1}`, question: path === 'me' ? q.me : q.carer, answer: picked });
+  });
+
+  if (path === 'carer') {
+    CARER_QUESTIONS.forEach((q, i) => {
+      const aIdx = carerAnswers[i];
+      rows.push({
+        key: `carer_q${i + 1}`,
+        label: `About you ${i + 1}`,
+        question: q.text,
+        answer: aIdx !== null ? q.options[aIdx].label : "(not answered)"
+      });
+    });
+  }
+
+  rows.push({
+    key: "hardest_part",
+    label: "In their own words",
+    question: "In your own words, what's the hardest part right now?",
+    answer: typedAnswer || "(skipped)"
+  });
+
+  return rows;
+}
+
+function transcriptText(rows) {
+  return rows.map(r => `${r.label}: ${r.question}\n    -> ${r.answer}`).join("\n\n");
+}
+
+// ── FULL TRANSCRIPT TO DARRAGH'S INBOX ──
+// MailerLite holds the few fields its automation needs; the complete question-by-question record
+// comes here, where there are no custom-field limits and nothing gets truncated.
+function emailFullTranscript(result, rows) {
+  if (FORMSPREE_ENDPOINT.includes("YOUR_FORM_ID")) {
+    console.warn("Formspree isn't configured — full transcript was not emailed.");
+    return;
+  }
+  const data = new FormData();
+  data.set("form_name", "quiz_completion");
+  data.set("_subject", `Bluzen quiz: ${userName} - ${PROFILES[result.winner].name}`);
+  data.set("name", userName);
+  data.set("email", userEmail);
+  data.set("taken_for", path === 'carer' ? "Someone they care for" : "Themselves");
+  data.set("profile", PROFILES[result.winner].name);
+  data.set("carer_state", result.carerState ? result.carerState.name : "n/a");
+  data.set("nothing_works_flag", result.nothingWorksFlag ? "yes" : "no");
+  data.set("hardest_part", typedAnswer || "(skipped)");
+  data.set("all_answers", transcriptText(rows));
+  data.set("completed_at", new Date().toISOString());
+
+  fetch(FORMSPREE_ENDPOINT, { method: "POST", body: data, headers: { Accept: "application/json" } })
+    .then(res => { if (!res.ok) console.error("Transcript email failed:", res.status); })
+    .catch(err => console.error("Transcript email failed:", err));
 }
 
 // ── MAILERLITE (this is what actually delivers the result — via its own locked automation) ──
@@ -699,7 +785,7 @@ function showResult() {
 // as their display names. Canon's "profile" field was renamed from "quiz_result" as a display
 // name only — MailerLite kept the underlying key/merge-tag as quiz_result, so that's what's sent
 // below. If the field ever gets recreated with a true "profile" key, change the key here to match.
-function submitToMailerLite(result) {
+function submitToMailerLite(result, rows) {
   const fields = {
     name: userName,
     path: path,
@@ -718,7 +804,14 @@ function submitToMailerLite(result) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ group: "quiz_completed", email: userEmail, fields })
-  }).catch(err => console.error("MailerLite proxy call failed:", err));
+  })
+    .then(async res => {
+      // Surfaces the real MailerLite response. If a custom field key doesn't exist on the account,
+      // MailerLite rejects it here — which is otherwise silent and looks like "only the group saved".
+      if (!res.ok) console.error("MailerLite rejected the submission:", res.status, await res.text().catch(() => ""));
+      else console.log("MailerLite accepted the submission.");
+    })
+    .catch(err => console.error("MailerLite proxy call failed:", err));
 }
 
 function bookCall() {

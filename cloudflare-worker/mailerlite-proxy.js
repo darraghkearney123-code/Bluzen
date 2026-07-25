@@ -80,11 +80,13 @@ export default {
       }),
     });
 
-    if (!mlRes.ok) {
-      const errText = await mlRes.text();
-      return new Response(errText, { status: mlRes.status, headers: corsHeaders(origin) });
-    }
-
-    return new Response("OK", { status: 200, headers: corsHeaders(origin) });
+    // Pass MailerLite's own response straight back, success or failure. On success the body
+    // includes the subscriber's stored `fields` — the quickest way to confirm custom fields
+    // actually landed, rather than being silently dropped for having a key MailerLite doesn't know.
+    const mlBody = await mlRes.text();
+    return new Response(mlBody, {
+      status: mlRes.status,
+      headers: { ...corsHeaders(origin), "Content-Type": "application/json" },
+    });
   },
 };
