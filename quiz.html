@@ -700,9 +700,9 @@ function showResult() {
       ? `<strong>${userName}</strong>, your full breakdown for both of you is on its way to your email, including one thing you can try tonight and how to book a free 15 minute chat with me.`
       : `<strong>${userName}</strong>, your full breakdown is on its way to your email, including one thing you can try tonight and how to book a free 15 minute chat with me.`;
 
-  const answerLog = buildAnswerLog();
-  submitToMailerLite(r, answerLog);
-  emailFullTranscript(r, answerLog);
+  const submission = buildSubmission(r, buildAnswerLog());
+  sendWithRetry('worker', workerPayload(submission));
+  sendWithRetry('formspree', formspreePayload(submission));
   document.getElementById('screen-result').classList.remove('hidden');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -750,68 +750,181 @@ function transcriptText(rows) {
   return rows.map(r => `${r.label}: ${r.question}\n    -> ${r.answer}`).join("\n\n");
 }
 
-// ── FULL TRANSCRIPT TO DARRAGH'S INBOX ──
-// MailerLite holds the few fields its automation needs; the complete question-by-question record
-// comes here, where there are no custom-field limits and nothing gets truncated.
-function emailFullTranscript(result, rows) {
-  if (FORMSPREE_ENDPOINT.includes("YOUR_FORM_ID")) {
-    console.warn("Formspree isn't configured — full transcript was not emailed.");
-    return;
-  }
-  const data = new FormData();
-  data.set("form_name", "quiz_completion");
-  data.set("_subject", `Bluzen quiz: ${userName} - ${PROFILES[result.winner].name}`);
-  data.set("name", userName);
-  data.set("email", userEmail);
-  data.set("taken_for", path === 'carer' ? "Someone they care for" : "Themselves");
-  data.set("profile", PROFILES[result.winner].name);
-  data.set("carer_state", result.carerState ? result.carerState.name : "n/a");
-  data.set("nothing_works_flag", result.nothingWorksFlag ? "yes" : "no");
-  data.set("hardest_part", typedAnswer || "(skipped)");
-  data.set("all_answers", transcriptText(rows));
-  data.set("completed_at", new Date().toISOString());
-
-  fetch(FORMSPREE_ENDPOINT, { method: "POST", body: data, headers: { Accept: "application/json" } })
-    .then(res => { if (!res.ok) console.error("Transcript email failed:", res.status); })
-    .catch(err => console.error("Transcript email failed:", err));
-}
-
-// ── MAILERLITE (this is what actually delivers the result — via its own locked automation) ──
-// Sends the visitor's answers to the serverless proxy (see /cloudflare-worker), which adds them
-// to the "Quiz Completed" group and fires the result automation. Never throws, never blocks the
-// result screen — if this fails, the visitor still sees their result either way.
-//
-// Field keys sent here must match MailerLite's actual field keys, which are NOT always the same
-// as their display names. Canon's "profile" field was renamed from "quiz_result" as a display
-// name only — MailerLite kept the underlying key/merge-tag as quiz_result, so that's what's sent
-// below. If the field ever gets recreated with a true "profile" key, change the key here to match.
-function submitToMailerLite(result, rows) {
-  const fields = {
+// ── THE FULL SUBMISSION RECORD ──
+// Everything worth keeping about one completion, in one object. This is what gets
+// written to Cloudflare KV, which is the durable store. MailerLite only receives the
+// handful of fields its automation merges into the result email, and Formspree is a
+// notification with a 50/month shared cap, so neither of those is the record.
+function buildSubmission(result, rows) {
+  return {
+    // Stable for the life of this submission, so a retry overwrites the same KV key
+    // instead of storing the completion twice.
+    submission_id: Math.random().toString(36).slice(2, 10),
+    completed_at: new Date().toISOString(),
     name: userName,
+    email: userEmail,
     path: path,
-    quiz_result: PROFILES[result.winner].name, // canon calls this "profile"; MailerLite's real key is quiz_result
+    taken_for: path === 'carer' ? "Someone they care for" : "Themselves",
+    profile: PROFILES[result.winner].name,
+    profile_key: result.winner,
     carer_state: result.carerState ? result.carerState.name : "",
     carer_state_text: result.carerState ? result.carerState.copy : "",
-    hardest_part: typedAnswer,
+    nothing_works: !!result.nothingWorksFlag,
+    recovery_tag: result.recoveryTag || "",
+    hardest_part: typedAnswer || "",
+    // Every question actually shown, in order, worded exactly as the visitor saw it,
+    // including the three carer questions when that path was taken.
+    answers: rows.map(r => ({ key: r.key, label: r.label, question: r.question, answer: r.answer })),
   };
-  console.log("Quiz payload for MailerLite:", { email: userEmail, fields });
+}
 
-  if (MAILERLITE_WORKER_URL.startsWith("REPLACE_WITH_")) {
-    console.warn("MailerLite proxy isn't set up yet — result was not sent to MailerLite. See cloudflare-worker/mailerlite-proxy.js.");
+function workerPayload(s) {
+  return {
+    group: "quiz_completed",
+    email: s.email,
+    // MailerLite field keys must match the account exactly. Canon calls this "profile",
+    // but MailerLite kept the underlying key as quiz_result after the display-name
+    // rename, so that is what goes on the wire.
+    fields: {
+      name: s.name,
+      path: s.path,
+      quiz_result: s.profile,
+      carer_state: s.carer_state,
+      carer_state_text: s.carer_state_text,
+      hardest_part: s.hardest_part,
+    },
+    submission: s,
+  };
+}
+
+function formspreePayload(s) {
+  return {
+    form_name: "quiz_completion",
+    _subject: `Bluzen quiz: ${s.name} - ${s.profile}`,
+    name: s.name,
+    email: s.email,
+    taken_for: s.taken_for,
+    profile: s.profile,
+    carer_state: s.carer_state || "n/a",
+    nothing_works_flag: s.nothing_works ? "yes" : "no",
+    hardest_part: s.hardest_part || "(skipped)",
+    all_answers: transcriptText(s.answers),
+    completed_at: s.completed_at,
+  };
+}
+
+// ── RESILIENT DELIVERY ──
+// Both destinations are independent and neither may block or break the result screen.
+// Each send retries once, and if it still fails the payload is parked in localStorage
+// and flushed on a later page load, so a dropped connection can't lose a completion.
+const SEND_QUEUE_KEY = "bluzen_pending_sends";
+const RETRY_DELAY_MS = 1500;
+const MAX_QUEUED = 25;
+
+function endpointFor(kind) {
+  return kind === "worker" ? MAILERLITE_WORKER_URL : FORMSPREE_ENDPOINT;
+}
+
+function isConfigured(kind) {
+  const url = endpointFor(kind);
+  return !!url && !url.startsWith("REPLACE_WITH_") && !url.includes("YOUR_FORM_ID");
+}
+
+function readQueue() {
+  try {
+    return JSON.parse(localStorage.getItem(SEND_QUEUE_KEY)) || [];
+  } catch (err) {
+    return [];
+  }
+}
+
+function writeQueue(items) {
+  try {
+    localStorage.setItem(SEND_QUEUE_KEY, JSON.stringify(items.slice(-MAX_QUEUED)));
+  } catch (err) {
+    // Private browsing or a full quota. Nothing more we can do client-side.
+  }
+}
+
+function queueSend(kind, body) {
+  const q = readQueue();
+  q.push({ kind: kind, body: body, queued_at: new Date().toISOString() });
+  writeQueue(q);
+  console.warn(`Bluzen: ${kind} send failed twice; queued for the next page load.`);
+}
+
+async function postOnce(kind, body) {
+  if (!isConfigured(kind)) return false;
+  try {
+    const res = await fetch(endpointFor(kind), {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      console.error(`Bluzen: ${kind} responded ${res.status}`);
+      return false;
+    }
+    if (kind === "worker") {
+      // The Worker always answers 200 when it received a well-formed request, and
+      // reports each side separately, so a KV or MailerLite problem is visible here
+      // rather than looking like a success.
+      const info = await res.json().catch(() => null);
+      if (info) {
+        console.log(`Bluzen: stored in KV = ${info.kv}, MailerLite = ${(info.mailerlite || {}).status}`);
+        if (info.kv !== "stored") console.error("Bluzen: submission was NOT stored in KV:", info.kv);
+        if (info.mailerlite && !info.mailerlite.ok) console.error("Bluzen: MailerLite rejected it:", info.mailerlite.detail);
+      }
+    }
+    return true;
+  } catch (err) {
+    console.error(`Bluzen: ${kind} send failed:`, err);
+    return false;
+  }
+}
+
+// Fire-and-forget from the caller's point of view: the result screen never waits on it.
+function sendWithRetry(kind, body) {
+  if (!isConfigured(kind)) {
+    console.warn(`Bluzen: ${kind} isn't configured — nothing sent.`);
     return;
   }
-  fetch(MAILERLITE_WORKER_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ group: "quiz_completed", email: userEmail, fields })
-  })
-    .then(async res => {
-      // Surfaces the real MailerLite response. If a custom field key doesn't exist on the account,
-      // MailerLite rejects it here — which is otherwise silent and looks like "only the group saved".
-      if (!res.ok) console.error("MailerLite rejected the submission:", res.status, await res.text().catch(() => ""));
-      else console.log("MailerLite accepted the submission.");
-    })
-    .catch(err => console.error("MailerLite proxy call failed:", err));
+  postOnce(kind, body).then(ok => {
+    if (ok) return;
+    setTimeout(() => {
+      postOnce(kind, body).then(retryOk => {
+        if (!retryOk) queueSend(kind, body);
+      });
+    }, RETRY_DELAY_MS);
+  });
+}
+
+async function flushQueue() {
+  const pending = readQueue();
+  if (!pending.length) return;
+  // Take ownership of the batch first so a slow flush isn't re-sent by a second tab.
+  writeQueue([]);
+  const stillFailing = [];
+  for (const item of pending) {
+    if (!isConfigured(item.kind)) {
+      stillFailing.push(item);
+      continue;
+    }
+    const ok = await postOnce(item.kind, item.body);
+    if (!ok) stillFailing.push(item);
+  }
+  if (stillFailing.length) writeQueue(readQueue().concat(stillFailing));
+  else console.log(`Bluzen: flushed ${pending.length} queued submission(s).`);
+}
+
+try {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", flushQueue);
+  } else {
+    flushQueue();
+  }
+} catch (err) {
+  console.error("Bluzen: could not flush the pending queue:", err);
 }
 
 function bookCall() {
