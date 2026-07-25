@@ -76,6 +76,13 @@ There is deliberately **no read endpoint on the Worker**. Submissions contain na
 and personal free-text answers, so serving them over HTTP would publish respondents' data. The
 Cloudflare dashboard is the only way in — please keep it that way.
 
+The Worker also refuses writes from anywhere other than the two site origins, caps request bodies at
+64KB and individual fields at 4,000 characters, and strips anything odd out of the KV key. Without
+the origin check, CORS alone would not have stopped a script posting straight to the Worker and
+filling the namespace or creating MailerLite subscribers, because CORS only decides whether a
+browser may *read* the reply, not whether the request runs. A determined non-browser client can
+still forge an Origin header, so this raises the cost rather than making it impossible.
+
 ### How a completion is delivered
 
 The Worker performs the KV write and the MailerLite call **independently**: if one fails the other
@@ -108,6 +115,24 @@ edit it:
 
 No prices appear here: group work is priced per contract or tender, and the 1:1 offer is discussed
 on the call rather than advertised on the page.
+
+## Privacy notice
+
+`privacy.html` covers all five forms, linked from the site footer, under both programme forms and
+under the quiz's start button. It follows the data rules in `bluzen-admin`: minimum collection,
+consent as the basis, marketing consent kept separate, and it names the three processors honestly
+(MailerLite, Formspree, Cloudflare).
+
+**Two things need your confirmation before you rely on it**, both marked in a comment at the top of
+the file:
+
+1. **Retention period.** It currently says records tied to client work are kept for as long as your
+   insurer and professional body require, without naming a number. Confirm the actual figure with
+   Holistic Insurance Services and the NCH, then state it plainly.
+2. **Contact address**, if you want a postal one shown. Only the email is there now.
+
+This is a working draft in your voice, not legal advice. Update the "Last updated" date whenever you
+change it.
 
 ## Adding the headshot
 

@@ -27,12 +27,23 @@ const ALLOWED_ORIGINS = [
   "https://bluzenfocus.net",
 ];
 
+// Size limits. A form post is a couple of KB, so anything far past that is either a
+// bug or someone trying to fill the namespace.
+const MAX_BODY_BYTES = 65536;
+const MAX_FIELD_CHARS = 4000;
+const MAX_ITEMS = 40;
+
+function isAllowedOrigin(origin) {
+  return ALLOWED_ORIGINS.indexOf(origin) !== -1;
+}
+
 function corsHeaders(origin) {
-  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const allowed = isAllowedOrigin(origin) ? origin : ALLOWED_ORIGINS[0];
   return {
     "Access-Control-Allow-Origin": allowed,
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
+    "Vary": "Origin",
   };
 }
 
@@ -47,6 +58,27 @@ function shortId() {
   return Math.random().toString(36).slice(2, 10);
 }
 
+// Bounds what can be written to KV: caps string length, array length, key count and
+// nesting, so a malformed or hostile payload can't store something enormous.
+function trimRecord(value, depth) {
+  if (typeof value === "string") {
+    return value.length > MAX_FIELD_CHARS ? value.slice(0, MAX_FIELD_CHARS) : value;
+  }
+  if (Array.isArray(value)) {
+    if (depth > 3) return [];
+    return value.slice(0, MAX_ITEMS).map(function (v) { return trimRecord(v, depth + 1); });
+  }
+  if (value && typeof value === "object") {
+    if (depth > 3) return {};
+    const out = {};
+    Object.keys(value).slice(0, MAX_ITEMS).forEach(function (k) {
+      out[k] = trimRecord(value[k], depth + 1);
+    });
+    return out;
+  }
+  return value;
+}
+
 // Writes the whole submission to KV. Never throws, so a storage problem can't take
 // the MailerLite send down with it.
 async function storeSubmission(env, submission) {
@@ -56,12 +88,12 @@ async function storeSubmission(env, submission) {
     const ts = submission.completed_at || new Date().toISOString();
     // The client sends a stable submission_id, so a retry overwrites the same key
     // rather than storing the same completion twice.
-    const id = submission.submission_id || shortId();
+    const id = String(submission.submission_id || shortId()).replace(/[^a-z0-9_-]/gi, "").slice(0, 32) || shortId();
     // Key prefix separates record types in the KV browser: "quiz:" for completions,
     // "programme:" for Sensory Kitchens and 1:1 enquiries. Older payloads have no
     // record_type and stay on "quiz:".
     const type = String(submission.record_type || "quiz").replace(/[^a-z0-9_-]/gi, "") || "quiz";
-    await env.QUIZ_LOG.put(type + ":" + ts + ":" + id, JSON.stringify(submission));
+    await env.QUIZ_LOG.put(type + ":" + ts + ":" + id, JSON.stringify(trimRecord(submission, 0)));
     return "stored";
   } catch (err) {
     console.error("KV write failed:", err && err.message);
@@ -104,9 +136,27 @@ export default {
       return json({ error: "Method not allowed" }, 405, origin);
     }
 
+    // The allowlist has to be enforced here, not just echoed in the CORS headers.
+    // CORS only stops a browser reading the response; the request would still have
+    // run, so without this check anyone could write to KV and create MailerLite
+    // subscribers straight from curl. This is not perfect, since a non-browser client
+    // can set any Origin it likes, but it closes the drive-by case.
+    if (!isAllowedOrigin(origin)) {
+      return json({ error: "Origin not allowed" }, 403, origin);
+    }
+
+    const declaredLength = Number(request.headers.get("Content-Length") || 0);
+    if (declaredLength > MAX_BODY_BYTES) {
+      return json({ error: "Payload too large" }, 413, origin);
+    }
+
     let body;
     try {
-      body = await request.json();
+      const raw = await request.text();
+      if (raw.length > MAX_BODY_BYTES) {
+        return json({ error: "Payload too large" }, 413, origin);
+      }
+      body = JSON.parse(raw);
     } catch (err) {
       return json({ error: "Invalid JSON" }, 400, origin);
     }
@@ -135,10 +185,12 @@ export default {
     // Always 200 when the request itself was well formed, so one failing side never
     // fails the whole call. The client retries on transport errors only, and reads
     // these flags to report what actually happened.
+    // detail is only echoed on failure, so a normal success doesn't hand the browser
+    // back the full MailerLite subscriber payload for no reason.
     return json({
       ok: true,
       kv: kv,
-      mailerlite: { ok: ml.ok, status: ml.status, detail: ml.detail },
+      mailerlite: { ok: ml.ok, status: ml.status, detail: ml.ok ? "" : ml.detail },
     }, 200, origin);
   },
 };
