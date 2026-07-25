@@ -23,6 +23,7 @@
       </a>
       <nav style="display:flex;align-items:center;gap:30px;">
         <a href="#how" style="font-family:'Bricolage Grotesque',sans-serif;font-size:15px;color:#9AB2C6;text-decoration:none;transition:color .2s ease;" class="bz-h1">How it works</a>
+        <a href="#programmes" style="font-family:'Bricolage Grotesque',sans-serif;font-size:15px;color:#9AB2C6;text-decoration:none;transition:color .2s ease;" class="bz-h1">Programmes</a>
         <a href="#library" style="font-family:'Bricolage Grotesque',sans-serif;font-size:15px;color:#9AB2C6;text-decoration:none;transition:color .2s ease;" class="bz-h2">Library</a>
         <a href="#about" style="font-family:'Bricolage Grotesque',sans-serif;font-size:15px;color:#9AB2C6;text-decoration:none;transition:color .2s ease;" class="bz-h3">About</a>
         <a href="quiz.html" style="display:inline-block;background:#4FD9E8;color:#06131F;border:none;border-radius:999px;padding:11px 22px;font-family:'Bricolage Grotesque',sans-serif;font-weight:600;font-size:15px;cursor:pointer;text-decoration:none;transition:transform .25s ease,box-shadow .25s ease;" class="bz-h4">Take the quiz</a>
@@ -137,7 +138,105 @@
     </div>
   </section>
 
-  <section id="library" style="padding:130px 28px;">
+  <section id="programmes" style="padding:130px 28px;">
+    <div style="max-width:1140px;margin:0 auto;">
+      <div data-reveal="" style="max-width:720px;margin:0 0 64px;">
+        <div style="display:inline-flex;align-items:center;gap:11px;margin-bottom:24px;">
+          <span style="width:26px;height:1px;background:#4FD9E8;"></span>
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;letter-spacing:0.2em;text-transform:uppercase;color:#4FD9E8;font-weight:600;">Programmes</span>
+        </div>
+        <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:600;font-size:clamp(32px,4vw,52px);line-height:1.1;letter-spacing:-0.02em;color:#EAF4F8;margin:0 0 22px;">Two ways to work with me.</h2>
+        <p style="font-size:19px;line-height:1.68;color:#C2D4E0;margin:0;max-width:58ch;">One is hands on, in a kitchen, with a group. The other is quiet, one to one, online. Leave your details for whichever fits and I will come back to you myself.</p>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:28px;">
+
+        <div data-reveal="" data-group="sensory" style="background:#0F1F38;border:1px solid rgba(154,178,198,0.16);border-radius:22px;padding:38px;">
+          <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;letter-spacing:0.2em;text-transform:uppercase;color:#4FD9E8;font-weight:600;margin-bottom:16px;">Group programme</div>
+          <h3 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:600;font-size:26px;color:#EAF4F8;margin:0 0 14px;letter-spacing:-0.01em;">Sensory Kitchens</h3>
+          <p style="font-size:17px;line-height:1.68;color:#C2D4E0;margin:0 0 16px;">A small, hands on cooking group for adults and children with intellectual disabilities. Real cooking, at a pace that suits the room, with the sensory side of a kitchen treated as the point rather than a problem.</p>
+          <p style="font-size:17px;line-height:1.68;color:#C2D4E0;margin:0 0 16px;">The food is the vehicle. Settling, confidence and doing something together are what we are actually after. I work in a specialist training kitchen day to day, and I am a qualified Healthy Food Made Easy facilitator.</p>
+          <p style="font-size:15px;line-height:1.6;color:#9AB2C6;margin:0 0 28px;">Sensory Kitchens runs with a host organisation, so schools, day services and community groups, under their safeguarding and staffing. If you are enquiring for someone you care for, I will let you know when a group is running near you.</p>
+
+          <div data-when="sensoryDone" hidden>
+            <div style="display:flex;align-items:flex-start;gap:14px;">
+              <div style="flex:none;width:44px;height:44px;border-radius:50%;border:2px solid #4FD9E8;display:flex;align-items:center;justify-content:center;color:#4FD9E8;font-size:20px;line-height:1;">✓</div>
+              <div>
+                <h4 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:600;font-size:19px;color:#EAF4F8;margin:0 0 8px;">Got it, thanks.</h4>
+                <p style="font-size:16px;line-height:1.6;color:#C2D4E0;margin:0;max-width:38ch;">I read every one of these myself and I will be in touch shortly.</p>
+              </div>
+            </div>
+          </div>
+          <div data-when="sensoryForm">
+            <form data-action="submitSensory" id="sensory-form">
+              <div style="margin-bottom:16px;">
+                <label for="sensory-name" style="display:block;font-family:'Bricolage Grotesque',sans-serif;font-size:13px;letter-spacing:0.03em;color:#C2D4E0;margin-bottom:9px;">Your name</label>
+                <input id="sensory-name" type="text" name="name" required autocomplete="name" placeholder="Your name" style="width:100%;background:#0A1628;border:1px solid rgba(154,178,198,0.22);border-radius:12px;padding:14px 16px;color:#EAF4F8;font-family:'Lora',serif;font-size:16px;outline:none;transition:border-color .2s ease;" class="bz-focus">
+              </div>
+              <div style="margin-bottom:16px;">
+                <label for="sensory-email" style="display:block;font-family:'Bricolage Grotesque',sans-serif;font-size:13px;letter-spacing:0.03em;color:#C2D4E0;margin-bottom:9px;">Email address</label>
+                <input id="sensory-email" type="email" name="email" required autocomplete="email" placeholder="you@example.com" style="width:100%;background:#0A1628;border:1px solid rgba(154,178,198,0.22);border-radius:12px;padding:14px 16px;color:#EAF4F8;font-family:'Lora',serif;font-size:16px;outline:none;transition:border-color .2s ease;" class="bz-focus">
+              </div>
+              <div style="margin-bottom:16px;">
+                <label for="sensory-phone" style="display:block;font-family:'Bricolage Grotesque',sans-serif;font-size:13px;letter-spacing:0.03em;color:#C2D4E0;margin-bottom:9px;">Phone number</label>
+                <input id="sensory-phone" type="tel" name="phone" required autocomplete="tel" placeholder="So I can ring you back" style="width:100%;background:#0A1628;border:1px solid rgba(154,178,198,0.22);border-radius:12px;padding:14px 16px;color:#EAF4F8;font-family:'Lora',serif;font-size:16px;outline:none;transition:border-color .2s ease;" class="bz-focus">
+              </div>
+              <div style="margin-bottom:24px;">
+                <label for="sensory-context" style="display:block;font-family:'Bricolage Grotesque',sans-serif;font-size:13px;letter-spacing:0.03em;color:#C2D4E0;margin-bottom:9px;">Who is this for?</label>
+                <select id="sensory-context" name="enquiring_as" required style="width:100%;background:#0A1628;border:1px solid rgba(154,178,198,0.22);border-radius:12px;padding:14px 16px;color:#EAF4F8;font-family:'Lora',serif;font-size:16px;outline:none;transition:border-color .2s ease;" class="bz-focus">
+                  <option value="">Choose one</option>
+                  <option value="organisation">An organisation I work with</option>
+                  <option value="someone_i_care_for">Someone I care for</option>
+                  <option value="myself">Myself</option>
+                </select>
+              </div>
+              <button type="submit" style="width:100%;background:#4FD9E8;color:#06131F;border:none;border-radius:999px;padding:16px;font-family:'Bricolage Grotesque',sans-serif;font-weight:600;font-size:17px;cursor:pointer;transition:transform .25s ease,box-shadow .25s ease;" class="bz-h7">Register your interest</button>
+              <p style="font-size:13px;line-height:1.5;color:#8FA6B8;margin:16px 0 0;text-align:center;">Your details come straight to me. No list, no automated emails.</p>
+            </form>
+          </div>
+        </div>
+
+        <div data-reveal="" data-group="oneToOne" style="background:#0F1F38;border:1px solid rgba(154,178,198,0.16);border-radius:22px;padding:38px;">
+          <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;letter-spacing:0.2em;text-transform:uppercase;color:#4FD9E8;font-weight:600;margin-bottom:16px;">One to one, adults</div>
+          <h3 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:600;font-size:26px;color:#EAF4F8;margin:0 0 14px;letter-spacing:-0.01em;">1:1 hypnotherapy</h3>
+          <p style="font-size:17px;line-height:1.68;color:#C2D4E0;margin:0 0 16px;">Solution focused hypnotherapy, online, for adults. This is the work I do with people whose sleep has gone, whose head will not switch off, or who have been running on empty for a long time and want somewhere to start.</p>
+          <p style="font-size:17px;line-height:1.68;color:#C2D4E0;margin:0 0 16px;">It works over a course of sessions rather than a single fix, and we talk that through before you commit to anything. Parents and carers are very welcome. This is often the only bit of the week that is about them.</p>
+          <p style="font-size:15px;line-height:1.6;color:#9AB2C6;margin:0 0 28px;">Adults only. Hypnotherapy sits alongside your GP or mental health team, never in place of them, and it is not a crisis service.</p>
+
+          <div data-when="oneToOneDone" hidden>
+            <div style="display:flex;align-items:flex-start;gap:14px;">
+              <div style="flex:none;width:44px;height:44px;border-radius:50%;border:2px solid #4FD9E8;display:flex;align-items:center;justify-content:center;color:#4FD9E8;font-size:20px;line-height:1;">✓</div>
+              <div>
+                <h4 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:600;font-size:19px;color:#EAF4F8;margin:0 0 8px;">Got it, thanks.</h4>
+                <p style="font-size:16px;line-height:1.6;color:#C2D4E0;margin:0;max-width:38ch;">I read every one of these myself and I will be in touch shortly.</p>
+              </div>
+            </div>
+          </div>
+          <div data-when="oneToOneForm">
+            <form data-action="submitOneToOne" id="onetoone-form">
+              <div style="margin-bottom:16px;">
+                <label for="oto-name" style="display:block;font-family:'Bricolage Grotesque',sans-serif;font-size:13px;letter-spacing:0.03em;color:#C2D4E0;margin-bottom:9px;">Your name</label>
+                <input id="oto-name" type="text" name="name" required autocomplete="name" placeholder="Your name" style="width:100%;background:#0A1628;border:1px solid rgba(154,178,198,0.22);border-radius:12px;padding:14px 16px;color:#EAF4F8;font-family:'Lora',serif;font-size:16px;outline:none;transition:border-color .2s ease;" class="bz-focus">
+              </div>
+              <div style="margin-bottom:16px;">
+                <label for="oto-email" style="display:block;font-family:'Bricolage Grotesque',sans-serif;font-size:13px;letter-spacing:0.03em;color:#C2D4E0;margin-bottom:9px;">Email address</label>
+                <input id="oto-email" type="email" name="email" required autocomplete="email" placeholder="you@example.com" style="width:100%;background:#0A1628;border:1px solid rgba(154,178,198,0.22);border-radius:12px;padding:14px 16px;color:#EAF4F8;font-family:'Lora',serif;font-size:16px;outline:none;transition:border-color .2s ease;" class="bz-focus">
+              </div>
+              <div style="margin-bottom:24px;">
+                <label for="oto-phone" style="display:block;font-family:'Bricolage Grotesque',sans-serif;font-size:13px;letter-spacing:0.03em;color:#C2D4E0;margin-bottom:9px;">Phone number</label>
+                <input id="oto-phone" type="tel" name="phone" required autocomplete="tel" placeholder="So I can ring you back" style="width:100%;background:#0A1628;border:1px solid rgba(154,178,198,0.22);border-radius:12px;padding:14px 16px;color:#EAF4F8;font-family:'Lora',serif;font-size:16px;outline:none;transition:border-color .2s ease;" class="bz-focus">
+              </div>
+              <button type="submit" style="width:100%;background:#4FD9E8;color:#06131F;border:none;border-radius:999px;padding:16px;font-family:'Bricolage Grotesque',sans-serif;font-weight:600;font-size:17px;cursor:pointer;transition:transform .25s ease,box-shadow .25s ease;" class="bz-h7">Register your interest</button>
+              <p style="font-size:13px;line-height:1.5;color:#8FA6B8;margin:16px 0 0;text-align:center;">Your details come straight to me. No list, no automated emails.</p>
+            </form>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <section id="library" style="background:#0F1F38;padding:130px 28px;">
     <div style="max-width:1140px;margin:0 auto;">
       <div data-reveal="" data-group="waitlist" style="max-width:760px;margin:0 0 64px;">
         <div style="display:inline-flex;align-items:center;gap:11px;margin-bottom:24px;">
@@ -194,13 +293,11 @@
     </div>
   </section>
 
-  <section id="about" style="background:#0F1F38;padding:130px 28px;">
+  <section id="about" style="padding:130px 28px;">
     <div style="max-width:1140px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:64px;align-items:start;">
       <div data-reveal="" style="">
         <div style="display:flex;align-items:center;gap:24px;margin-bottom:34px;">
-          <div style="flex:none;width:110px;height:130px;border-radius:16px;border:1px solid rgba(154,178,198,0.2);background-image:repeating-linear-gradient(135deg,rgba(154,178,198,0.10) 0,rgba(154,178,198,0.10) 8px,transparent 8px,transparent 16px);display:flex;align-items:flex-end;justify-content:center;padding:10px;">
-            <span style="font-family:'Courier New',monospace;font-size:10px;color:#6E869A;text-align:center;line-height:1.4;">portrait of<br>Darragh</span>
-          </div>
+          <img src="assets/darragh-headshot.jpg" alt="Darragh Kearney" loading="lazy" onerror="this.style.display='none'" style="flex:none;width:110px;height:130px;border-radius:16px;border:1px solid rgba(154,178,198,0.2);object-fit:cover;object-position:center 20%;display:block;">
           <div>
             <div style="display:inline-flex;align-items:center;gap:11px;margin-bottom:16px;">
               <span style="width:26px;height:1px;background:#4FD9E8;"></span>

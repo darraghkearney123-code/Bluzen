@@ -62,11 +62,15 @@ and Formspree are both delivery mechanisms, not storage:
 (Worker → Settings → Bindings).
 
 **To read submissions:** Cloudflare dashboard → **Storage & Databases → KV** →
-`bluzen-quiz-submissions` → your keys. Each key is `quiz:<ISO timestamp>:<short id>` so they sort
-newest-last by time, and each value is one JSON record containing the path taken, every question
-with the exact wording the visitor saw and the answer they picked (including the three carer
-questions), the free-text answer, the resulting profile, carer state, the nothing-works flag, plus
-name, email and `completed_at`.
+`bluzen-quiz-submissions` → your keys. Keys are prefixed by record type so the two kinds sit apart:
+
+- `quiz:<ISO timestamp>:<short id>` — a quiz completion. The record holds the path taken, every
+  question with the exact wording the visitor saw and the answer they picked (including the three
+  carer questions), the free-text answer, the resulting profile, carer state, the nothing-works
+  flag, plus name, email and `completed_at`.
+- `programme:<ISO timestamp>:<short id>` — a Programmes enquiry. Holds the programme name, name,
+  email, phone, and for Sensory Kitchens who they're enquiring as (organisation / someone they care
+  for / themselves).
 
 There is deliberately **no read endpoint on the Worker**. Submissions contain names, email addresses
 and personal free-text answers, so serving them over HTTP would publish respondents' data. The
@@ -85,12 +89,42 @@ losing signal mid-submit doesn't lose the completion. Each submission carries a 
 `submission_id`, so a replay overwrites the same KV key rather than storing a duplicate. None of
 this blocks the result screen — the visitor sees their result even if every send fails.
 
+## The Programmes section
+
+Two interest forms (name, email, phone), each landing in KV as a durable record *and* emailing you
+via Formspree. They add nobody to a MailerLite group and trigger no automated email, so the only
+thing an enquirer ever receives is what you send them yourself.
+
+Two boundaries from the scope and groups docs are built into the copy, so please keep them if you
+edit it:
+
+- **Sensory Kitchens** is described as running *with a host organisation* (schools, day services,
+  community groups) under their safeguarding and staffing. The groups doc allows children and young
+  people in group settings only under a host organisation's framework, so the form deliberately
+  can't read as a direct sign-up for a child. It asks who's enquiring instead, and tells a carer
+  you'll let them know when a group runs near them.
+- **1:1 hypnotherapy** is marked adults only, with hypnotherapy positioned alongside a GP or mental
+  health team rather than in place of one, per the scope doc's bright line on paid 1:1 clients.
+
+No prices appear here: group work is priced per contract or tender, and the 1:1 offer is discussed
+on the call rather than advertised on the page.
+
+## Adding the headshot
+
+The About section already points at `assets/darragh-headshot.jpg`. Drop that file into `assets/`
+with exactly that name and it appears. Until then the `onerror` handler hides the slot, so the
+section simply renders without a photo rather than showing a broken image.
+
+Portrait crop, roughly 3:4 or taller, is what the frame expects. Anything from about 400px wide up
+is plenty at the size it renders.
+
 ### Known limitations
 
-- **Formspree: 50 submissions/month on the free plan, shared** across quiz completions, the library
-  waitlist and the contact form. Past that, Formspree stops accepting and the notification emails
-  stop arriving. Quiz records are unaffected because KV is the store — but if the notifications
-  matter at volume, that's the thing to upgrade.
+- **Formspree: 50 submissions/month on the free plan, shared** across quiz completions, programme
+  enquiries, the library waitlist and the contact form. Past that, Formspree stops accepting and the
+  notification emails stop arriving. Quiz and programme records are unaffected because KV is the
+  store, but the notification emails are how you actually hear about a new enquiry, so this is the
+  thing to upgrade first if the programmes get busy.
 - KV reads in the dashboard are per-key; there's no built-in search. For any real analysis, export
   the keys with `wrangler kv key list` / `wrangler kv key get`.
 

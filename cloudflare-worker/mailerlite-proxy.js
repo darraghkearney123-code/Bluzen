@@ -57,7 +57,11 @@ async function storeSubmission(env, submission) {
     // The client sends a stable submission_id, so a retry overwrites the same key
     // rather than storing the same completion twice.
     const id = submission.submission_id || shortId();
-    await env.QUIZ_LOG.put("quiz:" + ts + ":" + id, JSON.stringify(submission));
+    // Key prefix separates record types in the KV browser: "quiz:" for completions,
+    // "programme:" for Sensory Kitchens and 1:1 enquiries. Older payloads have no
+    // record_type and stay on "quiz:".
+    const type = String(submission.record_type || "quiz").replace(/[^a-z0-9_-]/gi, "") || "quiz";
+    await env.QUIZ_LOG.put(type + ":" + ts + ":" + id, JSON.stringify(submission));
     return "stored";
   } catch (err) {
     console.error("KV write failed:", err && err.message);

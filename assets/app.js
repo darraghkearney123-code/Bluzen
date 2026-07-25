@@ -16,7 +16,9 @@
     sleepSubmitted: false,
     waitlist: "idle", // idle | open | done
     contactSubmitted: false,
-    sleepPopupDismissed: false
+    sleepPopupDismissed: false,
+    sensorySubmitted: false,
+    oneToOneSubmitted: false
   };
 
   function setGroup(groupName, activeWhen) {
@@ -36,6 +38,14 @@
 
   function showContact() {
     setGroup("contact", state.contactSubmitted ? "contactSubmitted" : "contactNotSubmitted");
+  }
+
+  function showSensory() {
+    setGroup("sensory", state.sensorySubmitted ? "sensoryDone" : "sensoryForm");
+  }
+
+  function showOneToOne() {
+    setGroup("oneToOne", state.oneToOneSubmitted ? "oneToOneDone" : "oneToOneForm");
   }
 
   function closeSleepPopup() {
@@ -75,6 +85,84 @@
   function clearFieldError(form) {
     const box = form.querySelector(".bz-form-error");
     if (box) box.classList.remove("bz-visible");
+  }
+
+  // ── RESILIENT DELIVERY ──
+  // Programme enquiries are leads, so they get the same treatment as quiz completions: a durable
+  // KV record via the Worker plus an instant Formspree email, each retried once and then parked
+  // in localStorage to be flushed on a later page load. The queue key is shared with quiz.html,
+  // so either page will flush whatever the other left behind.
+  const SEND_QUEUE_KEY = "bluzen_pending_sends";
+  const RETRY_DELAY_MS = 1500;
+  const MAX_QUEUED = 25;
+
+  function endpointFor(kind) {
+    return kind === "worker" ? MAILERLITE_WORKER_URL : FORMSPREE_ENDPOINT;
+  }
+
+  function isConfigured(kind) {
+    const url = endpointFor(kind);
+    return !!url && !url.startsWith("REPLACE_WITH_") && !url.includes("YOUR_FORM_ID");
+  }
+
+  function readQueue() {
+    try { return JSON.parse(localStorage.getItem(SEND_QUEUE_KEY)) || []; } catch (err) { return []; }
+  }
+
+  function writeQueue(items) {
+    try { localStorage.setItem(SEND_QUEUE_KEY, JSON.stringify(items.slice(-MAX_QUEUED))); } catch (err) {}
+  }
+
+  async function postOnce(kind, body) {
+    if (!isConfigured(kind)) return false;
+    try {
+      const res = await fetch(endpointFor(kind), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) { console.error(`Bluzen: ${kind} responded ${res.status}`); return false; }
+      if (kind === "worker") {
+        const info = await res.json().catch(() => null);
+        if (info && info.kv && info.kv !== "stored" && info.kv !== "no-submission") {
+          console.error("Bluzen: record was NOT stored in KV:", info.kv);
+        }
+      }
+      return true;
+    } catch (err) {
+      console.error(`Bluzen: ${kind} send failed:`, err);
+      return false;
+    }
+  }
+
+  function sendWithRetry(kind, body) {
+    if (!isConfigured(kind)) { console.warn(`Bluzen: ${kind} isn't configured — nothing sent.`); return; }
+    postOnce(kind, body).then(ok => {
+      if (ok) return;
+      setTimeout(() => {
+        postOnce(kind, body).then(retryOk => {
+          if (retryOk) return;
+          const q = readQueue();
+          q.push({ kind, body, queued_at: new Date().toISOString() });
+          writeQueue(q);
+          console.warn(`Bluzen: ${kind} send failed twice; queued for the next page load.`);
+        });
+      }, RETRY_DELAY_MS);
+    });
+  }
+
+  async function flushQueue() {
+    const pending = readQueue();
+    if (!pending.length) return;
+    writeQueue([]);
+    const stillFailing = [];
+    for (const item of pending) {
+      if (!isConfigured(item.kind)) { stillFailing.push(item); continue; }
+      const ok = await postOnce(item.kind, item.body);
+      if (!ok) stillFailing.push(item);
+    }
+    if (stillFailing.length) writeQueue(readQueue().concat(stillFailing));
+    else console.log(`Bluzen: flushed ${pending.length} queued submission(s).`);
   }
 
   // Sends { group, email, fields } to the serverless proxy, which adds the visitor to that
@@ -135,6 +223,44 @@
     return true;
   }
 
+  // Programme enquiries go to Darragh directly. No MailerLite group and no automated email,
+  // so nothing is sent to the person beyond what he writes himself.
+  function submitProgramme(form, programme) {
+    clearFieldError(form);
+    const data = new FormData(form);
+    const record = {
+      record_type: "programme",
+      submission_id: Math.random().toString(36).slice(2, 10),
+      completed_at: new Date().toISOString(),
+      programme: programme,
+      name: (data.get("name") || "").toString().trim(),
+      email: (data.get("email") || "").toString().trim(),
+      phone: (data.get("phone") || "").toString().trim(),
+      enquiring_as: (data.get("enquiring_as") || "").toString()
+    };
+
+    if (!isConfigured("worker") && !isConfigured("formspree")) {
+      fieldError(form, "This form isn't connected yet. Please email info@bluzenfocus.com directly.");
+      return false;
+    }
+
+    // Durable record first, then the notification email.
+    sendWithRetry("worker", { submission: record });
+    sendWithRetry("formspree", {
+      form_name: "programme_interest",
+      _subject: `Bluzen enquiry: ${programme} - ${record.name}`,
+      programme: programme,
+      name: record.name,
+      email: record.email,
+      phone: record.phone,
+      enquiring_as: record.enquiring_as || "n/a",
+      submitted_at: record.completed_at
+    });
+
+    form.reset();
+    return true;
+  }
+
   document.addEventListener("submit", async (e) => {
     const form = e.target.closest("form[data-action]");
     if (!form) return;
@@ -162,6 +288,16 @@
         state.contactSubmitted = true;
         showContact();
       }
+    } else if (action === "submitSensory") {
+      if (submitProgramme(form, "Sensory Kitchens")) {
+        state.sensorySubmitted = true;
+        showSensory();
+      }
+    } else if (action === "submitOneToOne") {
+      if (submitProgramme(form, "1:1 hypnotherapy")) {
+        state.oneToOneSubmitted = true;
+        showOneToOne();
+      }
     }
   });
 
@@ -175,4 +311,7 @@
   showSleepForm();
   showWaitlist();
   showContact();
+  showSensory();
+  showOneToOne();
+  flushQueue();
 })();

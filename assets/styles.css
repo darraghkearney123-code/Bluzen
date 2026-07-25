@@ -97,6 +97,8 @@ p,h1,h2,h3,h4,li,a{overflow-wrap:anywhere;}
 .bz-h18:hover{opacity:0.75;}
 .bz-h19:hover{color:#EAF4F8;border-color:rgba(154,178,198,0.6);}
 .bz-h20:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(79,217,232,0.28);}
+.bz-focus:focus{border-color:#4FD9E8;}
+select.bz-focus option{background:#0A1628;color:#EAF4F8;}
 .bz-f24:focus{border-color:#4FD9E8;}
 .bz-f25:focus{border-color:#4FD9E8;}
 .bz-f26:focus{border-color:#4FD9E8;}
