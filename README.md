@@ -37,6 +37,12 @@ updated file into the Cloudflare dashboard's Worker editor and redeploy — the 
 `QUIZ_LOG` KV binding both persist across redeploys. The file uses `//` line comments only, because
 block comments break the dashboard editor's auto-indent when pasting.
 
+**Deployed and verified live** against the real Worker URL, not a mock: a POST carrying a valid body
+from a disallowed origin returns 403, a POST with no `Origin` header returns 403, and a cross-origin
+simple POST (`text/plain`, so no preflight, meaning the request genuinely reached the Worker) wrote
+nothing to KV. A real Sensory Kitchens enquiry from the live site stored correctly under a
+`programme:` key with every field present, and arrived as a Formspree row.
+
 The 10-PDF-per-result and "which PDF goes with which profile" logic lives entirely in MailerLite's
 email editor (conditional content keyed off the `quiz_result` field), not in this code — that's your
 side to build once the PDFs exist.
@@ -134,14 +140,16 @@ the file:
 This is a working draft in your voice, not legal advice. Update the "Last updated" date whenever you
 change it.
 
-## Adding the headshot
+## The headshot
 
-The About section already points at `assets/darragh-headshot.jpg`. Drop that file into `assets/`
-with exactly that name and it appears. Until then the `onerror` handler hides the slot, so the
-section simply renders without a photo rather than showing a broken image.
+`assets/darragh-headshot.jpg` (688x977, ~90KB) renders in the About section at 110x130, cropped with
+`object-fit: cover` and `object-position: center 20%` so the face sits in frame rather than being
+centred on the chest. It is lazy-loaded, and an `onerror` handler hides the slot if the file is ever
+missing, so a bad path degrades to no photo instead of a broken image.
 
-Portrait crop, roughly 3:4 or taller, is what the frame expects. Anything from about 400px wide up
-is plenty at the size it renders.
+The source is already well past 2x for the size it renders at, so a retina variant would add nothing.
+If you ever want the page lighter, a WebP at around 400px wide would cut most of the 90KB, but at one
+lazy-loaded image it is not worth the extra file to maintain.
 
 ### Known limitations
 
@@ -185,11 +193,26 @@ Quiz scoring, copy, and result profiles live entirely inside `quiz.html`.
 
 ## Open items
 
-- **Redeploy the Worker** with the current `cloudflare-worker/mailerlite-proxy.js` — the KV logging
-  is in that file, so submissions aren't being stored until it's deployed.
+- **The contact address may be a dead one. Needs Darragh to confirm before anything else here.**
+  `index.html` and `privacy.html` both give the contact address as `info@bluzenfocus.com`, but the
+  domain the site runs on is `bluzenfocus.net`. If the `.com` isn't also owned, then the address on
+  the privacy notice does not exist, which is worse than a normal broken link: it is the route
+  someone has to use to request their data or ask for it to be deleted. Left as-is deliberately
+  rather than guessed at. It appears in **four** places, so change them together:
+  `index.html` (footer contact line), `privacy.html` (intro paragraph), and `assets/app.js` **twice**,
+  in the messages shown when a form fails to send. That last pair matters most: it is the fallback
+  someone is given at the exact moment the form did not work.
+- **Retention period and postal address in `privacy.html`** — see the comment at the top of that
+  file. Retention needs confirming with Holistic Insurance Services and the NCH.
+- The 10 result PDFs and the sleep-audio file, then the MailerLite result automation that pairs a
+  PDF to each `{$quiz_result}` value.
+- One live end-to-end test each of the **sleep-audio** and **library waitlist** forms. Both route
+  through the same Worker as the quiz but have only ever been exercised against a mock.
 - **Domain:** confirmed as `www.bluzenfocus.net` / `bluzenfocus.net` — the one live and
   DNS-configured since the start of the project. (An earlier message said `bluzen.net`; that was
   a mistake and has been reverted.) `CNAME` and the Worker's `ALLOWED_ORIGINS` both point at this.
   Still differs from the `bluzen.ie` domain locked in the canon docs — worth reconciling there at
   some point, not a website blocker.
-- The 10 result PDFs and the sleep-audio file — you're creating these now, no action needed yet.
+- The `bluzen-brand` doc still specifies the light Mist palette, `#2BB3C0` cyan and Lora headings.
+  The site and quiz are both dark navy with Bricolage Grotesque headings, by decision. Worth
+  updating the doc so future PDFs and social posts aren't generated against the old spec.
