@@ -102,6 +102,37 @@ losing signal mid-submit doesn't lose the completion. Each submission carries a 
 `submission_id`, so a replay overwrites the same KV key rather than storing a duplicate. None of
 this blocks the result screen — the visitor sees their result even if every send fails.
 
+## The welcome overlay (physiological sigh)
+
+`assets/sigh.js` plus the `#bz-sigh` block in `index.html`. Appears 1.5s after landing, guides one
+physiological sigh (3.5s inhale, 1s top-up, 6s exhale), then offers a second breath and a
+"Continue to Bluzen" button. Closes on the X, Escape, or a click on the backdrop.
+
+Knobs are constants at the top of `sigh.js`:
+
+| Constant | Does |
+|---|---|
+| `SHOW_AGAIN_AFTER_MS` | How long before it can show again. 24 hours. |
+| `OPEN_DELAY_MS` | Delay before it appears. 1500. |
+| `AUTO_RUN` | `true` starts the breath on open instead of waiting for the button. Currently `false`. |
+| `MAX_CYCLES` | How many breaths before the "one more" option stops being offered. 2. |
+
+Things worth knowing before changing it:
+
+- **It coordinates with the sleep-audio popup.** That popup used to fire on a flat 3.5s timer, which
+  would have put two interruptions inside four seconds of landing. `sigh.js` publishes
+  `window.bluzenOverlay.willShow` synchronously, and `app.js` either waits for the
+  `bluzen:overlay-closed` event or starts its own timer when the overlay isn't showing. The flag has
+  to be synchronous: `sigh.js` runs first, so an event alone would fire before `app.js` had
+  subscribed and the popup would never appear.
+- **It does not show if the URL has a hash.** Someone following a link to `#programmes` came for
+  something specific, so they are left alone.
+- **Reduced motion is respected** by keeping the timings and the labels, which are the actual
+  guidance, and shrinking the movement rather than removing the breath.
+- **It is on `index.html` only.** The quiz is its own focused flow with its own calm opening, and
+  `privacy.html` is a reference page.
+- The copy stays a plain invitation with no claim about what the breath does, per `bluzen-scope`.
+
 ## The Programmes section
 
 Two interest forms (name, email, phone), each landing in KV as a durable record *and* emailing you

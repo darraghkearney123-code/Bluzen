@@ -400,8 +400,37 @@
     </div>
   </div>
 
+  <div class="bz-sigh-backdrop" id="bz-sigh" role="dialog" aria-modal="true" aria-labelledby="bz-sigh-title" hidden>
+    <div class="bz-sigh-modal">
+      <button class="bz-sigh-close" id="bz-sigh-close" type="button" aria-label="Close">✕</button>
+      <p class="bz-sigh-eyebrow">One breath</p>
+      <h2 class="bz-sigh-title" id="bz-sigh-title">Take a moment for your nervous system</h2>
+      <p class="bz-sigh-sub">Before you explore, take a single physiological sigh with us. Two breaths in through the nose, one long breath out through the mouth.</p>
+
+      <div class="bz-sigh-stage">
+        <div class="bz-sigh-target" aria-hidden="true"></div>
+        <div class="bz-sigh-orb" id="bz-sigh-orb" aria-hidden="true"></div>
+      </div>
+
+      <p class="bz-sigh-phase" id="bz-sigh-phase" role="status" aria-live="polite">Whenever you're ready.</p>
+      <div class="bz-sigh-dots" aria-hidden="true">
+        <span class="bz-sigh-dot"></span>
+        <span class="bz-sigh-dot"></span>
+      </div>
+
+      <div class="bz-sigh-actions">
+        <button class="bz-sigh-btn bz-sigh-btn-primary" id="bz-sigh-start" type="button">Start the breath</button>
+        <button class="bz-sigh-btn bz-sigh-btn-ghost" id="bz-sigh-again" type="button" hidden>Take one more</button>
+        <button class="bz-sigh-btn bz-sigh-btn-primary" id="bz-sigh-continue" type="button" hidden>Continue to Bluzen</button>
+      </div>
+
+      <p class="bz-sigh-note">Skip it any time. This is an invitation, not a gate.</p>
+    </div>
+  </div>
+
 </div>
 
+<script src="assets/sigh.js" defer></script>
 <script src="assets/app.js" defer></script>
 </body>
 </html>

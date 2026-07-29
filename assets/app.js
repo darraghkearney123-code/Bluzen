@@ -302,11 +302,23 @@
   });
 
   // Show the sleep-audio popup after a short delay, unless it's already been handled.
-  setTimeout(() => {
-    if (!state.sleepSubmitted && !state.sleepPopupDismissed) {
-      document.getElementById("sleep-popup").hidden = false;
-    }
-  }, 3500);
+  // The welcome overlay gets out of the way first: without this the two would stack
+  // inside about four seconds of landing, which is the opposite of the point of it.
+  // assets/sigh.js fires this event either when the overlay closes or immediately if
+  // it isn't showing this visit, so the timer always starts.
+  function startSleepPopupTimer() {
+    setTimeout(() => {
+      if (!state.sleepSubmitted && !state.sleepPopupDismissed) {
+        document.getElementById("sleep-popup").hidden = false;
+      }
+    }, 3500);
+  }
+
+  if (window.bluzenOverlay && window.bluzenOverlay.willShow) {
+    document.addEventListener("bluzen:overlay-closed", startSleepPopupTimer, { once: true });
+  } else {
+    startSleepPopupTimer();
+  }
 
   showSleepForm();
   showWaitlist();
