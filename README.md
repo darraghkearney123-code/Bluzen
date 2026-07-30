@@ -222,6 +222,32 @@ Then open `http://localhost:8000`.
 
 Quiz scoring, copy, and result profiles live entirely inside `quiz.html`.
 
+## The Midweek Check-In component
+
+`components/MidweekCheckIn.jsx` is a React component for the client portal, not part of the static
+site. It is the between-session check-in: one score, one micro-win, one anchor, and an evidence list
+built from past entries. It is pure. No fetch, no storage, no `clientId`, no login. The parent passes
+`scaleTopic`, `history` and `onSubmit`, and adds `id`, `clientId`, `createdAt` and `weekOf` itself
+before persisting whatever `onSubmit` hands it. Nothing needs rewriting when it moves into the portal.
+
+Evidence and the trend strip are both derived from `history` on every render, so there is no second
+list to keep in step, and no evidence table to build.
+
+To look at it, serve the repo and open `components/preview.html`. That page compiles the real `.jsx`
+in the browser and stands in for the portal, holding the history in memory and saving with a
+deliberate delay so the pending state is visible. It pulls React and Babel from a CDN, so it needs to
+be online. It is a harness only, and none of it ships with the component.
+
+The acceptance checklist from the build spec is runnable:
+
+```
+npm i react react-dom jsdom @babel/core @babel/preset-react @babel/plugin-transform-modules-commonjs
+node components/MidweekCheckIn.test.mjs
+```
+
+69 checks: both score paths through all five screens, plus the hard rules (no em dashes, no emoji, no
+exclamation marks, no streaks, no copy about missed weeks, no storage, no `clientId`).
+
 ## Open items
 
 - **The contact address may be a dead one. Needs Darragh to confirm before anything else here.**
