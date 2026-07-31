@@ -14,7 +14,9 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
  *   <MidweekCheckIn
  *     scaleTopic={string | null}
  *     history={CheckIn[]}          full history, newest last
- *     onSubmit={draft => Promise}
+ *     onSubmit={draft => Promise}  reject to keep the client on the anchor
+ *                                  screen. Put client-facing copy on the error
+ *                                  as `clientMessage` to say why it failed.
  *     onCancel={() => void}        optional
  *   />
  *
@@ -300,10 +302,15 @@ function Footer() {
         not medical or psychological treatment, and it is not a substitute for either. Your GP is
         the first port of call for any health concern. For adults, 18 and over.
       </p>
+      {/* Hours go on every entry, not just the ones that run all night. A flat
+          list reads as though everything on it is answerable at 3am, and Aware
+          is not. Verified 31 July 2026, see the README for sources and dates. */}
       <p>
         If you need someone today, please ring rather than write it here. Emergency 999 or 112.
-        Northern Ireland: Lifeline 0808 808 8000, 24 hours. Samaritans 116 123. Republic of
-        Ireland: Samaritans 116 123. Pieta 1800 247 247. Aware 1800 80 48 48. Text HELLO to 50808.
+        Samaritans 116 123, free, 24 hours, the same number North and South. Northern Ireland:
+        Lifeline 0808 808 8000, 24 hours. Republic of Ireland: Pieta 1800 247 247, or text HELP to
+        51444. Aware 1800 80 48 48, 10am to 10pm, 7 days. Text HELLO to 50808, 24 hours. On An Post
+        and 48 the shortcode can fail, so text 086 1800 280 instead.
       </p>
     </div>
   );
@@ -404,7 +411,12 @@ export default function MidweekCheckIn({ scaleTopic = null, history = [], onSubm
       setEchoes((prev) => [...prev, { id: 'local-' + prev.length, createdAt: new Date().toISOString(), score, bodyArea, microWin, anchor }]);
       setStep('done');
     } catch (err) {
-      setSaveFailed(true);
+      /* A parent that knows why the save failed can say so by putting a line of
+         client-facing copy on the error as `clientMessage`. Only that field is
+         read, never `message`, so a stray technical error cannot end up on the
+         screen in front of somebody. */
+      const said = err && typeof err.clientMessage === 'string' && err.clientMessage.trim();
+      setSaveFailed(said || true);
     } finally {
       setSaving(false);
     }
@@ -638,7 +650,7 @@ export default function MidweekCheckIn({ scaleTopic = null, history = [], onSubm
       </button>
       {saveFailed ? (
         <p className="bz-mwci-note" role="status">
-          That did not save. Have another go in a moment.
+          {typeof saveFailed === 'string' ? saveFailed : 'That did not save. Have another go in a moment.'}
         </p>
       ) : null}
     </>
@@ -682,3 +694,11 @@ export default function MidweekCheckIn({ scaleTopic = null, history = [], onSubm
     </div>
   );
 }
+
+/* Exposed so a host page can put its own screen in front of the check-in without
+   keeping a second copy of the disclaimer, the helpline numbers or the styles.
+   The safety copy in particular should exist once and only once. A host showing
+   its own screen renders both; a host showing the check-in renders neither,
+   because the component brings them itself. */
+MidweekCheckIn.Footer = Footer;
+MidweekCheckIn.Styles = Styles;

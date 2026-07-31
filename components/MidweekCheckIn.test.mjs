@@ -16,6 +16,7 @@
 
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 import { JSDOM } from 'jsdom';
 import * as babel from '@babel/core';
 
@@ -110,6 +111,17 @@ check('newest first', txt().indexOf('Slept through until six') < txt().indexOf('
 check('anchor shown as Carried in', /Carried in: no phone at the table/.test(txt()));
 check('primary is check in for this week', !!btn('Check in for this week'));
 check('footer on evidence', /Lifeline 0808 808 8000/.test(txt()) && /18 and over/.test(txt()));
+
+/* Helpline hours. Numbers verified 31 July 2026, see README. The thing being
+   guarded here is that no line ends up implying a service is open all night
+   when it is not, which is the failure that would matter at 3am. */
+check('Samaritans labelled 24 hours', /Samaritans 116 123, free, 24 hours/.test(txt()));
+check('Lifeline labelled 24 hours', /Lifeline 0808 808 8000, 24 hours/.test(txt()));
+check('Aware labelled 10am to 10pm', /Aware 1800 80 48 48, 10am to 10pm, 7 days/.test(txt()));
+check('Aware never labelled 24 hours', !/Aware[^.]*24 hours/.test(txt()));
+check('50808 labelled 24 hours', /Text HELLO to 50808, 24 hours/.test(txt()));
+check('Pieta text line present', /text HELP to 51444/.test(txt()));
+check('50808 network fallback present', /086 1800 280/.test(txt()));
 
 /* trend */
 await click('See your weeks');
@@ -226,6 +238,19 @@ await act(async () => { r4.render(React.createElement(MidweekCheckIn, {
 check('empty bank still says Nothing here yet', /Nothing here yet/.test(c4.textContent));
 check('but does not call it their first check-in', [...c4.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Check in for this week'));
 check('trend link still offered', /See your weeks/.test(c4.textContent));
+
+/* The generated build must match the source, or checkin.html is serving an old
+   component while this suite happily tests the new one. */
+{
+  const built = spawnSync(process.execPath, [fileURLToPath(new URL('./build.mjs', import.meta.url)), '--check'], {
+    encoding: 'utf8',
+  });
+  check(
+    'MidweekCheckIn.js is in step with the .jsx',
+    built.status === 0,
+    (built.stderr || built.stdout || '').trim()
+  );
+}
 
 console.log('PASS ' + ok.length);
 if (fails.length) {

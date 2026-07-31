@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+
+<!--
+  Unlisted on purpose. Not in the nav, not in any sitemap, not linked from
+  anywhere on the site. Darragh gives the address to a client directly.
+
+  robots.txt would be the wrong tool here: it is a public file, so listing the
+  path in it would advertise the very thing we are keeping quiet. The meta below
+  is what keeps it out of search results.
+
+  Nothing on this page is fetched from another origin. React and the fonts are
+  in the repo, and the component is precompiled, so there is no CDN and no
+  build step between a client and their check-in. Nothing is sent anywhere: no
+  server, no account, no analytics, and nothing identifying in the URL.
+-->
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#F4F8FA">
+<meta name="description" content="A private between-session check-in.">
+
+<title>Midweek check-in</title>
+
+<link rel="icon" href="assets/bluzen-mark-cyan.png">
+<link rel="stylesheet" href="assets/checkin-fonts.css">
+
+<style>
+  html{background:#F4F8FA;}
+  body{
+    margin:0;background:#F4F8FA;color:#1A2332;
+    font-family:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;
+    -webkit-text-size-adjust:100%;
+  }
+
+  /* Skip link, for anyone landing here on a keyboard */
+  .bz-skip{
+    position:absolute;left:-9999px;top:0;z-index:5;
+    background:#FFFFFF;color:#14506B;padding:12px 16px;border-radius:0 0 12px 0;
+    font-size:15px;text-decoration:underline;
+  }
+  .bz-skip:focus{left:0;outline:2.5px solid #2BB3C0;outline-offset:3px;}
+
+  .bz-visually-hidden{
+    position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+    clip:rect(0 0 0 0);white-space:nowrap;border:0;
+  }
+
+  /* Page chrome. Deliberately almost nothing: the card is the page. */
+  .bz-topbar{
+    max-width:520px;margin:0 auto;padding:20px 16px 0;
+    font-family:'Lora',Georgia,serif;font-weight:400;font-size:17px;
+    letter-spacing:.01em;color:#1B2A4A;
+  }
+
+  /* The topic screen borrows the component's card. It has no score yet, so it
+     gets the calm 6 to 7 sky rather than a made up one. */
+  .bz-host-sky{
+    position:relative;height:104px;
+    background-image:linear-gradient(165deg,#B4CFD8 0%,#DDE9ED 52%,#F4F8FA 100%);
+  }
+  .bz-host-sky .bz-mwci-orb{position:absolute;left:26px;bottom:24px;}
+  .bz-host-topic{min-height:96px;}
+
+  /* Small print under the component's own footer */
+  .bz-host-note{
+    max-width:520px;margin:0 auto;padding:14px 22px 34px;
+  }
+  .bz-host-note p{
+    font-size:11.5px;line-height:1.65;color:#5A6B7B;margin:0 0 10px;font-weight:400;
+  }
+  .bz-host-flag{color:#14506B;}
+  .bz-host-link{
+    min-height:44px;padding:0;margin:2px 0 0;background:none;border:0;cursor:pointer;
+    font-family:'Nunito',system-ui,sans-serif;font-size:13px;color:#14506B;
+    text-decoration:underline;text-underline-offset:3px;text-decoration-color:#9CC5D2;
+  }
+  .bz-host-link:hover{text-decoration-color:#2BB3C0;}
+
+  /* Shown only if one of the four scripts does not arrive */
+  .bz-fallback{max-width:520px;margin:0 auto;padding:36px 22px;}
+  .bz-fallback h2{
+    font-family:'Lora',Georgia,serif;font-weight:500;font-size:24px;line-height:1.3;
+    color:#1B2A4A;margin:0 0 14px;
+  }
+  .bz-fallback p{font-size:15px;line-height:1.6;color:#5A6B7B;margin:0 0 16px;}
+  .bz-fallback p:last-child{font-size:12px;line-height:1.65;}
+
+  :focus-visible{outline:2.5px solid #2BB3C0;outline-offset:3px;}
+
+  @media (max-width:379px){
+    .bz-topbar{padding:16px 12px 0;}
+    .bz-host-note{padding:12px 18px 30px;}
+  }
+</style>
+</head>
+<body>
+
+<a class="bz-skip" href="#bz-checkin-root">Skip to the check-in</a>
+
+<div class="bz-topbar">Bluzen</div>
+
+<h1 class="bz-visually-hidden">Midweek check-in</h1>
+
+<main id="bz-checkin-root">
+  <noscript>
+    <div class="bz-fallback">
+      <h2>This needs JavaScript switched on</h2>
+      <p>The check-in will not run without it. If you cannot switch it on, tell Darragh and do the
+        check-in the next time you are in.</p>
+      <p>If you need someone today, please ring rather than write it here. Emergency 999 or 112.
+        Samaritans 116 123, free, 24 hours, the same number North and South. Northern Ireland:
+        Lifeline 0808 808 8000, 24 hours. Republic of Ireland: Pieta 1800 247 247, or text HELP to
+        51444. Aware 1800 80 48 48, 10am to 10pm, 7 days. Text HELLO to 50808, 24 hours. On An Post
+        and 48 the shortcode can fail, so text 086 1800 280 instead.</p>
+    </div>
+  </noscript>
+</main>
+
+<!-- All four are in this repo. Order matters: React, then the component that
+     reads it, then the store, then the host that wires them together. -->
+<script src="assets/vendor/react-18.3.1.production.min.js"></script>
+<script src="assets/vendor/react-dom-18.3.1.production.min.js"></script>
+<script src="components/MidweekCheckIn.js"></script>
+<script src="assets/checkin-store.js"></script>
+<script src="assets/checkin-app.js"></script>
+
+</body>
+</html>
