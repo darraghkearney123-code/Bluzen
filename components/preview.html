@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Midweek Check-In preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;padding:0;background:#F4F8FA;}
+  #bz-dev{
+    position:fixed;right:10px;bottom:10px;z-index:9;
+    display:flex;gap:6px;align-items:center;
+    background:#FFFFFF;border:1px solid #DCE5EA;border-radius:999px;
+    padding:7px 8px;box-shadow:0 6px 20px rgba(27,42,74,.12);
+    font-family:'Nunito',system-ui,sans-serif;font-size:12px;color:#5A6B7B;
+  }
+  #bz-dev button{
+    min-height:30px;padding:0 11px;border-radius:999px;border:1px solid #DCE5EA;
+    background:#FFFFFF;color:#1B2A4A;font:inherit;cursor:pointer;
+  }
+  #bz-dev button[data-on="true"]{background:#DCF2F5;border-color:#2BB3C0;color:#14506B;}
+  #bz-err{
+    margin:24px;padding:16px;border-radius:14px;background:#FFF;border:1px solid #E4B4B4;
+    font-family:ui-monospace,monospace;font-size:13px;white-space:pre-wrap;color:#8A3A3A;
+  }
+</style>
+</head>
+<body>
+
+<!--
+  Development harness. Not part of the site.
+
+  It loads the real components/MidweekCheckIn.jsx and compiles it in the
+  browser, so there is only ever one copy of the component. Needs to be served
+  over http, not opened as a file. From the repo root:
+
+      python3 -m http.server 8000
+      open http://localhost:8000/components/preview.html
+
+  The portal build imports the .jsx directly. None of this file goes with it.
+-->
+
+<div id="root"></div>
+<div id="bz-dev"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js" crossorigin></script>
+
+<script>
+(async function () {
+  var root = document.getElementById('root');
+
+  function fail(e) {
+    root.innerHTML = '';
+    var p = document.createElement('div');
+    p.id = 'bz-err';
+    p.textContent = 'Preview did not load.\n\n' + (e && e.stack ? e.stack : e) +
+      '\n\nServe the repo over http, and check the three CDN scripts loaded.';
+    root.appendChild(p);
+  }
+
+  var MidweekCheckIn;
+  try {
+    var src = await fetch('./MidweekCheckIn.jsx').then(function (r) {
+      if (!r.ok) throw new Error('fetch ' + r.status);
+      return r.text();
+    });
+    // Strip the ESM import, hand React in as a scope variable instead.
+    var compiled = Babel.transform(src.replace(/^import[^\n]*\n/, ''), {
+      presets: [['react', { runtime: 'classic' }]],
+    }).code.replace(/^export default function/m, 'return function');
+    MidweekCheckIn = new Function('React', 'useEffect', 'useMemo', 'useRef', 'useState', compiled)(
+      React, React.useEffect, React.useMemo, React.useRef, React.useState
+    );
+  } catch (e) { return fail(e); }
+
+  var TOPIC = 'the knot in my chest before work';
+
+  var SEED = [
+    { id: '1', createdAt: '2026-05-04T19:20:00.000Z', weekOf: '2026-05-04', score: 2, bodyArea: 'chest', microWin: 'Sat in the car for ten minutes before I went in, and it did help', anchor: 'no phone at the table' },
+    { id: '2', createdAt: '2026-05-11T20:05:00.000Z', weekOf: '2026-05-11', score: 3, bodyArea: 'jaw', microWin: '', anchor: '' },
+    { id: '3', createdAt: '2026-05-18T18:40:00.000Z', weekOf: '2026-05-18', score: 5, bodyArea: 'shoulders', microWin: 'Got out for a walk on the Tuesday without talking myself out of it', anchor: 'out the door before I think about it' },
+    { id: '4', createdAt: '2026-05-25T21:10:00.000Z', weekOf: '2026-05-25', score: 4, bodyArea: 'stomach', microWin: 'Ate a proper dinner sitting down', anchor: '' },
+    { id: '5', createdAt: '2026-06-01T19:55:00.000Z', weekOf: '2026-06-01', score: 7, bodyArea: 'none', microWin: 'Noticed my shoulders drop when I sat down with the tea', anchor: 'phone stays downstairs after nine' },
+    { id: '6', createdAt: '2026-06-15T20:30:00.000Z', weekOf: '2026-06-15', score: 6, bodyArea: 'head', microWin: 'Slept through until six for the first time in a while', anchor: 'lights off by eleven' },
+    { id: '7', createdAt: '2026-07-06T18:15:00.000Z', weekOf: '2026-07-06', score: 9, bodyArea: 'none', microWin: 'Said no to the Saturday shift and did not spend the night justifying it', anchor: 'one no a week' },
+  ];
+
+  // Stands in for the portal. This is the bit that owns storage, not the component.
+  var state = { history: SEED.slice(), topic: TOPIC };
+  var reactRoot = ReactDOM.createRoot(root);
+
+  function render() {
+    reactRoot.render(React.createElement(MidweekCheckIn, {
+      scaleTopic: state.topic,
+      history: state.history,
+      onSubmit: function (draft) {
+        console.log('onSubmit', draft);
+        return new Promise(function (res) {
+          setTimeout(function () {
+            var now = new Date();
+            var monday = new Date(now);
+            monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+            state.history = state.history.concat([Object.assign({
+              id: String(Date.now()),
+              clientId: 'preview',
+              createdAt: now.toISOString(),
+              weekOf: monday.toISOString().slice(0, 10),
+            }, draft)]);
+            render();
+            res();
+          }, 450); // a slow save, so the pending state is visible
+        });
+      },
+      onCancel: function () { console.log('onCancel'); },
+    }));
+  }
+
+  var dev = document.getElementById('bz-dev');
+  function control(label, on, fn) {
+    var b = document.createElement('button');
+    b.textContent = label;
+    b.setAttribute('data-on', String(on));
+    b.onclick = function () { fn(); paint(); render(); };
+    dev.appendChild(b);
+  }
+  function paint() {
+    dev.innerHTML = '';
+    var tag = document.createElement('span');
+    tag.textContent = 'preview';
+    dev.appendChild(tag);
+    control('history', state.history.length > 0, function () {
+      state.history = state.history.length ? [] : SEED.slice();
+    });
+    control('topic', state.topic !== null, function () {
+      state.topic = state.topic ? null : TOPIC;
+    });
+  }
+
+  paint();
+  render();
+})();
+</script>
+</body>
+</html>

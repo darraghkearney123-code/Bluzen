@@ -232,8 +232,171 @@ Then open `http://localhost:8000`.
 - `assets/*.png`, `assets/darragh-headshot.jpg` — logo and portrait.
 - `cloudflare-worker/mailerlite-proxy.js` — the small serverless proxy that gets signups into
   MailerLite (see setup above). Deployed separately from the site itself; not served by GitHub Pages.
+- `checkin.html`: the unlisted between-session check-in page (see above). Not in the nav, not
+  linked from anywhere, `noindex`.
+- `checkin.test.mjs`: browser tests for that page.
+- `assets/checkin-app.js`: the host that wires the component to the store and asks for the topic.
+- `assets/checkin-store.js`: the storage seam. The only file that knows about `localStorage`.
+- `assets/checkin-fonts.css`, `assets/fonts/`: self-hosted Lora and Nunito, so the check-in page
+  needs no CDN. Only the check-in page uses these; the rest of the site still loads Google Fonts.
+- `assets/vendor/`: React 18.3.1, vendored for the same reason.
+- `components/`: the check-in component, its generated build, its build script and its tests.
 
 Quiz scoring, copy, and result profiles live entirely inside `quiz.html`.
+
+## Helpline numbers: verified 31 July 2026
+
+Every number in the check-in footer was checked against the organisation's own page on
+**31 July 2026**. Sources, in the order the numbers appear:
+
+| Entry | Hours | Checked against |
+| --- | --- | --- |
+| Emergency 999 or 112 | 24 hours | standing |
+| Samaritans 116 123, free, same number North and South | 24 hours | samaritans.org/ireland |
+| Lifeline (NI) 0808 808 8000 | 24 hours | lifelinehelpline.info |
+| Pieta 1800 247 247, or text HELP to 51444 | 24 hours, both | pieta.ie |
+| Aware 1800 80 48 48 | 10am to 10pm, 7 days | aware.ie |
+| Text HELLO to 50808, fallback 086 1800 280 on An Post and 48 | 24 hours | Text About It SMS FAQ |
+
+Hours are written on **every** entry rather than only the ones that differ. In a flat run of
+numbers, one labelled entry makes the rest read as though they are all answerable at 3am. Aware is
+not, and someone ringing a closed line at their lowest would take the silence as an answer. There is
+a test that fails if Aware is ever labelled 24 hours.
+
+Pieta's own page carries both: "24-Hour Crisis Helpline: 1800 247 247" alongside "Talk to a
+therapist any time, day or night, 24/7", and for the text line, "Our qualified and professional
+therapists are available 24 hours a day". Phone and text are labelled together as `both 24 hours`.
+
+A test walks the rendered footer and fails if **any** entry in it is missing an hours label, so a
+number added later cannot quietly join the list unlabelled.
+
+**These numbers rot silently.** Nothing breaks, no test goes red, and the first sign of trouble is a
+client ringing a number that has changed. **Recheck every six months**, and note the date here when
+you do. Next due: **31 January 2027**.
+
+## The Midweek Check-In component
+
+`components/MidweekCheckIn.jsx` is a React component for the client portal, not part of the static
+site. It is the between-session check-in: one score, one micro-win, one anchor, and an evidence list
+built from past entries. It is pure. No fetch, no storage, no `clientId`, no login. The parent passes
+`scaleTopic`, `history` and `onSubmit`, and adds `id`, `clientId`, `createdAt` and `weekOf` itself
+before persisting whatever `onSubmit` hands it. Nothing needs rewriting when it moves into the portal.
+
+Evidence and the trend strip are both derived from `history` on every render, so there is no second
+list to keep in step, and no evidence table to build.
+
+`components/preview.html` is a dev harness for working on the component itself: it compiles the
+`.jsx` in the browser so you can edit and refresh, seeds a four-week history, and saves with a
+deliberate delay so the pending state is visible. It pulls React and Babel from a CDN, so it needs
+to be online. To see the real thing instead, open `checkin.html` (below), which needs nothing.
+
+The acceptance checklist from the build spec is runnable:
+
+```
+npm i react react-dom jsdom @babel/core @babel/preset-react @babel/plugin-transform-modules-commonjs
+node components/MidweekCheckIn.test.mjs
+```
+
+78 checks: both score paths through all five screens, the helpline hours, and the hard rules (no em
+dashes, no emoji, no exclamation marks, no streaks, no copy about missed weeks, no storage, no
+`clientId`).
+
+### Rebuilding after you edit the component
+
+`components/MidweekCheckIn.jsx` is the source of truth. `components/MidweekCheckIn.js` is generated
+from it and committed, because `checkin.html` loads it directly and a client on rural broadband
+should not be waiting on a compiler. **Edit the `.jsx`, then run:**
+
+```
+node components/build.mjs
+```
+
+`node components/build.mjs --check` fails if the two have drifted, and the test suite runs it, so a
+forgotten rebuild shows up as a failing test rather than as a stale page.
+
+## checkin.html
+
+The page a client actually opens. Unlisted: not in the nav, not linked from anywhere, `noindex,
+nofollow, noarchive`. Darragh gives out the address directly.
+
+It is deliberately not in a `robots.txt`, because that file is public and listing the path there
+would advertise the one thing being kept quiet. The meta tag is what keeps it out of search.
+
+**Nothing is fetched from another origin and there is no build step.** React 18.3.1 is vendored in
+`assets/vendor/`, Lora and Nunito are in `assets/fonts/`, and the component is precompiled. A test
+fails if any asset on the page ever points at an off-origin URL.
+
+**Nothing leaves the phone.** No server, no account, no login, no `clientId`, no analytics, and
+nothing identifying in the URL. Everything lives in `localStorage` under `bluzen.checkin.v1`.
+
+The page says so, in the interface and not just here: a short line inside the card the first time,
+and a standing line at the foot of every screen that clearing browser data clears the evidence bank
+with it. That line changes when it would otherwise be a lie, so a browser that refuses storage is
+told about instead of quietly promised to.
+
+### The storage seam
+
+`assets/checkin-store.js` is the only file that knows what storage is. Everything else talks to
+`checkinStore`:
+
+```
+mode()             -> 'store' | 'readonly' | 'memory'
+available()        -> boolean, true only in 'store'
+load()             -> { status, topic, topicAsked, entries, detail }
+saveTopic(topic)   -> { ok, error }          topic may be null for a skip
+append(draft)      -> { ok, entry, error }   adds id, createdAt, weekOf
+forget()           -> { ok, error }
+```
+
+`detail` is a finished sentence written for a client to read, not a log line. The page puts it on
+screen, so a full device and a blocked browser have to produce different words. The three modes are
+decided on what the device can actually do rather than on the name of the error thrown, because a
+full phone and Safari in private browsing both raise `QuotaExceededError`. What separates them is
+whether real data reads back.
+
+`append` is the piece playing the parent from the component's contract: the component hands over
+`{ score, bodyArea, microWin, anchor }` and the store adds `id`, `createdAt` and `weekOf`. A
+`clientId` would be added there too, the day there is one. **When the portal arrives, replace that
+one file.** The component and `assets/checkin-app.js` do not change, and the component still never
+learns what storage is.
+
+`forget()` is part of the contract but nothing calls it. There is no delete button on the page: a
+one-tap way to wipe the evidence bank felt like the wrong thing to put beside it, and clearing
+browser data does the same job. Wire it up if you disagree.
+
+### What happens when it goes wrong
+
+Each of these is exercised by a test, because a client is the worst person to discover them.
+
+- **Nothing stored yet.** The topic prompt, then the component's own empty state.
+- **Private browsing, or storage switched off.** Says so plainly, still lets the client check in and
+  read it back for the visit, and does not claim anything is being kept.
+- **Device full, with entries already on it.** This is the case worth understanding. Writing fails
+  but reading still works, so the client's evidence bank is right there. The store goes read-only
+  rather than falling back to memory: the real history is loaded and shown, and the page says there
+  is no room left rather than blaming private browsing. Treating a full device as "storage
+  unavailable" would show a returning client an empty bank and the wrong reason for it, which is the
+  same failure as an unlabelled helpline, an interface stating something untrue at the moment it
+  matters. If space is freed, the next save succeeds and the page goes back to normal on its own.
+- **Device fills up mid-visit.** The save does not silently fail. The client stays on the anchor
+  screen with their words still in the box, and reads the actual reason rather than "have another
+  go".
+- **Unreadable stored data.** Starts fresh, says so, and moves the old payload aside under
+  `bluzen.checkin.v1.unreadable` rather than writing over it. It is the client's own words.
+- **A script does not arrive, or JavaScript is off.** Says so, and still prints the helpline numbers.
+  That part has to work when the rest does not.
+- **Junk or half-written entries.** Coerced into shape or dropped, never crashed on.
+
+### Testing the page
+
+```
+npm i playwright && npx playwright install chromium
+node checkin.test.mjs
+```
+
+82 checks in a real browser at 390px and 360px, covering the full flow, what actually lands in
+`localStorage`, and each failure mode above. It serves the repo itself, so there is nothing to start
+first. `BZ_SHOTS=/tmp/shots` writes a screenshot of each state.
 
 ## Open items
 
