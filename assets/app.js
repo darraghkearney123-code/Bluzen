@@ -48,9 +48,16 @@
     setGroup("oneToOne", state.oneToOneSubmitted ? "oneToOneDone" : "oneToOneForm");
   }
 
+  // app.js is shared by index.html and programmes.html, and only the homepage has the
+  // sleep popup, so every reference to it tolerates the element not being there.
+  function sleepPopup() {
+    return document.getElementById("sleep-popup");
+  }
+
   function closeSleepPopup() {
     state.sleepPopupDismissed = true;
-    document.getElementById("sleep-popup").hidden = true;
+    const popup = sleepPopup();
+    if (popup) popup.hidden = true;
   }
 
   const actions = {
@@ -67,8 +74,8 @@
 
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
-    const popup = document.getElementById("sleep-popup");
-    if (!popup.hidden) closeSleepPopup();
+    const popup = sleepPopup();
+    if (popup && !popup.hidden) closeSleepPopup();
   });
 
   function fieldError(form, message) {
@@ -272,7 +279,8 @@
       if (ok) {
         state.sleepSubmitted = true;
         showSleepForm();
-        document.getElementById("sleep-popup").hidden = true;
+        const popup = sleepPopup();
+        if (popup) popup.hidden = true;
       }
     } else if (action === "submitWaitlist") {
       const email = new FormData(form).get("email");
@@ -308,8 +316,9 @@
   // it isn't showing this visit, so the timer always starts.
   function startSleepPopupTimer() {
     setTimeout(() => {
-      if (!state.sleepSubmitted && !state.sleepPopupDismissed) {
-        document.getElementById("sleep-popup").hidden = false;
+      const popup = sleepPopup();
+      if (popup && !state.sleepSubmitted && !state.sleepPopupDismissed) {
+        popup.hidden = false;
       }
     }, 3500);
   }

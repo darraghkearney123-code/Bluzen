@@ -133,11 +133,17 @@ Things worth knowing before changing it:
   `privacy.html` is a reference page.
 - The copy stays a plain invitation with no claim about what the breath does, per `bluzen-scope`.
 
-## The Programmes section
+## The Programmes page
 
-Two interest forms (name, email, phone), each landing in KV as a durable record *and* emailing you
-via Formspree. They add nobody to a MailerLite group and trigger no automated email, so the only
-thing an enquirer ever receives is what you send them yourself.
+`programmes.html`, its own page rather than a homepage section, reached only through the Programmes
+tab in the nav. Nothing about the programmes appears on the homepage. Two interest forms (name,
+email, phone), each landing in KV as a durable record *and* emailing you via Formspree. They add
+nobody to a MailerLite group and trigger no automated email, so the only thing an enquirer ever
+receives is what you send them yourself.
+
+Worth knowing: because it is off the homepage entirely, the only way anyone finds these offers is by
+noticing the nav tab or being sent the link directly. That is deliberate, but if enquiries are quieter
+than expected, that is the first thing to look at rather than the forms.
 
 Two boundaries from the scope and groups docs are built into the copy, so please keep them if you
 edit it:
@@ -210,13 +216,20 @@ Then open `http://localhost:8000`.
 
 ## What's here
 
-- `index.html` — the main site: nav, sleep-audio/waitlist/contact forms, library, about, footer.
+- `index.html` — the main site: nav, sleep-audio/waitlist/contact forms, library, about, footer, and
+  the welcome overlay.
+- `programmes.html` — Sensory Kitchens and 1:1 hypnotherapy, with their interest forms. Linked only
+  from the nav; deliberately not surfaced on the homepage.
+- `privacy.html` — the privacy notice, linked from the footers and the forms.
 - `quiz.html` — the standalone quiz (dual "for me" / "for someone I care for" paths, 5 result profiles
   each, plus a 3-state "how are you coping" read for carers). Linked from `index.html`'s quiz buttons
   and cards (`quiz.html?path=me` / `quiz.html?path=carer` preselects the path).
-- `assets/styles.css` — shared styles, hover/focus states, and animations for `index.html`.
-- `assets/app.js` — `index.html`'s interactivity: nav, forms, the sleep-audio popup.
-- `assets/*.png` — logo assets.
+- `assets/styles.css` — shared styles, hover/focus states, responsive rules and animations, used by
+  every page including the quiz's own overrides.
+- `assets/app.js` — form handling and the resilient send queue, shared by `index.html` and
+  `programmes.html`. Anything homepage-only (the sleep popup) is guarded so it no-ops elsewhere.
+- `assets/sigh.js` — the welcome overlay. `index.html` only.
+- `assets/*.png`, `assets/darragh-headshot.jpg` — logo and portrait.
 - `cloudflare-worker/mailerlite-proxy.js` — the small serverless proxy that gets signups into
   MailerLite (see setup above). Deployed separately from the site itself; not served by GitHub Pages.
 
