@@ -241,7 +241,7 @@ Every number in the check-in footer was checked against the organisation's own p
 | Emergency 999 or 112 | 24 hours | standing |
 | Samaritans 116 123, free, same number North and South | 24 hours | samaritans.org/ireland |
 | Lifeline (NI) 0808 808 8000 | 24 hours | lifelinehelpline.info |
-| Pieta 1800 247 247, text HELP to 51444 | see below | pieta.ie |
+| Pieta 1800 247 247, or text HELP to 51444 | 24 hours, both | pieta.ie |
 | Aware 1800 80 48 48 | 10am to 10pm, 7 days | aware.ie |
 | Text HELLO to 50808, fallback 086 1800 280 on An Post and 48 | 24 hours | Text About It SMS FAQ |
 
@@ -250,14 +250,14 @@ numbers, one labelled entry makes the rest read as though they are all answerabl
 not, and someone ringing a closed line at their lowest would take the silence as an answer. There is
 a test that fails if Aware is ever labelled 24 hours.
 
-**Two things still open.**
+Pieta's own page carries both: "24-Hour Crisis Helpline: 1800 247 247" alongside "Talk to a
+therapist any time, day or night, 24/7", and for the text line, "Our qualified and professional
+therapists are available 24 hours a day". Phone and text are labelled together as `both 24 hours`.
 
-Pieta's hours are not stated in the footer, because they were not part of the verification above.
-Their line is widely understood to be 24 hours, but this is not the place to write down something
-that was not checked. Confirm it and add `, 24 hours` after the number, and the labelling is then
-complete.
+A test walks the rendered footer and fails if **any** entry in it is missing an hours label, so a
+number added later cannot quietly join the list unlabelled.
 
-These numbers rot silently. Nothing breaks, no test goes red, and the first sign of trouble is a
+**These numbers rot silently.** Nothing breaks, no test goes red, and the first sign of trouble is a
 client ringing a number that has changed. **Recheck every six months**, and note the date here when
 you do. Next due: **31 January 2027**.
 
@@ -284,7 +284,7 @@ npm i react react-dom jsdom @babel/core @babel/preset-react @babel/plugin-transf
 node components/MidweekCheckIn.test.mjs
 ```
 
-77 checks: both score paths through all five screens, the helpline hours, and the hard rules (no em
+78 checks: both score paths through all five screens, the helpline hours, and the hard rules (no em
 dashes, no emoji, no exclamation marks, no streaks, no copy about missed weeks, no storage, no
 `clientId`).
 
@@ -327,12 +327,19 @@ told about instead of quietly promised to.
 `checkinStore`:
 
 ```
-available()        -> boolean
+mode()             -> 'store' | 'readonly' | 'memory'
+available()        -> boolean, true only in 'store'
 load()             -> { status, topic, topicAsked, entries, detail }
 saveTopic(topic)   -> { ok, error }          topic may be null for a skip
 append(draft)      -> { ok, entry, error }   adds id, createdAt, weekOf
 forget()           -> { ok, error }
 ```
+
+`detail` is a finished sentence written for a client to read, not a log line. The page puts it on
+screen, so a full device and a blocked browser have to produce different words. The three modes are
+decided on what the device can actually do rather than on the name of the error thrown, because a
+full phone and Safari in private browsing both raise `QuotaExceededError`. What separates them is
+whether real data reads back.
 
 `append` is the piece playing the parent from the component's contract: the component hands over
 `{ score, bodyArea, microWin, anchor }` and the store adds `id`, `createdAt` and `weekOf`. A
@@ -351,8 +358,16 @@ Each of these is exercised by a test, because a client is the worst person to di
 - **Nothing stored yet.** The topic prompt, then the component's own empty state.
 - **Private browsing, or storage switched off.** Says so plainly, still lets the client check in and
   read it back for the visit, and does not claim anything is being kept.
-- **Device full.** The save does not silently fail. The client stays on the anchor screen with their
-  words still in the box, and reads the actual reason rather than "have another go".
+- **Device full, with entries already on it.** This is the case worth understanding. Writing fails
+  but reading still works, so the client's evidence bank is right there. The store goes read-only
+  rather than falling back to memory: the real history is loaded and shown, and the page says there
+  is no room left rather than blaming private browsing. Treating a full device as "storage
+  unavailable" would show a returning client an empty bank and the wrong reason for it, which is the
+  same failure as an unlabelled helpline, an interface stating something untrue at the moment it
+  matters. If space is freed, the next save succeeds and the page goes back to normal on its own.
+- **Device fills up mid-visit.** The save does not silently fail. The client stays on the anchor
+  screen with their words still in the box, and reads the actual reason rather than "have another
+  go".
 - **Unreadable stored data.** Starts fresh, says so, and moves the old payload aside under
   `bluzen.checkin.v1.unreadable` rather than writing over it. It is the client's own words.
 - **A script does not arrive, or JavaScript is off.** Says so, and still prints the helpline numbers.
@@ -366,7 +381,7 @@ npm i playwright && npx playwright install chromium
 node checkin.test.mjs
 ```
 
-62 checks in a real browser at 390px and 360px, covering the full flow, what actually lands in
+82 checks in a real browser at 390px and 360px, covering the full flow, what actually lands in
 `localStorage`, and each failure mode above. It serves the repo itself, so there is nothing to start
 first. `BZ_SHOTS=/tmp/shots` writes a screenshot of each state.
 

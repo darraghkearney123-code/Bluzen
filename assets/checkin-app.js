@@ -34,8 +34,8 @@
       '<p>If you need someone today, please ring rather than write it here. Emergency 999 or 112. ' +
       'Samaritans 116 123, free, 24 hours, the same number North and South. Northern Ireland: ' +
       'Lifeline 0808 808 8000, 24 hours. Republic of Ireland: Pieta 1800 247 247, or text HELP to ' +
-      '51444. Aware 1800 80 48 48, 10am to 10pm, 7 days. Text HELLO to 50808, 24 hours. On An Post ' +
-      'and 48 the shortcode can fail, so text 086 1800 280 instead.</p>' +
+      '51444, both 24 hours. Aware 1800 80 48 48, 10am to 10pm, 7 days. Text HELLO to 50808, ' +
+      '24 hours. On An Post and 48 the shortcode can fail, so text 086 1800 280 instead.</p>' +
       '</div>';
     return;
   }
@@ -48,36 +48,83 @@
      about to type their own words in. The long one sits at the foot of every
      screen after that. */
 
+  /* Each of these takes the store's own `detail` sentence and finishes it. The
+     detail is the specific true thing, a full device or a blocked browser, and
+     it has to reach the screen. Saying "private browsing" to somebody whose
+     phone is simply full sends them looking for the wrong setting. */
+
   var STORAGE_SHORT = {
-    ok: 'Kept on this phone. Nothing is sent anywhere.',
-    /* Do not promise to keep something we cannot keep. */
-    unavailable:
-      'Nothing is sent anywhere. This browser will not let the page keep anything on the device ' +
-      'either, so what you write here goes when you close the tab.',
+    ok: function () {
+      return 'Kept on this phone. Nothing is sent anywhere.';
+    },
+    readonly: function (detail) {
+      return detail + ' Nothing is sent anywhere, but nothing new will save until there is room.';
+    },
+    unavailable: function (detail) {
+      return (
+        'Nothing is sent anywhere. ' +
+        detail +
+        ' What you write here goes when you close the tab.'
+      );
+    },
   };
 
   var STORAGE_LINES = {
-    ok:
-      'Everything here is kept on this phone and nowhere else. There is no account and no sign in, ' +
-      'nothing is sent to Darragh or to anyone else, and clearing your browser data clears this ' +
-      'along with it.',
-    unavailable:
-      'This browser is not letting the page keep anything on the device, which is usually private ' +
-      'browsing, or storage switched off for this site. You can still check in and read it back, ' +
-      'but it will be gone once you close the tab.',
-    recovered:
-      'What was stored here could not be read, so the evidence bank is starting from empty. The old ' +
-      'file has been left on the device rather than written over, in case it can be got back.',
+    ok: function () {
+      return (
+        'Everything here is kept on this phone and nowhere else. There is no account and no sign ' +
+        'in, nothing is sent to Darragh or to anyone else, and clearing your browser data clears ' +
+        'this along with it.'
+      );
+    },
+    readonly: function (detail) {
+      return (
+        detail +
+        ' Everything you have written before is still here and safe to read back. A new check-in ' +
+        'will not save until you clear some space on the phone.'
+      );
+    },
+    unavailable: function (detail) {
+      return (
+        detail +
+        ' That is usually private browsing, or storage switched off. You can still check in and ' +
+        'read it back, but it will be gone once you close the tab.'
+      );
+    },
+    /* Used in place of the standing line when nothing is being kept at all.
+       Saying "everything here is kept on this phone" directly under "this
+       browser is blocking storage" is a contradiction a client would catch. The
+       privacy half of the promise still holds, so keep that and drop the rest. */
+    privacyOnly: function () {
+      return (
+        'There is still no account and no sign in, and nothing is sent to Darragh or to anyone else.'
+      );
+    },
+    recovered: function () {
+      return (
+        'What was stored here could not be read, so the evidence bank is starting from empty. The ' +
+        'old file has been left on the device rather than written over, in case it can be got back.'
+      );
+    },
   };
+
+  function line(table, status, detail) {
+    var fn = table[status] || table.ok;
+    return fn(detail || '');
+  }
 
   function StorageNote(props) {
     var status = props.status === 'empty' ? 'ok' : props.status;
-    var lines = status === 'ok' ? [STORAGE_LINES.ok] : [STORAGE_LINES[status], STORAGE_LINES.ok];
+    var standing = status === 'unavailable' ? 'privacyOnly' : 'ok';
+    var lines =
+      status === 'ok'
+        ? [line(STORAGE_LINES, 'ok')]
+        : [line(STORAGE_LINES, status, props.detail), line(STORAGE_LINES, standing)];
     return h(
       'div',
       { className: 'bz-host-note' },
-      lines.map(function (line, i) {
-        return h('p', { key: i, className: i === 0 && status !== 'ok' ? 'bz-host-flag' : null }, line);
+      lines.map(function (text, i) {
+        return h('p', { key: i, className: i === 0 && status !== 'ok' ? 'bz-host-flag' : null }, text);
       }),
       props.error ? h('p', { className: 'bz-host-flag' }, props.error) : null,
       props.onEditTopic
@@ -126,7 +173,7 @@
                     'scale. Your check-ins stay exactly as they are.'
             ),
             first
-              ? h('p', { className: 'bz-mwci-sub' }, STORAGE_SHORT[props.status] || STORAGE_SHORT.ok)
+              ? h('p', { className: 'bz-mwci-sub' }, line(STORAGE_SHORT, props.status, props.detail))
               : null,
             h('textarea', {
               className: 'bz-mwci-textarea bz-host-topic',
@@ -165,6 +212,10 @@
     var status = statusState[0];
     var setStatus = statusState[1];
 
+    var detailState = React.useState(loaded.detail);
+    var detail = detailState[0];
+    var setDetail = detailState[1];
+
     var entriesState = React.useState(loaded.entries);
     var entries = entriesState[0];
     var setEntries = entriesState[1];
@@ -187,21 +238,33 @@
 
     var firstAsk = !loaded.topicAsked;
 
+    /* The store's mode can change under us: a device that was full may have had
+       space cleared, and a write that was going to work may now fail. Recompute
+       from the store after every attempt rather than trusting the load. */
+    function syncStorage(failureDetail) {
+      var m = store.mode();
+      setStatus(m === 'store' ? 'ok' : m === 'readonly' ? 'readonly' : 'unavailable');
+      if (failureDetail) setDetail(failureDetail);
+    }
+
     function saveTopic() {
       var result = store.saveTopic(draftTopic);
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
+      /* Do not trap the client on this screen when the save cannot work. Their
+         words hold for the visit, and the note below says why they will not
+         outlast it. */
       setTopic(draftTopic.trim() ? draftTopic.trim() : null);
-      setError(null);
+      setError(result.ok ? null : result.error);
+      syncStorage(result.ok ? null : result.error);
       setAsking(false);
     }
 
     function skipTopic() {
       if (firstAsk) {
         var result = store.saveTopic(null);
-        if (!result.ok) setError(result.error);
+        if (!result.ok) {
+          setError(result.error);
+          syncStorage(result.error);
+        }
         setTopic(null);
       } else {
         setDraftTopic(topic || ''); // came back to change it, then thought better of it
@@ -216,6 +279,7 @@
       var result = store.append(draft);
       if (!result.ok) {
         setError(result.error);
+        syncStorage(result.error);
         /* clientMessage is what the component will show. Without it the client
            reads "have another go in a moment", which is the wrong advice when
            the real answer is that the device is out of room. */
@@ -227,9 +291,7 @@
       setEntries(function (prev) {
         return prev.concat([result.entry]);
       });
-      if (status === 'empty' || status === 'recovered') {
-        setStatus(store.available() ? 'ok' : 'unavailable');
-      }
+      syncStorage(null);
       return Promise.resolve();
     }
 
@@ -245,7 +307,8 @@
       asking
         ? h(TopicScreen, {
             first: firstAsk,
-            status: status === 'unavailable' ? 'unavailable' : 'ok',
+            status: status,
+            detail: detail,
             value: draftTopic,
             error: error,
             onChange: setDraftTopic,
@@ -255,6 +318,7 @@
         : h(MidweekCheckIn, { scaleTopic: topic, history: entries, onSubmit: submit }),
       h(StorageNote, {
         status: status,
+        detail: detail,
         error: asking ? null : error,
         onEditTopic: asking ? null : editTopic,
       })

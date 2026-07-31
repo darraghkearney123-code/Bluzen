@@ -69,7 +69,7 @@ async function session(opts = {}) {
     const u = new URL(r.url());
     if (u.hostname !== '127.0.0.1') errs.push('OFF-ORIGIN REQUEST: ' + r.url());
   });
-  if (opts.init) await page.addInitScript(opts.init);
+  if (opts.init) await page.addInitScript(opts.init, opts.initArg);
   await page.goto(PAGE, { waitUntil: 'networkidle' });
   await page.waitForTimeout(700);
   return { ctx, page, errs };
@@ -185,12 +185,18 @@ const shot = async (page, name) => {
     },
   });
   const txt = () => page.textContent('body');
-  check('unavailable is stated plainly', /not letting the page keep anything on the device/.test(await txt()));
+  check('the browser refusal is named by name', /This browser is blocking storage for this site\./.test(await txt()));
+  check('private browsing is offered as the likely cause', /usually private browsing, or storage switched off/.test(await txt()));
+  check('never claims the device is full', !/no room left/.test(await txt()));
   check('unavailable says it goes when the tab closes', /gone once you close the tab/.test(await txt()));
+  check('does not also claim everything is kept on the phone',
+    !/Everything here is kept on this phone/.test(await txt()));
+  check('but still says nothing is sent anywhere',
+    /nothing is sent to Darragh or to anyone else/.test(await txt()));
   check('still usable, topic still asked', /What did you and Darragh call it\?/.test(await txt()));
   check('does not promise to keep what it cannot keep',
     !/Kept on this phone\. Nothing is sent anywhere\./.test(await txt()));
-  check('says plainly it will not be kept', /what you write here goes when you close the tab/.test(await txt()));
+  check('says plainly it will not be kept', /What you write here goes when you close the tab\./.test(await txt()));
   await shot(page, 'p4-no-storage');
   await page.locator('textarea').fill('the knot in my chest');
   await tap(page, 'Save it');
@@ -246,6 +252,76 @@ const shot = async (page, name) => {
   check('and again in the small print', /no room left/.test(await txt()));
   await shot(page, 'p5-storage-full');
   check('full-storage session clean', errs.length === 0, errs.join(' | '));
+  await ctx.close();
+}
+
+/* ── 4b. A full device, with the client's history already on it ────────
+   The probe write fails, but getItem still works and their entries are sitting
+   right there. Showing an empty bank and blaming private browsing would be two
+   untrue things at the moment it matters most. */
+{
+  const seeded = {
+    v: 1,
+    topic: 'the knot in my chest before work',
+    topicAsked: true,
+    entries: [
+      { id: '1', createdAt: '2026-07-06T19:00:00.000Z', weekOf: '2026-07-06', score: 3, bodyArea: 'chest', microWin: 'Sat in the car for ten minutes', anchor: 'no phone at the table' },
+      { id: '2', createdAt: '2026-07-13T19:00:00.000Z', weekOf: '2026-07-13', score: 5, bodyArea: 'jaw', microWin: 'Ate a dinner sitting down', anchor: '' },
+      { id: '3', createdAt: '2026-07-20T19:00:00.000Z', weekOf: '2026-07-20', score: 6, bodyArea: null, microWin: 'Slept through until six', anchor: 'lights off by eleven' },
+      { id: '4', createdAt: '2026-07-27T19:00:00.000Z', weekOf: '2026-07-27', score: 8, bodyArea: 'none', microWin: 'Said no to the Saturday shift', anchor: 'one no a week' },
+    ],
+  };
+  const { ctx, page, errs } = await session({
+    init: (payload) => {
+      const real = window.localStorage;
+      real.setItem('bluzen.checkin.v1', payload);
+      /* Reads keep working. Every write throws, including the probe. */
+      const shim = {
+        getItem: (k) => real.getItem(k),
+        setItem: () => { throw new DOMException('full', 'QuotaExceededError'); },
+        removeItem: (k) => real.removeItem(k),
+      };
+      Object.defineProperty(window, 'localStorage', { configurable: true, get: () => shim });
+    },
+    initArg: JSON.stringify(seeded),
+  });
+  const txt = () => page.textContent('body');
+
+  check('a full device does not hide the evidence bank', /4 moments you noticed/.test(await txt()),
+    ((await txt()).match(/\d+ moments? you noticed/) || [])[0]);
+  check('the entries themselves are there', /Said no to the Saturday shift/.test(await txt()));
+  check('and the older ones', /Sat in the car for ten minutes/.test(await txt()));
+  check('does not ask a returning client for the topic again',
+    !/What did you and Darragh call it\?/.test(await txt()));
+  check('says the true reason', /There is no room left to store anything on this device\./.test(await txt()));
+  check('never blames private browsing', !/private browsing/.test(await txt()));
+  check('does not claim it will be gone when the tab closes', !/close the tab/.test(await txt()));
+  check('says what still works and what does not',
+    /still here and safe to read back/.test(await txt()) && /will not save until you clear some space/.test(await txt()));
+  await shot(page, 'p4b-full-device');
+
+  /* the weeks are readable too */
+  await tap(page, 'See your weeks');
+  check('the weeks strip still reads back', /A season, not a score\./.test(await txt()));
+  check('four blocks in the strip', (await page.$$('.bz-mwci-stripbar')).length === 4);
+
+  /* and a new check-in fails honestly rather than pretending */
+  await tap(page, 'Check in for this week');
+  check('their own words still on the scale', /the knot in my chest before work/.test(await txt()));
+  await tap(page, '5');
+  await tap(page, 'Next');
+  await page.locator('textarea').fill('this one has nowhere to go');
+  await tap(page, 'Next');
+  await tap(page, 'Done for this week');
+  await page.waitForTimeout(500);
+  check('no false confirmation', !/Sixty seconds well spent/.test(await txt()));
+  check('stays put with their words', /What are you carrying into the rest of the week\?/.test(await txt()));
+  const failNote = await page.$eval('.bz-mwci-note', (e) => e.textContent);
+  check('the card names the real problem',
+    failNote === 'There is no room left to store anything on this device.', failNote);
+  check('the bank was not corrupted by the failed save',
+    JSON.parse(await page.evaluate(() => localStorage.getItem('bluzen.checkin.v1'))).entries.length === 4);
+  check('full-device session clean', errs.length === 0, errs.join(' | '));
   await ctx.close();
 }
 

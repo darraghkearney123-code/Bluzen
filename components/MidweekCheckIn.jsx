@@ -309,8 +309,8 @@ function Footer() {
         If you need someone today, please ring rather than write it here. Emergency 999 or 112.
         Samaritans 116 123, free, 24 hours, the same number North and South. Northern Ireland:
         Lifeline 0808 808 8000, 24 hours. Republic of Ireland: Pieta 1800 247 247, or text HELP to
-        51444. Aware 1800 80 48 48, 10am to 10pm, 7 days. Text HELLO to 50808, 24 hours. On An Post
-        and 48 the shortcode can fail, so text 086 1800 280 instead.
+        51444, both 24 hours. Aware 1800 80 48 48, 10am to 10pm, 7 days. Text HELLO to 50808,
+        24 hours. On An Post and 48 the shortcode can fail, so text 086 1800 280 instead.
       </p>
     </div>
   );

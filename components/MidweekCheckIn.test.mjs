@@ -120,7 +120,12 @@ check('Lifeline labelled 24 hours', /Lifeline 0808 808 8000, 24 hours/.test(txt(
 check('Aware labelled 10am to 10pm', /Aware 1800 80 48 48, 10am to 10pm, 7 days/.test(txt()));
 check('Aware never labelled 24 hours', !/Aware[^.]*24 hours/.test(txt()));
 check('50808 labelled 24 hours', /Text HELLO to 50808, 24 hours/.test(txt()));
-check('Pieta text line present', /text HELP to 51444/.test(txt()));
+check('Pieta labelled 24 hours, phone and text together',
+  /Pieta 1800 247 247, or text HELP to 51444, both 24 hours/.test(txt()));
+check('every helpline entry carries hours',
+  !/(Samaritans 116 123|Lifeline 0808 808 8000|Pieta 1800 247 247|Aware 1800 80 48 48|50808)(?![^.]*(24 hours|10am to 10pm))/.test(
+    txt().slice(txt().indexOf('If you need someone today'))
+  ));
 check('50808 network fallback present', /086 1800 280/.test(txt()));
 
 /* trend */

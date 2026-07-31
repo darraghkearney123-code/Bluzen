@@ -7,7 +7,8 @@
  * file with one that talks to it. Keep the shape below and nothing else in the
  * page changes, and the component still never learns what storage is.
  *
- *   available()          -> boolean
+ *   mode()               -> 'store' | 'readonly' | 'memory'
+ *   available()          -> boolean, true only in 'store'
  *   load()               -> { status, topic, topicAsked, entries, detail }
  *   saveTopic(topic)     -> { ok, error }        topic may be null for a skip
  *   append(draft)        -> { ok, entry, error }  adds id, createdAt, weekOf
@@ -16,8 +17,15 @@
  * status is one of:
  *   'ok'          read and written normally
  *   'empty'       nothing stored yet, this is a first visit on this device
- *   'unavailable' the browser will not let us store anything, see detail
+ *   'readonly'    the client's entries are here and readable, but nothing new
+ *                 can be written. A full device. See detail for why.
+ *   'unavailable' nothing can be written and there is nothing to read, so this
+ *                 visit is held in memory only. See detail for why.
  *   'recovered'   what was stored could not be read, see detail
+ *
+ * `detail` is a finished sentence written for a client to read, not a log line.
+ * The page puts it on screen, so it has to say the true specific thing: a full
+ * device and private browsing are different problems and get different words.
  *
  * append is the piece that plays the parent in the component's contract. It
  * takes { score, bodyArea, microWin, anchor } and adds id, createdAt and weekOf.
@@ -116,31 +124,53 @@
      browser will not store anything. Nothing is kept when the tab closes, and
      the page says so plainly rather than pretending the save worked. */
   var memory = blank();
-  var usingMemory = false;
+
+  /* Three modes, not two.
+
+     'store'    reads and writes normally
+     'readonly' cannot write, but the client's own entries are sitting there and
+                readable. A full device. Showing them an empty bank and blaming
+                private browsing would be two lies at once.
+     'memory'   cannot write and there is nothing to read. Private browsing, or
+                storage switched off. Held in memory for the visit only.
+
+     The split is decided on what the device can actually do, not on the name of
+     the error, because a full device and Safari in private browsing both throw
+     QuotaExceededError. What separates them is whether real data comes back. */
+  var mode = 'store';
+  var blockedReason = null;
 
   function write(data) {
-    if (usingMemory) {
+    if (mode === 'memory') {
       memory = data;
       return { ok: true };
     }
     try {
       global.localStorage.setItem(KEY, JSON.stringify(data));
+      /* Space may have been freed since the last attempt. */
+      if (mode === 'readonly') {
+        mode = 'store';
+        blockedReason = null;
+      }
       return { ok: true };
     } catch (e) {
-      /* Out of room mid-session. Do not fall back to memory silently: the
-         client is owed the truth that this one did not save. */
-      return { ok: false, error: reason(e) };
+      /* Do not fall back to memory silently: the client is owed the truth that
+         this one did not save. */
+      mode = 'readonly';
+      blockedReason = reason(e);
+      return { ok: false, error: blockedReason };
     }
   }
 
-  function read() {
-    if (usingMemory) return { status: memory.entries.length || memory.topicAsked ? 'ok' : 'empty', data: memory };
-    var raw;
+  function readRaw() {
     try {
-      raw = global.localStorage.getItem(KEY);
+      return { ok: true, raw: global.localStorage.getItem(KEY) };
     } catch (e) {
-      return { status: 'unavailable', data: blank(), detail: reason(e) };
+      return { ok: false, error: e };
     }
+  }
+
+  function parse(raw) {
     if (raw === null) return { status: 'empty', data: blank() };
     try {
       return { status: 'ok', data: clean(JSON.parse(raw)) };
@@ -163,30 +193,64 @@
     }
   }
 
+  function read() {
+    if (mode === 'memory') {
+      return { status: memory.entries.length || memory.topicAsked ? 'ok' : 'empty', data: memory };
+    }
+    var r = readRaw();
+    if (!r.ok) return { status: 'unavailable', data: blank(), detail: reason(r.error) };
+    return parse(r.raw);
+  }
+
   var store = {
+    mode: function () {
+      return mode;
+    },
+
     available: function () {
-      return !usingMemory;
+      return mode === 'store';
     },
 
     load: function () {
       var p = probe();
+
       if (!p.ok) {
-        usingMemory = true;
+        /* Writing is out. Whether reading is out too decides which of the two
+           bad states this is. */
+        var r = readRaw();
+        var hasData = r.ok && r.raw !== null;
+        if (hasData) {
+          mode = 'readonly';
+          blockedReason = reason(p.error);
+          var parsed = parse(r.raw);
+          return {
+            status: 'readonly',
+            topic: parsed.data.topic,
+            topicAsked: parsed.data.topicAsked,
+            entries: parsed.data.entries.slice(),
+            detail: blockedReason,
+          };
+        }
+        mode = 'memory';
+        blockedReason = reason(p.error);
         return {
           status: 'unavailable',
           topic: memory.topic,
           topicAsked: memory.topicAsked,
           entries: memory.entries.slice(),
-          detail: reason(p.error),
+          detail: blockedReason,
         };
       }
-      var r = read();
+
+      mode = 'store';
+      blockedReason = null;
+      var ok = read();
       return {
-        status: r.status,
-        topic: r.data.topic,
-        topicAsked: r.data.topicAsked,
-        entries: r.data.entries.slice(),
-        detail: r.detail || null,
+        status: ok.status,
+        topic: ok.data.topic,
+        topicAsked: ok.data.topicAsked,
+        entries: ok.data.entries.slice(),
+        detail: ok.detail || null,
       };
     },
 
@@ -221,7 +285,7 @@
 
     forget: function () {
       memory = blank();
-      if (usingMemory) return { ok: true };
+      if (mode === 'memory') return { ok: true };
       try {
         global.localStorage.removeItem(KEY);
         global.localStorage.removeItem(SALVAGE_KEY);
