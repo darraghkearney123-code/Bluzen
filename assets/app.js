@@ -187,7 +187,6 @@
   }
 
   async function submitToFormspree(form, formName) {
-    const button = form.querySelector('button[type="submit"]');
     clearFieldError(form);
 
     if (FORMSPREE_ENDPOINT.includes("YOUR_FORM_ID")) {
@@ -198,7 +197,7 @@
     const data = new FormData(form);
     data.set("form_name", formName);
 
-    if (button) button.disabled = true;
+    setBusy(form, true);
     try {
       const res = await fetch(FORMSPREE_ENDPOINT, {
         method: "POST",
@@ -212,7 +211,7 @@
       fieldError(form, "Something went wrong sending that — please try again, or email info@bluzenfocus.com directly.");
       return false;
     } finally {
-      if (button) button.disabled = false;
+      setBusy(form, false);
     }
   }
 
@@ -225,6 +224,7 @@
     }
 
     const email = new FormData(form).get("email");
+    setBusy(form, true);
     submitToMailerLite("sleep_audio", email);
     form.reset();
     return true;
@@ -232,6 +232,22 @@
 
   // Programme enquiries go to Darragh directly. No MailerLite group and no automated email,
   // so nothing is sent to the person beyond what he writes himself.
+  // Sending is fire-and-forget by design, so the button would otherwise flick straight
+  // to the success state with no sign anything happened. A brief busy state gives the
+  // press somewhere to land.
+  function setBusy(form, busy, label) {
+    const button = form.querySelector('button[type="submit"]');
+    if (!button) return;
+    if (busy) {
+      button.dataset.idleLabel = button.textContent;
+      button.textContent = label || "Sending...";
+      button.disabled = true;
+    } else {
+      if (button.dataset.idleLabel) button.textContent = button.dataset.idleLabel;
+      button.disabled = false;
+    }
+  }
+
   function submitProgramme(form, programme) {
     clearFieldError(form);
     const data = new FormData(form);
@@ -264,6 +280,7 @@
       submitted_at: record.completed_at
     });
 
+    setBusy(form, true);
     form.reset();
     return true;
   }

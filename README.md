@@ -214,6 +214,18 @@ Then open `http://localhost:8000`.
 2. In the repo's **Settings → Pages**, set the source to that branch, root folder.
 3. The site will be published at `https://<your-username>.github.io/<repo-name>/`.
 
+## Search, sharing and the 404
+
+- `robots.txt` and `sitemap.xml` at the root, pointing at `https://www.bluzenfocus.net`. If the
+  domain ever changes, both need updating along with the `canonical` and `og:url` tags in each page.
+- Every page carries its own `<title>`, meta description, `canonical`, Open Graph and Twitter card
+  tags, so a link pasted into WhatsApp, Instagram or a text shows the Bluzen card rather than a bare
+  URL.
+- `assets/og-image.png` (1200x630) is the share card, built from the real lockup on the brand navy
+  with the orb glow behind it. Regenerate it rather than editing by hand if the logo changes.
+- `404.html` is picked up automatically by GitHub Pages. It is `noindex`, and points at the home
+  page, the quiz, the sleep audio and programmes.
+
 ## What's here
 
 - `index.html` — the main site: nav, sleep-audio/waitlist/contact forms, library, about, footer, and
@@ -221,6 +233,8 @@ Then open `http://localhost:8000`.
 - `programmes.html` — Sensory Kitchens and 1:1 hypnotherapy, with their interest forms. Linked only
   from the nav; deliberately not surfaced on the homepage.
 - `privacy.html` — the privacy notice, linked from the footers and the forms.
+- `404.html` — served by GitHub Pages for any unknown URL.
+- `robots.txt`, `sitemap.xml` — crawling and indexing.
 - `quiz.html` — the standalone quiz (dual "for me" / "for someone I care for" paths, 5 result profiles
   each, plus a 3-state "how are you coping" read for carers). Linked from `index.html`'s quiz buttons
   and cards (`quiz.html?path=me` / `quiz.html?path=carer` preselects the path).
@@ -229,7 +243,23 @@ Then open `http://localhost:8000`.
 - `assets/app.js` — form handling and the resilient send queue, shared by `index.html` and
   `programmes.html`. Anything homepage-only (the sleep popup) is guarded so it no-ops elsewhere.
 - `assets/sigh.js` — the welcome overlay. `index.html` only.
-- `assets/*.png`, `assets/darragh-headshot.jpg` — logo and portrait.
+- `assets/*.png`, `assets/darragh-headshot.jpg` — logo, share card and portrait.
+
+## Deliberately not added
+
+Three things from the usual "launch checklist" were left out on purpose, because on this site they
+would be wrong rather than missing:
+
+- **Cookie banner.** The site sets no cookies and runs no trackers. The only browser storage is
+  `localStorage` for the welcome overlay's 24 hour flag and the pending send queue, both strictly
+  functional, which does not require consent. A banner asking permission for tracking that is not
+  happening would be consent theatre, and it trains people to click through the ones that matter.
+  This changes the day analytics goes in.
+- **Sticky mobile CTA.** The header is already sticky and already carries "Take the quiz" on mobile.
+  A second fixed bar would cover content on small screens for no gain.
+- **Thank-you page.** Every form resolves inline, which keeps people where they were and does not
+  lose the page they were reading. A redirect would mainly be worth it for conversion tracking,
+  which needs analytics first.
 - `cloudflare-worker/mailerlite-proxy.js` — the small serverless proxy that gets signups into
   MailerLite (see setup above). Deployed separately from the site itself; not served by GitHub Pages.
 
@@ -260,3 +290,11 @@ Quiz scoring, copy, and result profiles live entirely inside `quiz.html`.
 - The `bluzen-brand` doc still specifies the light Mist palette, `#2BB3C0` cyan and Lora headings.
   The site and quiz are both dark navy with Bricolage Grotesque headings, by decision. Worth
   updating the doc so future PDFs and social posts aren't generated against the old spec.
+- **Analytics: a decision, not a task.** Nothing is installed. Adding it means naming the provider
+  in `privacy.html`, and anything that profiles visitors (Google Analytics) needs a consent banner
+  under GDPR, which is the one thing that would make a cookie banner genuinely necessary. A
+  cookieless option such as Plausible or Cloudflare Web Analytics avoids the banner entirely and is
+  the lighter path if the question is just "how many people visited".
+- **Terms page.** Not written, because it is a legal document rather than copy, and the client-facing
+  terms already live in the consent agreement in `bluzen-admin`. Worth deciding whether the website
+  needs separate terms at all, given nothing is sold through it.
