@@ -56,8 +56,16 @@ a.more{color:var(--text);text-decoration:underline;text-decoration-color:var(--l
   .hero-in .actions{align-items:flex-start}
   h1{font-size:56px}
 }
-@media (min-width:900px){section.block{padding:96px 0}}
-.stage canvas{display:block;width:100%;height:100%}
+@media (min-width:900px){
+  section.block{padding:96px 0}
+  /* line every section up with the hero's left edge, and keep reading lines comfortable */
+  .hero-in{max-width:1000px}
+  header.top{max-width:1000px}
+  section.block .wrap,footer .wrap{max-width:1000px}
+  section.block .wrap > p,section.block .wrap > h2,section.block .wrap > .steps,section.block .wrap > .about,footer .wrap > *{max-width:680px}
+  .facts,.phones{max-width:none}
+}
+.stage canvas{display:block;width:100%;height:100%;-webkit-mask-image:radial-gradient(ellipse 54% 56% at 50% 50%,#000 52%,transparent 100%);mask-image:radial-gradient(ellipse 54% 56% at 50% 50%,#000 52%,transparent 100%)}
 h1{font-size:clamp(32px,8vw,52px);line-height:1.08;font-weight:600;letter-spacing:-.035em;text-wrap:balance;margin-top:8px}
 .lede{margin:16px auto 0;max-width:30em;color:var(--muted);font-size:17px;text-wrap:pretty}
 .actions{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:28px}
@@ -287,7 +295,7 @@ function frame(now) {
   const v1 = 7; a1 += v1 * dt;
   const sx = SM.x + Math.cos(AX) * gap, sy = SM.y + Math.sin(AX) * gap;
   if (locked) { const m = L + 180 - PITCH / 2 - (a1 - L) * RATIO; a2 += (m - a2) * 0.12; } else a2 += -v1 * RATIO * dt;
-  ctx.fillStyle = 'rgba(11,13,16,0.2)'; ctx.fillRect(0, 0, W, H);
+  ctx.globalCompositeOperation = 'destination-out'; ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fillRect(0, 0, W, H); ctx.globalCompositeOperation = 'source-over';
   for (const p of P) {
     if (p.home) {
       let tx, ty;
@@ -314,7 +322,6 @@ const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => { v
 if (io) io.observe(cv);
 document.addEventListener('visibilitychange', () => { visible = !document.hidden; go(); });
 let rt = 0; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(size, 120); });
-ctx.fillStyle = '#0B0D10'; ctx.fillRect(0, 0, W, H);
 go();
 })();
 </script>
