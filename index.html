@@ -42,8 +42,19 @@ header.top{display:flex;align-items:center;justify-content:space-between;height:
 .wordmark{font-size:19px;font-weight:700;letter-spacing:-.045em;text-decoration:none}
 .top a.small{font-size:14px;color:var(--muted);text-decoration:none;padding:8px 4px}
 .top a.small:hover{color:var(--text)}
-.hero{text-align:center;padding:8px 0 72px}
-.stage{position:relative;width:100%;max-width:560px;height:min(48vh,380px);min-height:240px;margin:0 auto}
+.hero{text-align:center;padding:12px 0 72px}
+.hero-in{max-width:1080px;margin:0 auto}
+.stage{position:relative;width:100%;max-width:320px;height:clamp(180px,30vh,250px);margin:0 auto;opacity:.92}
+@media (min-width:900px){
+  .hero{padding:56px 0 96px}
+  .hero-in{display:grid;grid-template-columns:1.1fr .9fr;align-items:center;gap:40px;padding:0 20px}
+  .hero-in .wrap{order:1;text-align:left;padding:0;margin:0;max-width:none}
+  .hero-in .stage{order:2;max-width:420px;height:360px}
+  .hero-in .lede,.hero-in .promise{margin-left:0}
+  .hero-in .actions{align-items:flex-start}
+  h1{font-size:56px}
+}
+@media (min-width:900px){section.block{padding:96px 0}}
 .stage canvas{display:block;width:100%;height:100%}
 h1{font-size:clamp(32px,8vw,52px);line-height:1.08;font-weight:600;letter-spacing:-.035em;text-wrap:balance;margin-top:8px}
 .lede{margin:16px auto 0;max-width:30em;color:var(--muted);font-size:17px;text-wrap:pretty}
@@ -74,6 +85,8 @@ h2{font-size:clamp(25px,6vw,32px);line-height:1.15;font-weight:600;letter-spacin
 .note{margin-top:22px;padding-left:12px;border-left:2px solid rgba(61,214,227,.55);font-size:14.5px;color:var(--muted)}
 .phones{display:grid;gap:10px;margin-top:28px}
 @media (min-width:640px){.phones{grid-template-columns:1fr 1fr}}
+.soon .tag{display:inline-block;margin-top:12px;padding:3px 10px;border:1px solid var(--line-2);border-radius:999px;font-size:12.5px;color:var(--faint)}
+.fact a{color:var(--text);text-underline-offset:3px;text-decoration-color:var(--line-3)}
 .about{display:grid;grid-template-columns:1fr;gap:18px;align-items:start;margin-top:24px}
 @media (min-width:560px){.about{grid-template-columns:96px 1fr;gap:20px}}
 .about img{width:96px;height:116px;object-fit:cover;object-position:center 20%;border-radius:12px;border:1px solid var(--line)}
@@ -103,6 +116,7 @@ footer h2{font-size:16px;margin:0;letter-spacing:-.01em}
 
 <main id="main">
   <section class="hero">
+   <div class="hero-in">
     <div class="stage" aria-hidden="true"><canvas id="swarm"></canvas></div>
     <div class="wrap">
       <h1>Three minutes. One small step.</h1>
@@ -113,6 +127,7 @@ footer h2{font-size:16px;margin:0;letter-spacing:-.01em}
       </div>
       <p class="promise"><span class="led" aria-hidden="true"></span>Works with no signal. Nothing you type leaves your phone.</p>
     </div>
+   </div>
   </section>
 
   <section class="block" aria-labelledby="private-h">
@@ -155,21 +170,28 @@ footer h2{font-size:16px;margin:0;letter-spacing:-.01em}
     </div>
   </section>
 
+  <section class="block" id="more" aria-labelledby="more-h">
+    <div class="wrap">
+      <p class="label">Coming soon</p>
+      <h2 id="more-h">More on the way.</h2>
+      <div class="facts">
+        <!-- PLACEHOLDER: Find your direction. Link it here when direction.html is built. -->
+        <div class="fact soon"><h3>Find your direction</h3><p>A few quick sliders to help you choose which way to point your check-ins.</p><span class="tag">Coming soon</span></div>
+        <!-- PLACEHOLDER: wind-down audio. Swap in the email sign-up when the audio is recorded. -->
+        <div class="fact soon"><h3>Wind-down audio</h3><p>A guided audio for the end of the day. Use it after an evening check-in.</p><span class="tag">Coming soon</span></div>
+        <!-- PLACEHOLDER: 1:1 sessions. Add the session block and pricing when ready. -->
+        <div class="fact soon"><h3>One to one sessions</h3><p>Solution Focused Hypnotherapy, online, for adults. <a href="https://calendly.com/darraghkearney123/30min" rel="noopener">Book a free 15 minute call</a>.</p></div>
+      </div>
+    </div>
+  </section>
+
   <section class="block" id="about" aria-labelledby="about-h">
     <div class="wrap">
       <p class="label">Who made it</p>
+      <!-- PLACEHOLDER: Darragh's own story goes here. Photo optional, casual rather than posed. -->
       <h2 id="about-h">I’m Darragh.</h2>
-      <div class="about">
-        <img src="assets/darragh-headshot.jpg" alt="Darragh Kearney" width="96" height="116">
-        <div>
-          <!-- CONFIRM the training wording with CPHT Belfast before publishing. -->
-          <p>I’m a <strong>Solution Focused Hypnotherapist</strong> from the North West of Ireland. I trained at CPHT Belfast, part of The Clifton Practice, in the approach developed by David Newton.</p>
-          <p>Before this I spent years in professional kitchens, so I know what it’s like to be wired at midnight and wrecked by three in the afternoon. I made the check-in because most people get no help with their head until things are already bad.</p>
-          <p>If you want to go further, I work one to one with adults, online, across Ireland and the UK.</p>
-        </div>
-      </div>
+      <p class="sub">I’m a Solution Focused Hypnotherapist from the North West of Ireland. More about me, and why I made this, is on the way.</p>
       <div class="cta-row">
-        <a href="https://calendly.com/darraghkearney123/30min" rel="noopener">Book a free 15 minute call</a>
         <!-- CONFIRM this address works. The site runs on bluzenfocus.net. -->
         <a href="mailto:info@bluzenfocus.com">info@bluzenfocus.com</a>
       </div>
