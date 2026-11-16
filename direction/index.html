@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!--
+  BLUZEN: FIND YOUR DIRECTION
+  The check-in's livelier sibling. Eight sliders, each between two helpful things, point a
+  person's check-ins towards one of four directions: Settle, Unload, Refuel or Hold steady.
+  It is not a test, an assessment or a diagnosis, and it never describes the person.
+
+  Family (shared with the check-in, keep identical): the HG head and gears block, the
+  colour tokens, header, support drawer and numbers, footer status line, theme switch.
+  Personality (its own): the murmuration, the tug slider, direction colours, card screens.
+
+  Privacy: like the check-in, nothing is saved or sent. Answers live in memory only.
+  The policy line below blocks all network traffic. The optional email offer (the
+  wind-down audio) is built but switched off: see SETTINGS. Switching it on needs this
+  policy changed to allow the Cloudflare Worker (connect-src), and privacy.html updated.
+
+  Hand-over: the result links to the check-in with #dir=settle (or unload, refuel,
+  steady). The part after # never reaches the server.
+-->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<title>Find your direction · Bluzen</title>
+<meta name="description" content="Eight quick sliders to help you choose which way to point your check-ins. Not a test. Nothing is saved or sent.">
+<meta name="theme-color" content="#0B0D10">
+<meta name="color-scheme" content="dark light">
+<meta name="referrer" content="no-referrer">
+<meta name="format-detection" content="telephone=no">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230B0D10'/%3E%3Ccircle cx='32' cy='32' r='19' fill='none' stroke='%233DD6E3' stroke-width='5'/%3E%3Ccircle cx='32' cy='32' r='6' fill='%233DD6E3'/%3E%3C/svg%3E">
+<style>
+/* Tokens: the check-in's, plus a live direction colour (--dir) and a faint page wash. */
+:root{
+  color-scheme:dark;
+  --bg:#0B0D10;--panel:#13161C;--well:#0F1216;--raise:#1A1E25;
+  --hover:rgba(255,255,255,.035);--press:rgba(255,255,255,.07);
+  --line:rgba(255,255,255,.08);--line-2:rgba(255,255,255,.13);--line-3:rgba(255,255,255,.22);
+  --text:#EDEEF0;--muted:#8B9098;--faint:#6B7079;
+  --accent:#3DD6E3;--accent-dim:rgba(61,214,227,.12);--accent-line:rgba(61,214,227,.55);
+  --cta:#EDEEF0;--cta-hover:#FFFFFF;--on-cta:#0B0C0E;
+  --seg-off:rgba(255,255,255,.08);
+  --dir-rgb:61,214,227;--dir:rgb(var(--dir-rgb));--wash:0;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --r-sm:6px;--r-md:8px;--r-lg:18px;
+  --sans:"Inter","InterVariable","Inter Variable",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+:root[data-mode="light"]{
+  color-scheme:light;
+  --bg:#E9EAED;--panel:#FBFBFC;--well:#F3F4F6;--raise:#FFFFFF;
+  --hover:rgba(11,12,14,.035);--press:rgba(11,12,14,.07);
+  --line:rgba(11,12,14,.09);--line-2:rgba(11,12,14,.15);--line-3:rgba(11,12,14,.28);
+  --text:#0B0C0E;--muted:#575E68;--faint:#868D97;
+  --accent:#0A7C88;--accent-dim:rgba(10,124,136,.09);--accent-line:rgba(10,124,136,.5);
+  --cta:#0B0C0E;--cta-hover:#25282D;--on-cta:#FFFFFF;
+  --seg-off:rgba(11,12,14,.09);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;background:var(--bg)}
+body{margin:0;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg);color:var(--text);font:400 15px/1.5 var(--sans);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;-webkit-tap-highlight-color:transparent}
+h1,h2,h3,p,dl,dd{margin:0}
+ol,ul{margin:0;padding:0;list-style:none}
+button,input{font:inherit;color:inherit;letter-spacing:inherit}
+button{margin:0;padding:0;border:0;background:none;cursor:pointer;text-align:inherit;-webkit-appearance:none;appearance:none;touch-action:manipulation}
+a{color:inherit}
+strong{font-weight:600}
+[hidden]{display:none!important}
+:focus{outline:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[data-focus]:focus-visible{outline:none}
+.sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+
+/* The wash: a very faint tint of the leading direction over the whole page */
+.wash{position:fixed;inset:0;pointer-events:none;background:var(--dir);opacity:calc(var(--wash) * .07);transition:opacity 1.2s var(--ease),background-color 1.2s var(--ease)}
+:root[data-mode="light"] .wash{opacity:calc(var(--wash) * .09)}
+
+/* Frame */
+.app{position:relative;flex:1;display:flex;flex-direction:column;width:100%;max-width:520px;margin:0 auto;padding:env(safe-area-inset-top,0px) 10px 0}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px;height:50px;padding-left:2px}
+.top-l{display:flex;align-items:center;gap:2px;min-width:0}
+.wordmark{padding:0 8px;font-size:18px;font-weight:700;letter-spacing:-.045em;line-height:1;text-decoration:none}
+.ib{flex:none;display:grid;place-items:center;width:36px;height:36px;border-radius:var(--r-md);color:var(--muted);transition:background-color .15s var(--ease),color .15s var(--ease)}
+.ib:hover{background:var(--press);color:var(--text)}
+.tb{display:inline-flex;align-items:center;height:34px;padding:0 12px;border:1px solid var(--line-2);border-radius:var(--r-md);font-size:13.5px;font-weight:500;transition:border-color .15s var(--ease),background-color .15s var(--ease)}
+.tb:hover{background:var(--hover);border-color:var(--line-3)}
+
+/* The murmuration stage: no box, it floats on the page */
+.stage{position:relative;flex:none;height:clamp(190px,32vh,290px);margin:2px 0 10px;transition:height .55s var(--ease)}
+.app[data-view="result"] .stage{height:clamp(220px,36vh,320px)}
+.app[data-view="about"] .stage{height:0;margin:0}
+.stage canvas{display:block;width:100%;height:100%}
+
+/* The card */
+.card{position:relative;flex:1;display:flex;flex-direction:column;padding:20px 18px 18px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r-lg)}
+@media (min-width:640px) and (min-height:760px){.app{flex:none;margin:auto;padding:20px 16px}.card{min-height:430px}}
+.dots{display:flex;gap:6px;margin-bottom:16px}
+.dots i{width:7px;height:7px;border-radius:50%;background:var(--seg-off);transition:background-color .3s var(--ease),transform .3s var(--ease)}
+.dots i.done{background:var(--muted)}
+.dots i.now{background:var(--dir);transform:scale(1.25)}
+.scene{display:none;flex:1;flex-direction:column}
+.scene.on{display:flex}
+.scene.enter{animation:card-in .42s var(--ease) both}
+.app[data-dir="back"] .scene.enter{animation-name:card-back}
+@keyframes card-in{from{opacity:0;transform:translate3d(28px,0,0) scale(.985)}}
+@keyframes card-back{from{opacity:0;transform:translate3d(-28px,0,0) scale(.985)}}
+
+h1{font-size:clamp(27px,7.4vw,32px);line-height:1.12;font-weight:600;letter-spacing:-.034em;text-wrap:balance}
+h2{font-size:clamp(20px,5.4vw,22px);line-height:1.25;font-weight:600;letter-spacing:-.022em;text-wrap:balance}
+h3{font-size:15px;line-height:1.35;font-weight:600;letter-spacing:-.01em}
+.sub{margin-top:8px;color:var(--muted);text-wrap:pretty}
+.label{font-size:13px;font-weight:500;line-height:1.35;color:var(--muted)}
+.fine{font-size:13px;line-height:1.5;color:var(--muted);text-wrap:pretty}
+.small-print{margin-top:14px;text-align:center}
+.actions{display:flex;flex-direction:column;align-items:stretch;gap:2px;margin-top:auto;padding-top:24px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 18px;border-radius:var(--r-md);font-size:15px;font-weight:500;text-decoration:none;white-space:nowrap;transition:background-color .15s var(--ease),transform .12s var(--ease)}
+.btn:active{transform:scale(.985)}
+.btn.primary{background:var(--cta);color:var(--on-cta)}
+.btn.primary:hover{background:var(--cta-hover)}
+.link{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 8px;border-radius:var(--r-sm);font-size:14px;color:var(--muted);text-decoration:none;transition:color .15s var(--ease)}
+.link:hover{color:var(--text)}
+.links{display:flex;flex-wrap:wrap;justify-content:center;gap:0 4px;margin-top:4px}
+.inline{display:inline;padding:0;color:var(--text);font:inherit;text-decoration:underline;text-decoration-color:var(--line-3);text-underline-offset:3px}
+
+/* The tug: a smooth pull between two words. No numbers on screen. */
+.tug{margin-top:22px}
+.tug-words{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;min-height:66px}
+.tw{flex:1 1 0;min-width:0;font-size:clamp(19px,5.3vw,23px);font-weight:600;line-height:1.15;letter-spacing:-.02em;text-wrap:balance;transition:transform .28s var(--ease),opacity .28s var(--ease),color .28s var(--ease);transform-origin:left bottom}
+.tw.r{text-align:right;transform-origin:right bottom}
+.tug-row{display:grid;grid-template-columns:40px minmax(0,1fr) 40px;align-items:center;gap:8px;margin-top:16px}
+.jog{display:grid;place-items:center;width:40px;height:44px;border:1px solid var(--line-2);border-radius:var(--r-md);background:var(--well);color:var(--muted);font:500 18px/1 var(--sans);-webkit-user-select:none;user-select:none;transition:color .15s var(--ease),border-color .15s var(--ease)}
+.jog:hover{color:var(--text);border-color:var(--line-3)}
+.tug-track{position:relative;height:48px;cursor:pointer;touch-action:none;-webkit-user-select:none;user-select:none;border-radius:8px}
+.tug-track:focus-visible{outline-offset:4px}
+.tug-rail{position:absolute;left:0;right:0;top:50%;height:6px;margin-top:-3px;border-radius:3px;background:var(--seg-off)}
+.tug-fill{position:absolute;top:50%;height:6px;margin-top:-3px;border-radius:3px;background:var(--side,var(--accent));transition:left .18s var(--ease),width .18s var(--ease),background-color .25s var(--ease)}
+.tug-mid{position:absolute;left:50%;top:13px;bottom:13px;width:2px;margin-left:-1px;border-radius:1px;background:var(--line-3)}
+.tug-thumb{position:absolute;top:50%;left:50%;width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;background:var(--text);box-shadow:0 0 0 5px var(--panel);transition:left .18s var(--ease)}
+.tug-track.dragging .tug-thumb,.tug-track.dragging .tug-fill{transition-duration:.06s}
+.tug-lean{margin-top:12px;min-height:1.5em;font-size:14px;color:var(--muted);text-align:center;transition:color .25s var(--ease)}
+.q-stem{color:var(--muted)}
+
+/* The result */
+.r-label{color:var(--dir)}
+.r-h{margin-top:6px;font-size:clamp(34px,10vw,44px);line-height:1;font-weight:650;letter-spacing:-.04em;color:var(--dir)}
+.r-line{margin-top:12px;font-size:17px;line-height:1.45;text-wrap:pretty}
+.hints{margin-top:20px;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--well)}
+.hints dl{margin-top:4px}
+.hints div{padding:10px 0;border-top:1px solid var(--line)}
+.hints div:first-child{border-top:0}
+.hints dt{font-size:12.5px;font-weight:500;color:var(--dir)}
+.hints dd{margin-top:2px;font-size:15px;line-height:1.45}
+.note{margin-top:14px;padding-left:12px;border-left:2px solid var(--line-3);font-size:13.5px;color:var(--muted)}
+.box{margin-top:16px;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--well)}
+.box > .fine{margin-top:4px}
+.input{display:block;width:100%;min-height:48px;margin-top:8px;padding:12px 14px;border:1px solid var(--line-2);border-radius:var(--r-md);background:var(--panel);color:var(--text);font-size:16px}
+.input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+
+/* How this works */
+.how{margin-top:14px;counter-reset:how}
+.how li{display:grid;grid-template-columns:26px minmax(0,1fr);gap:8px;padding:10px 0;border-top:1px solid var(--line);color:var(--muted)}
+.how li:first-child{border-top:0}
+.how li::before{counter-increment:how;content:counter(how);font:500 12px/1.75 var(--sans);color:var(--faint)}
+.prose > p{margin-top:8px;color:var(--muted)}
+.prose > h3{margin-top:22px}
+.prose strong{color:var(--text)}
+
+/* Support, shared with the check-in */
+.support > div{display:grid;gap:3px;padding:12px 0;border-top:1px solid var(--line)}
+.support > div:first-child{padding-top:0;border-top:0}
+.support dt{font-size:15px;font-weight:600}
+.support .where{margin-left:8px;font-size:12.5px;font-weight:400;color:var(--muted)}
+.support dd{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 16px}
+.support .big{font:500 19px/1.3 var(--sans);letter-spacing:-.02em;color:var(--text);text-decoration:none}
+.support a.big:hover{color:var(--accent)}
+.support dd span{flex-basis:100%;font-size:13px;color:var(--muted)}
+.box .support{margin-top:10px}
+.drawer{position:fixed;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.drawer-back{position:absolute;inset:0;background:rgba(5,6,8,.62);opacity:0;transition:opacity .25s var(--ease)}
+.drawer-sheet{position:relative;width:100%;max-width:520px;max-height:88vh;max-height:88dvh;overflow:auto;padding:16px 18px max(20px,env(safe-area-inset-bottom,0px));background:var(--panel);border:1px solid var(--line);border-bottom:0;border-radius:16px 16px 0 0;transform:translateY(24px);opacity:0;transition:transform .32s var(--ease),opacity .25s var(--ease)}
+.drawer.open .drawer-back{opacity:1}
+.drawer.open .drawer-sheet{transform:none;opacity:1}
+.drawer-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.drawer-sheet:focus-visible{outline:none}
+#supportBody{margin-top:14px}
+@media (min-width:640px) and (min-height:700px){.drawer{align-items:center}.drawer-sheet{border-bottom:1px solid var(--line);border-radius:16px}}
+
+.status{display:flex;align-items:center;gap:9px;min-height:46px;padding:0 0 env(safe-area-inset-bottom,0px) 10px;font-size:12.5px;line-height:1.35;color:var(--muted)}
+.led{flex:none;width:6px;height:6px;border-radius:50%;background:var(--dir);box-shadow:0 0 0 3px var(--accent-dim);transition:background-color .6s var(--ease)}
+.status-t{flex:1;min-width:0}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
+</style>
+</head>
+<body>
+<div class="wash" aria-hidden="true"></div>
+<div class="app" id="app" data-view="welcome" data-dir="fwd">
+
+<header class="top">
+  <div class="top-l">
+    <button type="button" class="ib" id="backBtn" data-act="back" aria-label="Back" hidden>
+      <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M10 3.25 5.25 8 10 12.75" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <a class="wordmark" id="brand" href="/">bluzen</a>
+  </div>
+  <button type="button" class="tb" id="supportBtn" data-go="support">Support</button>
+</header>
+
+<!-- The murmuration. A picture of the answers, not a reading of anything. -->
+<div class="stage" aria-hidden="true"><canvas id="swarm"></canvas></div>
+
+<main class="card" id="main" tabindex="-1">
+  <div class="dots" id="dots" aria-hidden="true" hidden></div>
+
+  <section class="scene on" data-scene="welcome">
+    <h1 data-focus tabindex="-1">Which way should your check-in point?</h1>
+    <p class="sub">Eight quick sliders, about two minutes. Each one sits between two things that could help. There are no right answers, and nothing is saved.</p>
+    <div class="actions">
+      <button type="button" class="btn primary" data-act="begin">Start</button>
+      <div class="links"><button type="button" class="link" data-go="about">How this works</button></div>
+    </div>
+    <p class="fine small-print">For adults. A self-help tool, not a test, therapy or a diagnosis.</p>
+  </section>
+
+  <section class="scene" data-scene="q">
+    <p class="label" id="qCount"></p>
+    <h2 class="q-stem" id="qStem" data-focus tabindex="-1">Right now, what would help more?</h2>
+    <div class="tug" id="qTug"></div>
+    <div class="actions">
+      <button type="button" class="btn primary" data-act="next">Next</button>
+    </div>
+  </section>
+
+  <section class="scene" data-scene="weight">
+    <p class="label">One more</p>
+    <h2 id="wStem" data-focus tabindex="-1">And how heavy does it all feel right now?</h2>
+    <p class="sub">This doesn’t change your direction. If it’s heavy, you’ll see where to find support.</p>
+    <div class="tug" id="wTug"></div>
+    <div class="actions">
+      <button type="button" class="btn primary" data-act="finish">See my direction</button>
+    </div>
+  </section>
+
+  <section class="scene" data-scene="result">
+    <p class="label r-label">Your direction for now</p>
+    <h2 class="r-h" id="rH" data-focus tabindex="-1"></h2>
+    <p class="r-line" id="rLine"></p>
+    <div class="hints">
+      <p class="label">In your check-in, try…</p>
+      <dl id="rHints"></dl>
+    </div>
+    <p class="note">This is a direction, not a label. Change it any time, or check in without one.</p>
+    <div id="rSupport"></div>
+    <div class="actions">
+      <a class="btn primary" id="goCheck" href="../check-in/">Check in with this direction</a>
+      <div class="links">
+        <a class="link" id="goPlain" href="../check-in/">Check in without a direction</a>
+        <button type="button" class="link" data-act="again">Try again</button>
+        <button type="button" class="link" data-go="about">How this works</button>
+      </div>
+    </div>
+    <form class="box" id="emailBox" hidden novalidate>
+      <h3>Get my wind-down audio, free</h3>
+      <p class="fine">Use it after your evening check-in.</p>
+      <label class="label" for="email" style="display:block;margin-top:12px">Your email</label>
+      <input class="input" id="email" type="email" autocomplete="email" inputmode="email" required>
+      <p class="fine" style="margin-top:8px">You’ll get the audio and the odd email from me. Unsubscribe any time. What’s kept: your email and your direction. Nothing from the check-in.</p>
+      <div class="actions" style="padding-top:12px"><button type="submit" class="btn primary">Send it to me</button></div>
+      <p class="fine" id="emailMsg" role="status"></p>
+    </form>
+    <p class="fine small-print" id="rMore">Based only on your answers. Nothing here measures or assesses anything.</p>
+  </section>
+
+  <section class="scene prose" data-scene="about">
+    <h2 data-focus tabindex="-1">How this works.</h2>
+    <ol class="how">
+      <li><span><strong>Eight sliders.</strong> Each one sits between two things that could help. Lean towards whichever fits right now. The middle is fine too.</span></li>
+      <li><span><strong>One direction.</strong> Your answers point to Settle, Unload, Refuel or Hold steady. It’s a direction for your check-ins, not a label for you.</span></li>
+      <li><span><strong>Into the check-in.</strong> If you check in with a direction, a few of the ideas lean that way. Everything else stays the same.</span></li>
+    </ol>
+    <h3>What it isn’t</h3>
+    <p>It isn’t a test, an assessment or a diagnosis, and it doesn’t measure anything about you or your brain. It’s a self-help tool for adults, not therapy, and it doesn’t replace your GP. If you’re struggling, the <button type="button" class="inline" data-go="support">support numbers</button> are there at any hour.</p>
+    <h3>The swarm and the gears</h3>
+    <p>The swarm gathers into the Bluzen logo as you answer. It’s a picture of your answers. It doesn’t read or measure anything. The two gears are a rough picture of two parts of your head: the part that thinks things through, and the part that raises the alarm. They come fully into step in the check-in, as you breathe.</p>
+    <h3>Your privacy</h3>
+    <p>No account, no cookies, no tracking and no saving. Your answers are worked out on this page and never leave it. Close the tab and they’re gone.</p>
+    <h3>Who made it</h3>
+    <p>Bluzen is a hypnotherapy and nervous system regulation practice in the North West of Ireland, run by Darragh, a solution-focused hypnotherapist. Bluzen exists to bring people support before crisis, not after.</p>
+    <div class="actions"><button type="button" class="btn primary" data-act="back">Back</button></div>
+  </section>
+</main>
+
+<footer class="status">
+  <span class="led" aria-hidden="true"></span>
+  <span class="status-t">Zero accounts. Nothing saved or sent.</span>
+  <button type="button" class="ib" id="themeBtn" aria-label="Switch to light">
+    <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="5.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 2.75a5.25 5.25 0 0 1 0 10.5Z" fill="currentColor"/></svg>
+  </button>
+</footer>
+</div>
+
+<!-- Support drawer, as in the check-in -->
+<div class="drawer" id="drawer" hidden>
+  <div class="drawer-back" data-act="drawer-close"></div>
+  <section class="drawer-sheet" id="drawerSheet" role="dialog" aria-modal="true" aria-labelledby="drawerH" tabindex="-1">
+    <div class="drawer-head">
+      <h2 id="drawerH">Talk to someone</h2>
+      <button type="button" class="ib" data-act="drawer-close" aria-label="Close">
+        <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <p class="sub">Free and confidential, North and South. You don’t need to be in crisis to ring or text.</p>
+    <div id="supportBody"></div>
+  </section>
+</div>
+
+<template id="tplSupport">
+  <dl class="support">
+    <div><dt>In an emergency</dt><dd><a class="big" href="tel:999">999</a><a class="big" href="tel:112">112</a><span>If you or someone else is in immediate danger. Both work North and South.</span></dd></div>
+    <div><dt>Samaritans<span class="where">North and South</span></dt><dd><a class="big" href="tel:116123">116 123</a><span>Free, at any hour.</span></dd></div>
+    <div><dt>Lifeline<span class="where">Northern Ireland</span></dt><dd><a class="big" href="tel:08088088000">0808 808 8000</a><span>Free, at any hour.</span></dd></div>
+    <div><dt>Shout<span class="where">Northern Ireland</span></dt><dd><a class="big" href="sms:85258?body=SHOUT">Text SHOUT to 85258</a><span>Free text support, at any hour, from anywhere in the UK.</span></dd></div>
+    <div><dt>Pieta<span class="where">Republic of Ireland</span></dt><dd><a class="big" href="tel:1800247247">1800 247 247</a><span>Free, at any hour. Or text HELP to 51444 (standard text rates).</span></dd></div>
+    <div><dt>Text About It<span class="where">Republic of Ireland</span></dt><dd><a class="big" href="sms:50808?body=HELLO">Text HELLO to 50808</a><span>Free text support, at any hour.</span></dd></div>
+    <div><dt>Your GP</dt><dd><span>A good first step for anything that has been going on for a while.</span></dd></div>
+  </dl>
+</template>
+
+<script>
+/* The head and gears: copied unchanged from the check-in (keep them identical). */
+const HG = (() => {
+  'use strict';
+  const RAD = Math.PI / 180;
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const ramp = (from, to, x) => { const t = clamp((x - from) / (to - from), 0, 1); return t * t * (3 - 2 * t); };
+  const ease = (dt, seconds) => 1 - Math.exp(-dt / seconds);
+  const wrap = (a, period) => { a = ((a % period) + period) % period; return a > period / 2 ? a - period : a; };
+  const motion = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+  const still = () => !!motion.matches;
+
+  const HEAD = { main: 'M51.4 232.8L51.4 217.4C51.4 207.9 54.1 188.8 51.2 180.8C49.3 175.5 45.5 171.2 42.3 166.6C27.9 145.6 17.3 133.8 15.2 107.3C14.9 103 15.6 98.8 16 94.6C17.2 81.6 22.3 69.9 29.6 59.2C62.6 10.7 138.3 1.6 182.2 41.4C192.7 50.9 200.8 63.4 202 77.7C202.7 86 199.8 105.5 200.9 109.5C203.8 120.2 220.7 134.2 220.8 144.8C220.8 154 206.4 152.2 203.4 159.4C200.2 167.3 202.3 197.9 195.4 207.9C189.9 215.8 178.4 216 169.8 216C165.8 216 155.6 216.1 152.2 215.6C150.4 215.3 148.6 214.5 146.8 214.1C129 209.8 122.2 207.8 106.2 198.4', neck: 'M150.9 215.3L150.9 232.8' };
+  const VIEWBOX = '6 7 224 235';
+  const NECK = [101.15, 232.8];       // the base of the neck, where the head swivels
+
+  // Pitch radius is module x teeth / 2. Tips stand 0.45 modules above it, roots sit 0.8 below.
+  // tipHalf and rootHalf: half the angle a tooth covers at its tip and at its root.
+  const MODULE = 6;
+  const spur = (teeth, x, y, turn, hub) => {
+    const r = MODULE * teeth / 2, pitch = 360 / teeth;
+    return { teeth, pitchR: r, tip: r + 0.45 * MODULE, root: r - 0.8 * MODULE, tipHalf: 0.11 * pitch, rootHalf: 0.35 * pitch, hub, x, y, turn };
+  };
+  const BIG = spur(10, 68.84, 93.56, 0, 12.6);       // the executive gear, on a fixed axle
+  const SMALL = spur(8, 111.52, 61.52, 9, 9);        // the alarm gear, on the arm; x, y is where it sits in the logo
+
+  const AXIS = Math.atan2(SMALL.y - BIG.y, SMALL.x - BIG.x);
+  const AXIS_DEG = AXIS / RAD;
+  const UX = Math.cos(AXIS), UY = Math.sin(AXIS);
+  const MESH = BIG.pitchR + SMALL.pitchR;   // d sync = r1 + r2: the pitch circles touch
+  const CLEAR = BIG.tip + SMALL.tip;        // any closer than this and the teeth overlap, so the two can only turn together
+  const REST = CLEAR + 1.2;                 // at rest: sitting just clear of each other
+  const RATIO = BIG.teeth / SMALL.teeth;
+  const PITCH = 360 / SMALL.teeth;          // one tooth of the alarm gear, in degrees
+  const BIG_PITCH = 360 / BIG.teeth;
+  const SPEED = 12;                         // the executive gear in working order, in degrees a second
+  const DETENT = BIG_PITCH / 2;             // one point on the 0 to 10 scale turns the executive gear half a tooth
+
+  // The swing arm: a fixed pivot off to the side of the alarm gear. The arm keeps its length,
+  // so as it swings, the alarm gear moves on an arc that brings it in towards the executive gear.
+  const ARM = 32;
+  const S_MESH = [BIG.x + UX * MESH, BIG.y + UY * MESH];
+  const PIVOT = [S_MESH[0] - UY * ARM, S_MESH[1] + UX * ARM];   // perpendicular to the axis, below and to the right
+  function smallAt(gap) {
+    // where the circle of radius gap round the executive axle meets the circle of radius ARM round the pivot
+    const dx = PIVOT[0] - BIG.x, dy = PIVOT[1] - BIG.y, d = Math.hypot(dx, dy);
+    const a = (gap * gap - ARM * ARM + d * d) / (2 * d);
+    const hh = Math.sqrt(Math.max(0, gap * gap - a * a));
+    const mx = BIG.x + dx * a / d, my = BIG.y + dy * a / d;
+    const c1 = [mx + hh * dy / d, my - hh * dx / d], c2 = [mx - hh * dy / d, my + hh * dx / d];
+    return Math.hypot(c1[0] - S_MESH[0], c1[1] - S_MESH[1]) < Math.hypot(c2[0] - S_MESH[0], c2[1] - S_MESH[1]) ? c1 : c2;
+  }
+  // The angle of the line from the executive axle to the alarm gear changes a little as the arm swings.
+  const lineDeg = gap => { const s = smallAt(gap); return Math.atan2(s[1] - BIG.y, s[0] - BIG.x) / RAD; };
+
+  // The outline of a gear: flat-topped teeth with softened corners, as in the logo.
+  function gearPath({ teeth, tip, root, tipHalf, rootHalf }, soften = 0.9) {
+    const at = (r, deg) => [r * Math.cos(deg * RAD), r * Math.sin(deg * RAD)];
+    const f = p => p[0].toFixed(2) + ' ' + p[1].toFixed(2);
+    const pts = [];
+    for (let k = 0; k < teeth; k++) {
+      const c = k * 360 / teeth;
+      pts.push(at(root, c - rootHalf), at(tip, c - tipHalf), at(tip, c + tipHalf), at(root, c + rootHalf));
+    }
+    const towards = (p, q) => {
+      const len = Math.hypot(q[0] - p[0], q[1] - p[1]), t = Math.min(soften, len / 2) / len;
+      return [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t];
+    };
+    let d = '';
+    pts.forEach((corner, i) => {
+      const before = pts[(i + pts.length - 1) % pts.length], after = pts[(i + 1) % pts.length];
+      d += (i ? 'L' : 'M') + f(towards(corner, before)) + 'Q' + f(corner) + ' ' + f(towards(corner, after));
+    });
+    return d + 'Z';
+  }
+
+  // Phase lock: where the alarm gear has to sit for its gaps to meet the executive gear's teeth,
+  // measured along the line between their centres at the given distance.
+  const meshAngle = (a1, gap = MESH) => { const L = lineDeg(gap); return L + 180 - PITCH / 2 - (a1 - L) * RATIO; };
+  const centres = gap => ({ big: [BIG.x, BIG.y], small: smallAt(gap) });
+
+  // A still picture for a given amount of progress, 0 to 1. Used with reduced motion and for the keepsake card.
+  function poseFor(p, a1 = BIG.turn) {
+    const gap = lerp(REST, MESH, ramp(0.7, 0.98, p));
+    const a2 = p >= 0.5 || gap < CLEAR ? meshAngle(a1, gap) : SMALL.turn;
+    return { gap, a1, a2, centres: centres(gap), look: p > 0.96 ? 'synced' : 'active' };
+  }
+
+  // How the alarm gear runs on its own before the two are in step. a: strain, 0 to 1.
+  // Speeds are multiples of its working speed.
+  const tickTock = t => { const ph = (t / 0.55) % 1; return ph < 0.26 ? (1 - Math.cos(2 * Math.PI * ph / 0.26)) / 0.26 : 0; };
+  const STYLE = {
+    over: { free: a => 0.15 + 2.4 * a, big: () => 0 },
+    wound: { free: a => 0.15 + 1.4 * a, big: () => 0.04, jerk: a => Math.min(1, 0.25 + a) },
+    low: { free: a => 0.3 - 0.22 * a, big: a => 0.18 * (1 - a), dim: a => 0.5 * a },
+    steady: { free: a => 0.3 + 0.9 * a, big: () => 0.3 }
+  };
+
+  // A damped spring, stepped in small slices so it stays stable on slow frames.
+  function spring(s, target, k, c, dt) {
+    let n = Math.max(1, Math.ceil(dt / 0.008));
+    const hh = dt / n;
+    while (n--) { s.v += (k * (target - s.x) - c * s.v) * hh; s.x += s.v * hh; }
+  }
+
+  function create(svg) {
+    const one = sel => svg.querySelector(sel);
+    one('[data-head="main"]').setAttribute('d', HEAD.main);
+    one('[data-head="neck"]').setAttribute('d', HEAD.neck);
+    const body = one('.hg-body'), big = one('[data-gear="big"]'), small = one('[data-gear="small"]'), title = one('title');
+    [[big, BIG], [small, SMALL]].forEach(([node, g]) => {
+      node.querySelector('path').setAttribute('d', gearPath(g));
+      node.querySelector('circle').setAttribute('r', String(g.hub));
+    });
+    const place = (node, at, turn) => node.setAttribute('transform', `translate(${at[0].toFixed(2)} ${at[1].toFixed(2)}) rotate(${(turn % 360).toFixed(2)})`);
+    const CAPTIONS = { neutral: 'At rest', out: 'Out of step', coming: 'Coming into step', synced: 'In step' };
+
+    const G = {
+      mode: 'neutral', look: '', caption: '',
+      kind: 'over', arousal: 0, target: 0, pv: 0,
+      a1: BIG.turn, a2: SMALL.turn, v1: 0, v2: 0, pace: 0, hold: 0, slip: 0,
+      gapS: { x: REST, v: 0 },        // the arm, as a spring on the centre distance
+      tiltS: { x: 0, v: 0 }, tilt: 0, // the swivel at the base of the neck, in degrees
+      detent: null, detentBase: 0,    // when set, the executive gear is held at a notch for that scale value
+      breath: 0, torque: 0, viscous: 0.7, kick: 0, dim: 0, shownDim: -1, idle: 1, clock: 0, running: false, last: 0,
+      onlook: null,
+      get gap() { return this.gapS.x; },
+
+      // At rest. Passing 'synced' instead goes straight to in step.
+      set(mode) {
+        if (mode === 'synced') { this.drive({ p: 1 }); return; }
+        this.mode = 'neutral';
+        this.target = 0;
+        this.breath = 0;
+        this.detent = null;
+        this.changed();
+      },
+      // Responding. p: how far into step, 0 to 1. arousal: strain, 0 to 1.
+      drive({ p = this.target, arousal = this.arousal, kind = this.kind } = {}) {
+        this.mode = 'driven';
+        this.target = clamp(+p || 0, 0, 1);
+        this.arousal = clamp(+arousal || 0, 0, 1);
+        this.kind = STYLE[kind] ? kind : 'over';
+        this.changed();
+      },
+      // The 0 to 10 scale turns the executive gear notch by notch. Pass null to let it run again.
+      notch(v) {
+        if (v == null) { this.detent = null; return; }
+        if (this.detent == null) this.detentBase = this.a1 - v * DETENT;
+        this.detent = v;
+        if (still()) { this.a1 = this.detentBase + v * DETENT; this.pose(); return; }
+        this.wake();
+      },
+      // A slight swivel of the head at the base of the neck: positive bows it, negative lifts it.
+      posture(deg) {
+        this.tilt = clamp(+deg || 0, -1.5, 1.5);
+        if (still()) { this.tiltS.x = this.tilt; this.tiltS.v = 0; this.draw(); return; }
+        this.wake();
+      },
+      // A small turn of the executive gear, as if something clicked into place.
+      tick(deg = BIG_PITCH / 4) {
+        if (still() || this.detent != null) return;
+        this.kick += deg;
+        this.wake();
+      },
+      // A nudge of speed that dies away on its own: a chip tapped, a few letters typed.
+      impulse(dv = 30) {
+        if (still() || this.detent != null) return;
+        this.v1 += dv;
+        this.wake();
+      },
+      // The orb: holding winds the executive gear up with a gentle torque (degrees a second, per second);
+      // letting go hands it to a thicker viscosity, which slows it back to its working pace.
+      breathe(torque, viscous = 0.7) {
+        this.torque = still() ? 0 : torque;
+        this.viscous = viscous;
+        if (torque) this.wake();
+      },
+      changed() {
+        if (still()) { this.pose(); return; }
+        this.report();
+        this.wake();
+      },
+
+      // With reduced motion, each state is a still picture.
+      pose() {
+        if (this.mode === 'neutral') {
+          this.pv = 0; this.a2 = SMALL.turn; this.gapS.x = REST; this.dim = 0;
+          if (this.detent == null) this.a1 = BIG.turn;
+        } else {
+          this.pv = this.target;
+          if (this.detent != null) this.a1 = this.detentBase + this.detent * DETENT;
+          const P = poseFor(this.pv, this.a1);
+          this.gapS.x = P.gap; this.a2 = P.a2;
+          const st = STYLE[this.kind];
+          this.dim = st.dim ? st.dim(this.arousal) * (1 - ramp(0.1, 0.6, this.pv)) : 0;
+        }
+        this.gapS.v = 0; this.tiltS.x = this.tilt; this.tiltS.v = 0;
+        this.v1 = this.v2 = this.pace = this.slip = this.kick = this.torque = 0;
+        this.hold = this.pv >= 0.5 ? 1 : 0;
+        this.idle = 0;
+        this.report();
+        this.draw();
+      },
+
+      step(dt) {
+        this.clock += dt;
+        const driven = this.mode !== 'neutral';
+
+        // 1. Progress eases towards where it has been asked to be: into step slowly, out of it a little faster.
+        const goal = driven ? this.target : 0;
+        this.pv += (goal - this.pv) * ease(dt, goal > this.pv ? 1.3 : 0.8);
+        const st = STYLE[this.kind], a = this.arousal, p = this.pv;
+        let spinBig = 0, own = 0, steer = 0, want = REST, dim = 0;
+        if (driven) {
+          own = lerp(st.free(a), 1, ramp(0.12, 0.45, p));       // the alarm gear eases from its own pace to the working pace
+          spinBig = lerp(st.big(a), 1, ramp(0.04, 0.4, p));
+          steer = ramp(0.4, 0.6, p);                             // then it is steered into phase
+          want = lerp(REST, MESH, ramp(0.7, 0.98, p));           // then the arm swings it in
+          dim = st.dim ? st.dim(a) * (1 - ramp(0.1, 0.6, p)) : 0;
+        }
+
+        // 2. The executive gear: held at a scale notch on a spring, or turning, plus any click from a tap.
+        const before = this.a1;
+        if (this.detent != null) {
+          const s = { x: this.a1, v: this.v1 };
+          spring(s, this.detentBase + this.detent * DETENT, 140, 15, dt);    // a little under critical damping: it settles into the notch
+          this.a1 = s.x; this.v1 = s.v;
+        } else {
+          this.v1 += this.torque * dt;                                       // winding up while the orb is held
+          this.v1 += (SPEED * spinBig - this.v1) * ease(dt, this.viscous);   // and a viscous pull back to its pace
+          let k = 0;
+          if (this.kick) {
+            k = this.kick * ease(dt, 0.09);
+            this.kick -= k;
+            if (Math.abs(this.kick) < 0.02) { k += this.kick; this.kick = 0; }
+          }
+          this.a1 += this.v1 * dt + k;
+        }
+        const turned = dt > 0 ? (this.a1 - before) / dt : 0;     // how fast it actually turned this frame
+
+        // 3. The alarm gear.
+        const offBy = () => wrap(this.a2 - meshAngle(this.a1, this.gap), PITCH);
+        if (this.gap < CLEAR) {
+          // Its teeth are between the executive gear's teeth: phase locked, it can only follow.
+          this.slip *= Math.exp(-dt / 0.12);
+          this.a2 += this.slip - offBy();
+          this.v2 = this.pace = -turned * RATIO;
+          this.hold = 1;
+        } else {
+          // Clear of the executive gear: it runs at its own pace until it is steered into phase.
+          this.hold += (steer - this.hold) * ease(dt, 0.5);
+          this.pace += (-SPEED * RATIO * own - this.pace) * ease(dt, 0.6);
+          const jerk = driven && st.jerk ? st.jerk(a) * (1 - this.hold) : 0;
+          const free = this.pace * (jerk ? lerp(1, tickTock(this.clock), jerk) : 1);
+          const inStep = -turned * RATIO - clamp(2.2 * offBy(), -16, 16);
+          this.v2 = lerp(free, inStep, this.hold);
+          this.a2 += this.v2 * dt;
+          this.slip = offBy();
+        }
+
+        // 4. The arm, on a spring. It only swings the gear in once the teeth line up, and never past r1 + r2.
+        const linedUp = Math.abs(offBy()) < 1.2 && Math.abs(this.v2 + turned * RATIO) < 2.4;
+        if (want < CLEAR + 0.4 && this.gap >= CLEAR && !linedUp) want = CLEAR + 0.4;
+        spring(this.gapS, want, 26, 10.2, dt);                    // critically damped: no overshoot
+        if (this.gapS.x < MESH) { this.gapS.x = MESH; this.gapS.v = Math.max(0, this.gapS.v); }
+        if (want >= CLEAR && this.gapS.x < CLEAR && !linedUp && this.gapS.v < 0) this.gapS.v = 0;
+        this.dim += (dim - this.dim) * ease(dt, 0.6);
+
+        // 5. Posture, on a soft spring.
+        spring(this.tiltS, this.tilt, 18, 7, dt);
+
+        // 6. At rest, a slow drift that is barely there.
+        const resting = !driven && this.detent == null && Math.abs(this.v1) < 0.4 && Math.abs(this.v2) < 0.4 && this.gap > CLEAR;
+        this.idle += ((resting ? 1 : 0) - this.idle) * ease(dt, 0.9);
+        this.report();
+      },
+
+      report() {
+        if (Math.abs(this.dim - this.shownDim) > 0.004) { this.shownDim = this.dim; svg.style.setProperty('--hg-dim', this.dim.toFixed(3)); }
+        const look = this.mode === 'neutral' ? 'neutral' : (this.pv > 0.96 && this.gap < MESH + 0.5) ? 'synced' : 'active';
+        const caption = CAPTIONS[look === 'active' ? (this.pv >= 0.4 ? 'coming' : 'out') : look];
+        if (look === this.look && caption === this.caption) return;
+        this.look = look;
+        this.caption = caption;
+        svg.setAttribute('data-state', look);
+        if (title) title.textContent = `A head in profile with two gears inside. ${caption}.`;
+        if (this.onlook) this.onlook(look, caption);
+      },
+
+      draw() {
+        const drift = this.idle * clamp((this.gap - CLEAR) / (REST - CLEAR), 0, 1);
+        const d1 = 1.2 * Math.sin(this.clock * 2 * Math.PI / 11) * drift;
+        const d2 = 1.6 * Math.sin(this.clock * 2 * Math.PI / 8.3 + 1.3) * drift;
+        const at = centres(this.gap);
+        place(big, at.big, this.a1 + d1);
+        place(small, at.small, this.a2 + d2);
+        if (body) body.setAttribute('transform', `rotate(${this.tiltS.x.toFixed(3)} ${NECK[0]} ${NECK[1]})`);
+      },
+
+      wake() {
+        if (this.running || still()) return;
+        this.running = true;
+        this.last = performance.now();
+        requestAnimationFrame(t => this.frame(t));
+      },
+      frame(now) {
+        if (still()) { this.running = false; this.pose(); return; }
+        const dt = Math.min(0.05, Math.max(0, (now - this.last) / 1000));
+        this.last = now;
+        this.step(dt);
+        this.draw();
+        requestAnimationFrame(t => this.frame(t));
+      }
+    };
+
+    G.report();
+    G.draw();
+    G.wake();
+    const onMotion = () => { if (still()) G.pose(); else G.wake(); };
+    if (motion.addEventListener) motion.addEventListener('change', onMotion);
+    else if (motion.addListener) motion.addListener(onMotion);
+    return G;
+  }
+
+  return { create, gearPath, meshAngle, centres, poseFor, smallAt, HEAD, VIEWBOX, NECK, PIVOT, BIG, SMALL, MESH, CLEAR, REST, RATIO, PITCH, DETENT, AXIS_DEG };
+})();
+</script>
+<script>
+(() => {
+'use strict';
+
+/* ---------- Settings: the only lines you should need to change ---------- */
+const SETTINGS = {
+  checkin: '../check-in/',   // where the check-in lives. The result adds #dir=… to it.
+  call: '',                  // optional: link to book a free 15 minute call, shown on the result
+  email: false,              // the wind-down audio offer. Leave false until the audio is recorded.
+                             // Turning it on also needs the policy line at the top to allow the Worker.
+  emailWorker: '',           // the Cloudflare Worker URL that passes sign-ups to MailerLite
+  emailGroup: 'sleep_audio'  // a group name the Worker knows (see GROUP_IDS in mailerlite-proxy.js)
+};
+
+/* ==========================================================================
+   The words. Edit freely: the sliders, the directions and the hints.
+   Each slider sits between two helpful things; [left, right, left feeds, right feeds].
+   ========================================================================== */
+const QUESTIONS = [
+  ['Slowing down', 'Getting going', 'settle', 'refuel'],
+  ['Clearing my head', 'Topping up my energy', 'unload', 'refuel'],
+  ['Putting something down', 'Keeping what’s working', 'unload', 'steady'],
+  ['Switching off at night', 'Getting started in the morning', 'settle', 'refuel'],
+  ['Quieter evenings', 'Keeping my routine as it is', 'settle', 'steady'],
+  ['Less on my mind', 'More in the tank', 'unload', 'refuel'],
+  ['Winding down', 'Letting go of something', 'settle', 'unload'],
+  ['A small win', 'More of the same', 'refuel', 'steady']
+];
+// Colours: dark and light theme. kind: how the check-in's gears move (the HG engine's styles).
+const DIRS = {
+  settle: { name: 'Settle', dark: [91, 141, 239], light: [47, 104, 201], kind: 'over',
+    line: 'For now, point your check-ins at anything that slows you down, even a little.',
+    hints: ['Notice a moment you slowed down, even for a minute.', 'Name what helps you switch off.', 'Choose a step that winds the evening down.'] },
+  unload: { name: 'Unload', dark: [61, 214, 227], light: [10, 124, 136], kind: 'wound',
+    line: 'For now, point your check-ins at putting things down, so your head isn’t holding it all.',
+    hints: ['Notice something you let go of, or got off your chest.', 'Name what helps you clear your head.', 'Choose a step that takes one thing off the pile.'] },
+  refuel: { name: 'Refuel', dark: [242, 180, 90], light: [166, 102, 16], kind: 'low',
+    line: 'For now, point your check-ins at small wins and anything that tops you up.',
+    hints: ['Notice something small that went right.', 'Name what gives you a bit back.', 'Choose a tiny, physical step.'] },
+  steady: { name: 'Hold steady', dark: [111, 211, 160], light: [34, 136, 88], kind: 'steady',
+    line: 'For now, point your check-ins at what’s already working, so you can lean on it.',
+    hints: ['Notice what kept you steady today.', 'Name the routine that helps.', 'Choose a step that protects it.'] }
+};
+const ORDER = ['settle', 'unload', 'refuel', 'steady'];   // also the tie-break order, gentlest first
+const HINT_LABELS = ['What went right', 'What keeps you there', 'Your half-point step'];
+const WEIGHT_WORDS = ['Light', 'Light', 'Light', 'A bit of weight', 'A bit of weight', 'Middling', 'Heavy', 'Heavy', 'Very heavy', 'Very heavy', 'Very heavy'];
+const HEAVY = 8;   // at or above this on the weight check, the result shows the support numbers
+
+/* ==========================================================================
+   Small helpers
+   ========================================================================== */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const root = document.documentElement;
+const app = $('#app');
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const motionQuery = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+const still = () => !!motionQuery.matches;
+const buzz = ms => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* not supported */ } };
+const lower = t => (/^[A-Z][a-z’']/.test(t) && !/^I[\s’']/.test(t) ? t.charAt(0).toLowerCase() + t.slice(1) : t);
+function h(tag, props, ...kids) {
+  const n = document.createElement(tag);
+  if (props) for (const k in props) {
+    const v = props[k];
+    if (v == null || v === false) continue;
+    if (k === 'class') n.className = v;
+    else if (k === 'text') n.textContent = v;
+    else if (k === 'on') for (const ev in v) n.addEventListener(ev, v[ev]);
+    else n.setAttribute(k, v === true ? '' : v);
+  }
+  for (const kid of kids.flat()) if (kid != null && kid !== false) n.append(kid);
+  return n;
+}
+const rgbOf = key => DIRS[key][Theme.current === 'light' ? 'light' : 'dark'];
+const mix = (a, b, t) => [0, 1, 2].map(i => Math.round(a[i] + (b[i] - a[i]) * t));
+
+/* ==========================================================================
+   Answers. In memory only, gone with the tab.
+   ========================================================================== */
+let A = new Array(QUESTIONS.length).fill(null);
+let weight = null;
+
+function ranked() {
+  const pts = { settle: [], unload: [], refuel: [], steady: [] };
+  QUESTIONS.forEach((q, i) => { const v = A[i]; if (v == null) return; pts[q[2]].push(10 - v); pts[q[3]].push(v); });
+  const avg = a => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);
+  return ORDER.slice().sort((a, b) => {
+    const d = avg(pts[b]) - avg(pts[a]);
+    return Math.abs(d) > 1e-9 ? d : ORDER.indexOf(a) - ORDER.indexOf(b);
+  });
+}
+const answered = () => A.filter(v => v != null).length;
+
+/* ==========================================================================
+   Theme: dark first, the switch lasts as long as the tab
+   ========================================================================== */
+const Theme = {
+  current: 'dark',
+  apply() {
+    const light = this.current === 'light';
+    if (light) root.setAttribute('data-mode', 'light'); else root.removeAttribute('data-mode');
+    $('#themeBtn').setAttribute('aria-label', light ? 'Switch to dark' : 'Switch to light');
+    const meta = $('meta[name="theme-color"]'); if (meta) meta.setAttribute('content', light ? '#E9EAED' : '#0B0D10');
+    paintDir();
+    if (window.BluzenSwarm) window.BluzenSwarm.theme();
+  },
+  toggle() { this.current = this.current === 'light' ? 'dark' : 'light'; this.apply(); }
+};
+
+// The page picks up the leading direction's colour, faintly, as answers come in.
+let lead = null, runner = null;
+function paintDir() {
+  const rgb = lead ? rgbOf(lead) : (Theme.current === 'light' ? [10, 124, 136] : [61, 214, 227]);
+  root.style.setProperty('--dir-rgb', rgb.join(','));
+}
+function updateLead() {
+  if (!answered()) { lead = runner = null; } else { const r = ranked(); lead = r[0]; runner = r[1]; }
+  paintDir();
+  root.style.setProperty('--wash', String(answered() / QUESTIONS.length));
+  Swarm.set({ lead, run: runner });
+}
+
+/* ==========================================================================
+   The murmuration
+   A swarm, like starlings, that gathers into the Bluzen head and gears as the
+   person answers. Built from the HG geometry, so its gears are the check-in's gears.
+     question 1 sets the tempo: a slow drift, up to a flock with somewhere to be (never frantic)
+     question 2 sets the feel: spacious and dim, or a little brighter with a gentle shimmer
+     each slider drifts the loose particles towards the side leaned, in that side's colour
+     each answer sends a wave home: the head (1 to 3), the big gear (4, 5), the small gear (6 to 8)
+     on the result the small gear slides in and clicks into mesh, then the crisp logo fades in
+   ========================================================================== */
+const Swarm = (() => {
+  const cv = $('#swarm'), ctx = cv.getContext('2d');
+  const RAD = Math.PI / 180, ns = 'http://www.w3.org/2000/svg';
+  const hold = document.createElementNS(ns, 'svg');
+  hold.setAttribute('width', '0'); hold.setAttribute('height', '0'); hold.setAttribute('aria-hidden', 'true');
+  hold.style.position = 'absolute';
+  document.body.append(hold);
+  const mk = d => { const p = document.createElementNS(ns, 'path'); p.setAttribute('d', d); hold.append(p); return p; };
+  const headEl = mk(HG.HEAD.main), neckEl = mk(HG.HEAD.neck), bigEl = mk(HG.gearPath(HG.BIG)), smEl = mk(HG.gearPath(HG.SMALL));
+  const HL = headEl.getTotalLength(), NL = neckEl.getTotalLength(), BL = bigEl.getTotalLength(), SL = smEl.getTotalLength();
+  const pt = (el, len) => { const q = el.getPointAtLength(len); return [q.x, q.y]; };
+  const HEAD2D = new Path2D(HG.HEAD.main), NECK2D = new Path2D(HG.HEAD.neck);
+  const BIG2D = new Path2D(HG.gearPath(HG.BIG)), SM2D = new Path2D(HG.gearPath(HG.SMALL));
+  const wrap = (a, p) => { a = ((a % p) + p) % p; return a > p / 2 ? a - p : a; };
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  let W = 0, H = 0, S = 1, OX = 0, OY = 0;
+  function size() {
+    W = cv.clientWidth; H = cv.clientHeight;
+    cv.width = Math.max(1, Math.round(W * dpr)); cv.height = Math.max(1, Math.round(H * dpr));
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    S = Math.max(0.1, Math.min((H - 16) / 235, (W - 16) / 224));
+    OX = (W - 224 * S) / 2 - 6 * S; OY = (H - 235 * S) / 2 - 7 * S;
+  }
+  size();
+
+  const N = (window.innerWidth || 400) < 420 ? 420 : 560;
+  const P = [];
+  for (let i = 0; i < N; i++) {
+    const part = i < N * 0.48 ? 'head' : i < N * 0.76 ? 'big' : 'sm';
+    const k = Math.random();
+    let local, wave;
+    if (part === 'head') {
+      const l = k * (HL + NL);
+      local = l < HL ? pt(headEl, l) : pt(neckEl, l - HL);
+      wave = k < 0.34 ? 0 : k < 0.67 ? 1 : 2;
+    } else {
+      const g = part === 'big' ? HG.BIG : HG.SMALL;
+      if (Math.random() < 0.18) { const a = k * Math.PI * 2; local = [Math.cos(a) * g.hub, Math.sin(a) * g.hub]; }
+      else local = part === 'big' ? pt(bigEl, k * BL) : pt(smEl, k * SL);
+      wave = part === 'big' ? (k < 0.5 ? 3 : 4) : (k < 0.4 ? 5 : k < 0.8 ? 6 : 7);
+    }
+    P.push({ x: Math.random() * W, y: Math.random() * H, vx: 0, vy: 0, part, local, wave,
+      stray: Math.random() < 0.06, home: false, sz: 0.8 + Math.random() * 1.6, ph: Math.random() * 6.28, mix: Math.random() });
+  }
+
+  const st = { tempo: 0.5, feel: 0.5, lean: 5, leanL: null, leanR: null, drift: false, lead: null, run: null, locked: false };
+  let E = 0.5, B = 0.5, a1 = 0, a2 = 0, gap = HG.REST, cro = 0, pulse = 0, clicked = false, tt = 0;
+  let last = performance.now(), t0 = last, running = false, visible = true;
+  const ink = () => (Theme.current === 'light' ? [40, 44, 52] : [220, 222, 226]);
+  const accent = () => (Theme.current === 'light' ? [10, 124, 136] : [61, 214, 227]);
+
+  function gear(path, g, c, turn, col) {
+    ctx.save(); ctx.translate(c[0], c[1]); ctx.rotate(turn * RAD);
+    ctx.strokeStyle = `rgb(${col.join(',')})`;
+    ctx.stroke(path); ctx.beginPath(); ctx.arc(0, 0, g.hub, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+  }
+  function logo(alpha, sc) {
+    const lc = st.lead ? rgbOf(st.lead) : accent(), rc = st.run ? rgbOf(st.run) : lc;
+    ctx.save(); ctx.globalAlpha = alpha; ctx.translate(OX, OY); ctx.scale(S, S);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = 1.6 / S;
+    ctx.strokeStyle = `rgba(${ink().join(',')},0.5)`; ctx.stroke(HEAD2D); ctx.stroke(NECK2D);
+    ctx.lineWidth = (1.6 + pulse * 2.2) / S;
+    gear(BIG2D, HG.BIG, [HG.BIG.x, HG.BIG.y], a1, lc);
+    gear(SM2D, HG.SMALL, sc, a2, mix(lc, rc, 0.25));
+    ctx.restore();
+  }
+  // With reduced motion: the crisp logo, still, in the current colours.
+  function drawStill() {
+    ctx.clearRect(0, 0, W, H);
+    gap = st.locked ? HG.MESH : HG.REST;
+    a2 = HG.meshAngle(a1, gap);
+    logo(1, HG.smallAt(gap));
+  }
+
+  function frame(now) {
+    if (!visible || still()) { running = false; if (still()) drawStill(); return; }
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    const t = (now - t0) / 1000;
+    E += (st.tempo - E) * 0.03; B += (st.feel - B) * 0.03;
+    tt += dt * (0.35 + 0.5 * E);
+
+    // the small gear: just clear of the big one until the result, then in to mesh
+    gap += ((st.locked ? HG.MESH : HG.REST) - gap) * 0.06;
+    if (st.locked && !clicked && gap - HG.MESH < 0.25) { clicked = true; pulse = 1; buzz(18); }
+    if (!st.locked) clicked = false;
+    cro = clicked ? Math.min(1, cro + dt * 0.5) : Math.max(0, cro - dt * 1.5);
+    pulse *= 0.95;
+
+    let v1 = 4 + 8 * E;
+    if (clicked && st.lead === 'settle') v1 *= 0.6;
+    if (clicked && st.lead === 'refuel') v1 *= 1 + 0.25 * Math.sin(t * 1.4);
+    a1 += v1 * dt;
+    if (gap < HG.CLEAR + 0.6) { a2 += wrap(HG.meshAngle(a1, gap) - a2, HG.PITCH) * 0.2; }
+    else {
+      let v2 = -v1 * HG.RATIO;
+      if (st.lead === 'unload') { const ph = (t / 0.8) % 1; v2 *= ph < 0.35 ? 2.4 : 0.2; }
+      a2 += v2 * dt;
+    }
+    const sc = HG.smallAt(gap);
+
+    // fade the last frame towards transparent, so trails show the page behind
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.fillStyle = `rgba(0,0,0,${(0.16 + 0.12 * E).toFixed(3)})`;
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'source-over';
+
+    const speed = 0.35 + 1.5 * E, cx = W / 2, cy = H / 2;
+    const open = Math.max(0, 0.5 - B) * 2, glow = Math.max(0, B - 0.5) * 2;
+    const leanX = W * (0.15 + 0.7 * st.lean / 10);
+    const c1 = Math.cos(a1 * RAD), s1 = Math.sin(a1 * RAD), c2 = Math.cos(a2 * RAD), s2 = Math.sin(a2 * RAD);
+    const side = st.lean < 5 ? st.leanL : st.lean > 5 ? st.leanR : null;
+    const base = ink(), loose = side ? mix(base, rgbOf(side), Math.abs(st.lean - 5) / 5 * 0.55) : base;
+    const lc = st.lead ? rgbOf(st.lead) : accent(), rc = st.run ? rgbOf(st.run) : lc;
+
+    for (const p of P) {
+      if (p.home) {
+        const [x0, y0] = p.local;
+        let tx, ty;
+        if (p.part === 'head') { tx = x0; ty = y0; }
+        else if (p.part === 'big') { tx = HG.BIG.x + x0 * c1 - y0 * s1; ty = HG.BIG.y + x0 * s1 + y0 * c1; }
+        else { tx = sc[0] + x0 * c2 - y0 * s2; ty = sc[1] + x0 * s2 + y0 * c2; }
+        tx = OX + tx * S; ty = OY + ty * S;
+        p.vx += (tx - p.x) * 0.012; p.vy += (ty - p.y) * 0.012; p.vx *= 0.84; p.vy *= 0.84;
+      } else {
+        // smooth currents: they move together, never jitter
+        const ang = Math.sin(p.x * 0.007 + tt * 0.4) * 1.6 + Math.cos(p.y * 0.009 - tt * 0.3) * 1.6 + tt * 0.15;
+        let tvx = Math.cos(ang) * speed, tvy = Math.sin(ang) * speed * 0.7;
+        if (st.drift) tvx += (leanX - p.x) * 0.0015;
+        const dx = p.x - cx, dy = p.y - cy, d = Math.hypot(dx, dy) + 1;
+        if (open > 0 && d < H * 0.42) { tvx += dx / d * open * 0.6; tvy += dy / d * open * 0.6; }
+        p.vx += (tvx - p.vx) * 0.04; p.vy += (tvy - p.vy) * 0.04;
+        if (p.x < -4) p.x += W + 8; if (p.x > W + 4) p.x -= W + 8;
+        if (p.y < -4) p.y += H + 8; if (p.y > H + 4) p.y -= H + 8;
+      }
+      p.x += p.vx; p.y += p.vy;
+      let a = (0.4 + 0.3 * B) + (0.08 + 0.15 * glow) * Math.sin(t * 1.5 + p.ph);
+      if (p.home) a *= 1 - 0.85 * cro;
+      a = clamp(a, 0.06, 1);
+      const col = p.home ? (p.part === 'head' ? base : (p.mix < 0.7 ? lc : rc)) : loose;
+      ctx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${a.toFixed(2)})`;
+      const z = p.sz * (0.85 + 0.4 * B);
+      ctx.fillRect(p.x, p.y, z, z);
+    }
+    if (cro > 0) logo(cro, sc);
+    requestAnimationFrame(frame);
+  }
+  function go() {
+    if (still()) { drawStill(); return; }
+    if (running || !visible) return;
+    running = true; last = performance.now(); requestAnimationFrame(frame);
+  }
+  const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => { visible = es[0].isIntersecting && !document.hidden; go(); }) : null;
+  if (io) io.observe(cv);
+  document.addEventListener('visibilitychange', () => { visible = !document.hidden; go(); });
+  let rt = 0;
+  window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { size(); if (still()) drawStill(); }, 120); });
+  const onMotion = () => { if (still()) drawStill(); else { ctx.clearRect(0, 0, W, H); go(); } };
+  if (motionQuery.addEventListener) motionQuery.addEventListener('change', onMotion);
+
+  const api = {
+    set(o) { Object.assign(st, o); if (still()) drawStill(); },
+    waves(n) { P.forEach(p => { p.home = !p.stray && p.wave < n; }); if (still()) drawStill(); },
+    lock(on) { st.locked = !!on; if (still()) drawStill(); },
+    resize() { size(); if (still()) drawStill(); },
+    theme() { if (still()) drawStill(); },
+    scatter() {
+      st.locked = false; clicked = false; cro = 0;
+      P.forEach(p => { p.home = false; p.vx += (Math.random() - 0.5) * 4; p.vy += (Math.random() - 0.5) * 4; });
+    },
+    start: go
+  };
+  return api;
+})();
+window.BluzenSwarm = Swarm;
+
+/* ==========================================================================
+   The tug: a smooth pull between two words. Snaps to 0 to 10 for scoring,
+   but no number is ever shown. Drag, tap, the − and + buttons, or arrow keys.
+   ========================================================================== */
+class Tug {
+  constructor(el, labelId) {
+    this.value = 5; this.onchange = null; this.dragging = false; this.timer = 0; this.mode = 'dir';
+    this.wl = h('span', { class: 'tw l' }); this.wr = h('span', { class: 'tw r' });
+    this.fill = h('span', { class: 'tug-fill' }); this.thumb = h('span', { class: 'tug-thumb' });
+    this.track = h('div', { class: 'tug-track', role: 'slider', tabindex: '0', 'aria-labelledby': labelId, 'aria-valuemin': '0', 'aria-valuemax': '10', 'aria-orientation': 'horizontal' },
+      h('span', { class: 'tug-rail' }), this.fill, h('span', { class: 'tug-mid' }), this.thumb);
+    this.lean = h('p', { class: 'tug-lean', 'aria-hidden': 'true' });
+    const jog = (d, glyph) => h('button', { type: 'button', class: 'jog', tabindex: '-1', 'aria-hidden': 'true', 'data-jog': String(d), text: glyph });
+    el.append(h('div', { class: 'tug-words', 'aria-hidden': 'true' }, this.wl, this.wr),
+      h('div', { class: 'tug-row' }, jog(-1, '−'), this.track, jog(1, '+')), this.lean);
+
+    const fromX = e => { const r = this.track.getBoundingClientRect(); return Math.round(clamp((e.clientX - r.left) / r.width, 0, 1) * 10); };
+    this.track.addEventListener('pointerdown', e => {
+      if (e.button) return;
+      e.preventDefault();
+      try { this.track.setPointerCapture(e.pointerId); } catch (x) { /* fine */ }
+      try { this.track.focus({ preventScroll: true }); } catch (x) { /* older browsers */ }
+      this.dragging = true; this.track.classList.add('dragging');
+      this.set(fromX(e), true);
+    });
+    this.track.addEventListener('pointermove', e => { if (this.dragging) this.set(fromX(e), true); });
+    ['pointerup', 'pointercancel'].forEach(type => this.track.addEventListener(type, () => { this.dragging = false; this.track.classList.remove('dragging'); }));
+    this.track.addEventListener('keydown', e => {
+      const steps = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1, PageUp: 2, PageDown: -2 };
+      if (e.key in steps) { e.preventDefault(); this.set(this.value + steps[e.key], true); }
+      else if (e.key === 'Home') { e.preventDefault(); this.set(0, true); }
+      else if (e.key === 'End') { e.preventDefault(); this.set(10, true); }
+    });
+    el.addEventListener('pointerdown', e => {
+      const b = e.target.closest ? e.target.closest('[data-jog]') : null;
+      if (!b || e.button) return;
+      e.preventDefault();
+      const d = Number(b.dataset.jog);
+      this.set(this.value + d, true);
+      clearTimeout(this.timer);
+      const again = wait => { this.timer = setTimeout(() => { this.set(this.value + d, true); again(110); }, wait); };
+      again(420);
+    });
+    const stop = () => clearTimeout(this.timer);
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(type => el.addEventListener(type, stop));
+  }
+  open({ left, right, lc = null, rc = null, value = 5, mode = 'dir', onchange = null }) {
+    this.left = left; this.right = right; this.lc = lc; this.rc = rc; this.mode = mode; this.onchange = onchange;
+    this.wl.textContent = left; this.wr.textContent = right;
+    this.set(value, false);
+  }
+  sideColour() {
+    const v = this.value;
+    if (this.mode !== 'dir') return v > 5 ? (Theme.current === 'light' ? [166, 102, 16] : [242, 180, 90]) : null;
+    if (v < 5 && this.lc) return rgbOf(this.lc);
+    if (v > 5 && this.rc) return rgbOf(this.rc);
+    return null;
+  }
+  words() {
+    const v = this.value;
+    if (this.mode === 'weight') return WEIGHT_WORDS[v];
+    if (v === 5) return 'Right in the middle';
+    const strong = Math.abs(v - 5) >= 4 ? 'Leaning well towards ' : 'Leaning towards ';
+    return strong + lower(v < 5 ? this.left : this.right);
+  }
+  set(v, byHand) {
+    v = clamp(Math.round(v), 0, 10);
+    if (byHand && v === this.value) return;
+    if (byHand) buzz(4);
+    this.value = v;
+    this.paint();
+    if (this.onchange) this.onchange(v);
+  }
+  paint() {
+    const v = this.value, off = (v - 5) / 5;
+    this.thumb.style.left = (v * 10) + '%';
+    const lo = Math.min(v, 5), hi = Math.max(v, 5);
+    this.fill.style.left = (lo * 10) + '%'; this.fill.style.width = ((hi - lo) * 10) + '%';
+    const c = this.sideColour();
+    this.track.style.setProperty('--side', c ? `rgb(${c.join(',')})` : 'var(--line-3)');
+    if (this.mode === 'dir') {
+      const lw = Math.max(0, -off), rw = Math.max(0, off);
+      this.wl.style.transform = `scale(${(1 + 0.12 * lw).toFixed(3)})`; this.wr.style.transform = `scale(${(1 + 0.12 * rw).toFixed(3)})`;
+      this.wl.style.opacity = (1 - 0.6 * rw).toFixed(2); this.wr.style.opacity = (1 - 0.6 * lw).toFixed(2);
+      this.wl.style.color = lw > 0 && this.lc ? `rgb(${rgbOf(this.lc).join(',')})` : '';
+      this.wr.style.color = rw > 0 && this.rc ? `rgb(${rgbOf(this.rc).join(',')})` : '';
+    } else {
+      this.wl.style.transform = this.wr.style.transform = ''; this.wl.style.color = this.wr.style.color = '';
+      this.wl.style.opacity = (1 - 0.5 * Math.max(0, off)).toFixed(2); this.wr.style.opacity = (1 - 0.5 * Math.max(0, -off)).toFixed(2);
+    }
+    this.lean.textContent = this.words();
+    this.track.setAttribute('aria-valuenow', String(v));
+    this.track.setAttribute('aria-valuetext', this.mode === 'dir'
+      ? `${this.words()}. Between ${this.left} and ${this.right}.`
+      : `${this.words()}, ${v} out of 10.`);
+  }
+}
+const qTug = new Tug($('#qTug'), 'qStem');
+const wTug = new Tug($('#wTug'), 'wStem');
+
+/* ==========================================================================
+   Moving between screens. The browser's back button steps back through them too.
+   ========================================================================== */
+const dots = $('#dots');
+QUESTIONS.forEach(() => dots.append(h('i')));
+function paintDots(i) {
+  $$('i', dots).forEach((d, k) => { d.classList.toggle('done', k < i); d.classList.toggle('now', k === i); });
+}
+
+const Nav = {
+  trail: [{ s: 'welcome' }], pos: 0, ok: false,
+  init() {
+    try { history.replaceState({ dz: 0 }, ''); this.ok = !!(history.state && history.state.dz === 0); } catch (e) { this.ok = false; }
+    window.addEventListener('popstate', e => {
+      if (!e.state || typeof e.state.dz !== 'number') return;
+      const to = clamp(e.state.dz, 0, this.trail.length - 1), dir = to < this.pos ? 'back' : 'fwd';
+      this.pos = to;
+      this.render(this.trail[to], dir);
+    });
+    this.render(this.trail[0], 'fwd', true);
+  },
+  go(state) {
+    this.trail = this.trail.slice(0, this.pos + 1);
+    this.trail.push(state);
+    this.pos++;
+    if (this.ok) { try { history.pushState({ dz: this.pos }, ''); } catch (e) { this.ok = false; } }
+    this.render(state, 'fwd');
+  },
+  back() {
+    if (this.pos <= 0) return;
+    if (this.ok && history.state && history.state.dz === this.pos) { history.back(); return; }
+    this.pos--;
+    this.render(this.trail[this.pos], 'back');
+  },
+  render(state, dir, first) {
+    let s = state.s;
+    if (s === 'result' && (answered() < QUESTIONS.length || weight == null)) s = 'welcome';
+    app.dataset.view = s;
+    app.dataset.dir = dir;
+    $$('.scene').forEach(sc => {
+      const on = sc.dataset.scene === s;
+      sc.classList.toggle('on', on);
+      sc.classList.remove('enter');
+      if (on && !first && !still()) { void sc.offsetWidth; sc.classList.add('enter'); }
+    });
+    $('#backBtn').hidden = this.pos === 0;
+    dots.hidden = s !== 'q' && s !== 'weight';
+    if (s === 'welcome') enterWelcome();
+    else if (s === 'q') enterQ(state.i);
+    else if (s === 'weight') enterWeight();
+    else if (s === 'result') enterResult();
+    Swarm.lock(s === 'result');
+    if (s === 'about') Swarm.set({ drift: false });
+    setTimeout(() => Swarm.resize(), 600);   // the stage changes height between screens
+    if (!first) {
+      window.scrollTo(0, 0);
+      const head = $('.scene.on [data-focus]');
+      if (head) { try { head.focus({ preventScroll: true }); } catch (e) { /* older browsers */ } }
+    }
+  }
+};
+
+function enterWelcome() {
+  Swarm.waves(answered() ? Math.min(answered(), QUESTIONS.length) : 0);
+  Swarm.set({ drift: false, lean: 5, leanL: null, leanR: null });
+}
+function live(i, v) {
+  const q = QUESTIONS[i];
+  const o = { lean: v, leanL: q[2], leanR: q[3], drift: i >= 2 };
+  if (i === 0) o.tempo = v / 10;
+  if (i === 1) o.feel = v / 10;
+  Swarm.set(o);
+}
+function enterQ(i) {
+  const q = QUESTIONS[i];
+  $('#qCount').textContent = `${i + 1} of ${QUESTIONS.length}`;
+  paintDots(i);
+  Swarm.waves(i);
+  qTug.open({ left: q[0], right: q[1], lc: q[2], rc: q[3], value: A[i] == null ? 5 : A[i], onchange: v => live(i, v) });
+  live(i, qTug.value);
+}
+function enterWeight() {
+  paintDots(QUESTIONS.length);
+  Swarm.waves(QUESTIONS.length);
+  Swarm.set({ drift: false, lean: 5, leanL: null, leanR: null });
+  wTug.open({ left: 'Light', right: 'Very heavy', value: weight == null ? 5 : weight, mode: 'weight' });
+}
+function supportList() { return $('#tplSupport').content.cloneNode(true); }
+function enterResult() {
+  const r = ranked(), d = DIRS[r[0]];
+  lead = r[0]; runner = r[1];
+  paintDir();
+  root.style.setProperty('--wash', '1');
+  Swarm.waves(QUESTIONS.length);
+  Swarm.set({ lead, run: runner, drift: false, lean: 5, leanL: null, leanR: null });
+  $('#rH').textContent = d.name + '.';
+  $('#rLine').textContent = d.line;
+  const dl = $('#rHints'); dl.textContent = '';
+  HINT_LABELS.forEach((lab, k) => dl.append(h('div', null, h('dt', { text: lab }), h('dd', { text: d.hints[k] }))));
+  const sup = $('#rSupport'); sup.textContent = '';
+  if (weight >= HEAVY) sup.append(h('div', { class: 'box' }, h('h3', { text: 'If it stays heavy, talk to someone.' }), h('p', { class: 'fine', text: 'You don’t need to be in crisis to ring or text. These are free, North and South.' }), supportList()));
+  $('#goCheck').href = SETTINGS.checkin + '#dir=' + r[0];
+  $('#goPlain').href = SETTINGS.checkin;
+  $('#emailBox').hidden = !SETTINGS.email;
+  const more = $('#rMore');
+  more.textContent = 'Based only on your answers. Nothing here measures or assesses anything.';
+  if (SETTINGS.call) more.append(' ', h('a', { class: 'inline', href: SETTINGS.call, target: '_top', rel: 'noopener', text: 'Book a free 15 minute call.' }));
+}
+
+/* The optional email offer. Off until the audio exists (SETTINGS.email).
+   Sends only the email and the direction, through the site's Cloudflare Worker.
+   No "submission" is sent, so the Worker doesn't store anything itself. */
+$('#emailBox').addEventListener('submit', e => {
+  e.preventDefault();
+  const input = $('#email'), msg = $('#emailMsg'), email = input.value.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg.textContent = 'Enter an email address first.'; input.focus(); return; }
+  if (!SETTINGS.email || !SETTINGS.emailWorker) { msg.textContent = 'This isn’t switched on yet.'; return; }
+  msg.textContent = 'Sending…';
+  fetch(SETTINGS.emailWorker, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ group: SETTINGS.emailGroup, email, fields: { direction: lead || '' } }) })
+    .then(r => r.json()).then(j => { msg.textContent = j && j.mailerlite && j.mailerlite.ok ? 'Done. Check your inbox in a minute or two.' : 'That didn’t go through. Try again in a minute.'; })
+    .catch(() => { msg.textContent = 'That didn’t go through. Check your connection and try again.'; });
+});
+
+/* ==========================================================================
+   The support drawer, as in the check-in
+   ========================================================================== */
+const Drawer = {
+  el: $('#drawer'), from: null,
+  open(from) {
+    if (!this.el.hidden) return;
+    this.from = from || document.activeElement;
+    this.el.hidden = false;
+    document.body.style.overflow = 'hidden';
+    void this.el.offsetWidth;
+    this.el.classList.add('open');
+    try { $('#drawerSheet').focus({ preventScroll: true }); } catch (e) { /* older browsers */ }
+  },
+  close() {
+    if (this.el.hidden) return;
+    this.el.classList.remove('open');
+    document.body.style.overflow = '';
+    const done = () => { this.el.hidden = true; };
+    if (still()) done(); else setTimeout(done, 260);
+    if (this.from && this.from.focus) { try { this.from.focus({ preventScroll: true }); } catch (e) { /* older browsers */ } }
+  }
+};
+document.addEventListener('keydown', e => {
+  if (Drawer.el.hidden) return;
+  if (e.key === 'Escape') { e.preventDefault(); Drawer.close(); return; }
+  if (e.key === 'Tab') {
+    const f = $$('#drawerSheet a, #drawerSheet button');
+    if (!f.length) return;
+    const first = f[0], lastEl = f[f.length - 1];
+    if (e.shiftKey && (document.activeElement === first || document.activeElement === $('#drawerSheet'))) { e.preventDefault(); lastEl.focus(); }
+    else if (!e.shiftKey && document.activeElement === lastEl) { e.preventDefault(); first.focus(); }
+  }
+});
+
+/* ==========================================================================
+   What each button does
+   ========================================================================== */
+function restart() {
+  A = new Array(QUESTIONS.length).fill(null);
+  weight = null;
+  lead = runner = null;
+  paintDir();
+  root.style.setProperty('--wash', '0');
+  Swarm.scatter();
+  Swarm.set({ tempo: 0.5, feel: 0.5, lead: null, run: null });
+}
+const Actions = {
+  begin() { restart(); Nav.go({ s: 'q', i: 0 }); },
+  back() { Nav.back(); },
+  next() {
+    const st = Nav.trail[Nav.pos]; if (st.s !== 'q') return;
+    A[st.i] = qTug.value;
+    updateLead();
+    if (st.i < QUESTIONS.length - 1) Nav.go({ s: 'q', i: st.i + 1 });
+    else Nav.go({ s: 'weight' });
+  },
+  finish() { weight = wTug.value; Nav.go({ s: 'result' }); },
+  again() { restart(); Nav.go({ s: 'q', i: 0 }); },
+  'drawer-close'() { Drawer.close(); }
+};
+document.addEventListener('click', e => {
+  const t = e.target.closest ? e.target.closest('[data-go],[data-act]') : null;
+  if (!t || t.disabled) return;
+  if (t.dataset.go === 'support') { Drawer.open(t); return; }
+  if (t.dataset.go) { Nav.go({ s: t.dataset.go }); return; }
+  const fn = Actions[t.dataset.act];
+  if (fn) fn(t, e);
+});
+$('#themeBtn').addEventListener('click', () => Theme.toggle());
+
+/* ==========================================================================
+   Start
+   ========================================================================== */
+$('#supportBody').append(supportList());
+Theme.apply();
+Nav.init();
+Swarm.start();
+if ((window.location.hash || '').slice(1) === 'about') Nav.go({ s: 'about' });
+})();
+</script>
+</body>
+</html>
