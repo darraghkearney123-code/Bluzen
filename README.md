@@ -21,12 +21,17 @@ The Bluzen website: plain static pages, no build step. Served by GitHub Pages at
 - The check-in stores nothing and sends nothing. Its policy allows only its own manifest and offline helper, from its own folder.
 - If you ever add analytics, a form or an embed, the policy will block it, and `privacy.html` has to change to match.
 
-## Before going live (search the files for CONFIRM)
+## Before going live (search the files for TODO and CONFIRM)
 
-- **Contact email.** The site uses `info@bluzenfocus.com` but runs on `bluzenfocus.net`. Confirm which works and update `index.html`, `privacy.html` and `accessibility.html`.
+- **Contact (TODO CONTACT).** There's no working contact address yet. Set one up and add it to `index.html`, `privacy.html` and `accessibility.html`. A privacy notice needs a real way to reach you.
+- **Prices (TODO PRICES).** Not set. `sessions.html` stays hidden and unlinked until they are.
 - **CPHT and David Newton wording** in the About section of `index.html`. Confirm with CPHT Belfast.
 - **Old quiz records** in Cloudflare KV and MailerLite. Decide what happens to them and by when, then fill in the gap in `privacy.html`.
 - **Retention period** for client records, confirmed with your insurer and professional body.
+
+## The name isn't final
+
+Darragh is open to renaming Bluzen. If the name changes, update: the domain and `CNAME`, the wordmark text on every page, page titles and descriptions, the check-in's `manifest.webmanifest` name, the share image (`assets/og-image.png`), the logo files if the mark changes, the Cloudflare Worker's allowed origins, and the MailerLite sender name. Hold off on setting up a contact email until the name is settled.
 
 ## Retired in this version
 
