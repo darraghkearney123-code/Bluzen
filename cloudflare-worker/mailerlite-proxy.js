@@ -1,4 +1,4 @@
-// Bluzen — MailerLite proxy + durable quiz log.
+// Bluzen: MailerLite proxy + durable quiz log.
 // Deploy as a Cloudflare Worker (Workers & Pages > Create > paste this in > Deploy).
 //
 // Worker bindings and secrets (Worker > Settings):
