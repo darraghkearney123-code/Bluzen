@@ -3,7 +3,7 @@
 // It only ever reads from this folder on the Bluzen site. It never sends anything anywhere,
 // and nothing anyone types is stored here: the check-in keeps that in memory only.
 // Change CACHE whenever any file in this folder changes, so phones fetch the new version.
-const CACHE = 'bluzen-check-in-v1';
+const CACHE = 'bluzen-check-in-v2';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', event => {

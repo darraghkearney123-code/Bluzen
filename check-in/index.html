@@ -466,7 +466,7 @@ textarea.input{min-height:76px;resize:none;overflow:hidden}
     <p class="sub">Start with what went right, see where your head is at, reset your breathing, and leave with one thing to do.</p>
     <div class="actions">
       <button type="button" class="btn primary" data-act="begin">Start check-in</button>
-      <div class="links"><button type="button" class="link" data-go="about">How it works</button></div>
+      <div class="links"><button type="button" class="link" data-go="about">How it works</button><a class="link" id="noDir" href="./" hidden>Check in without a direction</a></div>
     </div>
     <p class="fine small-print">Nothing is saved. Close the tab and it’s gone. For adults. A self-help tool, not therapy or a diagnosis.</p>
   </section>
@@ -674,6 +674,7 @@ textarea.input{min-height:76px;resize:none;overflow:hidden}
     <h3>Your privacy</h3>
     <p>There is no account, no cookies, no tracking and no saving. What you write never leaves this page, and it’s gone when you close the tab. The page is locked so it can’t send anything over the internet.</p>
     <p>You can add it to your home screen. After that it opens like an app and works with no signal at all, because your phone keeps its own copy of the page. Still nothing is saved or sent.</p>
+    <p>If you arrive from Find your direction, a few of the ideas lean the way you chose and the gears move a little differently. That’s the only difference.</p>
     <p>If you work with Bluzen 1 to 1, you may be given a client link. Only that link offers to save check-ins, in this browser only, and only when you choose to.</p>
     <h3>Who made it</h3>
     <p>Bluzen is a hypnotherapy and nervous system regulation practice in the North West of Ireland, run by Darragh, a solution-focused hypnotherapist. Bluzen exists to bring people support before crisis, not after.</p>
@@ -1076,7 +1077,7 @@ const HG = (() => {
 /* ---------- Settings: the only lines you should need to change ---------- */
 const SETTINGS = {
   home: '/',   // where "Visit Bluzen" on the How it works page goes. Use '' to hide the link.
-  quiz: '',    // optional: full link to the Bluzen quiz, offered at the end of a check-in
+  quiz: '../direction/',    // optional: link to Find your direction, offered at the end of a check-in. Use '' to hide it.
   call: ''     // optional: full link to book a free 15 minute call, offered at the end
 };
 
@@ -1137,6 +1138,41 @@ const ENOUGH = ['Getting through the day', 'One thing done', 'A bit of headspace
 const SIGNS = ['I get up without hitting snooze', 'I eat a proper breakfast', 'I reply to that message', 'I get outside before lunch', 'I’m easier on the people around me', 'I start the day with a plan'];
 const THENS = ['Step outside for five minutes', 'Drink a glass of water', 'Write down tomorrow’s one thing', 'Put the phone in another room', 'Message one person', 'Eat something proper', 'Go to bed half an hour earlier'];
 const IFS = ['I finish my dinner', 'I put the kettle on', 'I sit into the car', 'I close the laptop', 'It hits 9pm', 'I get in the door'];
+
+/* ==========================================================================
+   A direction from Find your direction (optional)
+   Arriving with #dir=settle (or unload, refuel, steady) changes very little: the
+   gears move in that direction's style, a few ideas lean that way, Settle starts
+   on five breathing rounds, and one quiet line names it at the end. The hash never
+   reaches the server, and nothing about it is saved.
+   ========================================================================== */
+const DIRECTIONS = {
+  settle: { name: 'Settle', kind: 'over',
+    ideas: { prime: ['Had a slow ten minutes', 'Switched off for a bit'], anchor: ['A quiet bit of the day'], enough: ['A decent evening', 'Going easy on myself'],
+      sign: ['I get to bed a bit earlier'], then: ['Put the phone in another room', 'Go to bed half an hour earlier', 'Step outside for five minutes'], cue: ['It hits 9pm', 'I finish my dinner'] } },
+  unload: { name: 'Unload', kind: 'wound',
+    ideas: { prime: ['Got something off my chest', 'Let something go'], anchor: ['Having someone to talk to'], enough: ['A bit of headspace', 'One thing done'],
+      sign: ['I reply to that message', 'I start the day with a plan'], then: ['Write it all down, then close the notebook', 'Message one person', 'Write down tomorrow’s one thing'], cue: ['I close the laptop', 'I get in the door'] } },
+  refuel: { name: 'Refuel', kind: 'low',
+    ideas: { prime: ['Ate something good', 'Got outside', 'Had a decent cup of tea'], anchor: ['Some sleep, even a bit', 'Getting outside'], enough: ['One thing done', 'Getting through the day'],
+      sign: ['I get outside before lunch', 'I eat a proper breakfast'], then: ['Eat something proper', 'Drink a glass of water', 'Step outside for five minutes'], cue: ['I put the kettle on', 'I sit into the car'] } },
+  steady: { name: 'Hold steady', kind: 'steady',
+    ideas: { prime: ['Stuck to my routine', 'Got something done'], anchor: ['My routine', 'Having something to do'], enough: ['A decent evening', 'One thing done'],
+      sign: ['I start the day with a plan'], then: ['Keep doing what worked today', 'Write down tomorrow’s one thing'], cue: ['I finish my dinner', 'I close the laptop'] } }
+};
+const DIR = (() => { try { const m = /(?:^|[#&])dir=([a-z]+)/.exec(window.location.hash || ''); return m && DIRECTIONS[m[1]] ? m[1] : null; } catch (e) { return null; } })();
+const KIND = DIR ? DIRECTIONS[DIR].kind : 'over';
+// Put the direction's ideas first, keeping each list the same length.
+function lean(list, extras) {
+  if (!extras) return;
+  const n = list.length;
+  extras.slice().reverse().forEach(x => { const i = list.indexOf(x); if (i > -1) list.splice(i, 1); list.unshift(x); });
+  list.length = n;
+}
+if (DIR) {
+  const I = DIRECTIONS[DIR].ideas;
+  lean(PRIMES, I.prime); lean(ANCHORS, I.anchor); lean(ENOUGH, I.enough); lean(SIGNS, I.sign); lean(THENS, I.then); lean(IFS, I.cue);
+}
 // When no step is set: a solution-focused observation task.
 const NOTICE = 'Notice one small thing worth keeping before tomorrow.';
 // Cyclic sighing: a breath in, a short top-up breath on top, then a long breath out.
@@ -1186,7 +1222,7 @@ const strain = v => (10 - v) / 10;
 // Between the active moments, the gears show how settled the person has got so far.
 function rest() {
   if (S.before == null) { Gears.set('neutral'); return; }
-  Gears.drive({ kind: 'over', arousal: strain(S.before), p: S.calm });
+  Gears.drive({ kind: KIND, arousal: strain(S.before), p: S.calm });
 }
 const an = n => (n === 8 || n === 11 || n === 18 ? `an ${n}` : `a ${n}`);   // "an 8", "a 7"
 const halfUp = v => (v >= 10 ? null : `${v}.5`);
@@ -1432,7 +1468,7 @@ const Reset = {
   auto: false, running: false, started: false, done: false, valid: false,
   enter() {
     this.active = true;
-    this.setup(S.rounds || (S.before <= 3 ? 5 : S.before <= 6 ? 4 : 3));
+    this.setup(S.rounds || (DIR === 'settle' || S.before <= 3 ? 5 : S.before <= 6 ? 4 : 3));
   },
   // The text that goes with the double breath in, on or off.
   words() {
@@ -1543,7 +1579,7 @@ const Reset = {
   // Each round brings the gears a little further into step.
   lead() {
     const p = this.started ? 0.08 + 0.92 * (this.count / this.total) : 0;
-    Gears.drive({ kind: 'over', arousal: strain(S.before == null ? 5 : S.before), p: Math.min(p, 0.9) });
+    Gears.drive({ kind: KIND, arousal: strain(S.before == null ? 5 : S.before), p: Math.min(p, 0.9) });
   },
   step(dt) {
     if (!this.active || this.done) return;
@@ -1678,7 +1714,7 @@ function summaryText() {
   const mins = S.startedAt ? Math.max(1, Math.round((S.endedAt - S.startedAt) / 60000)) : 0;
   const reset = S.reset === 'skipped' || !S.reset ? 'skipped' : `${S.rounds} rounds of cyclic sighing${S.reset === 'paced' ? ', paced' : ''}`;
   const L = [
-    'Bluzen check-in: session brief',
+    'Bluzen check-in: session brief' + (DIR ? ` (direction: ${DIRECTIONS[DIR].name})` : ''),
     `${fmtDay(S.endedAt)}, ${fmtTime(S.endedAt)}${mins ? `, about ${mins} min` : ''}`,
     '',
     `Went right today: ${S.prime || 'not noted'}`,
@@ -1871,7 +1907,7 @@ const Keepsake = {
     }
 
     // the foot
-    text('Bluzen check-in', X, 1262, `500 24px ${sans}`, P.muted);
+    text(DIR ? `Bluzen check-in · ${DIRECTIONS[DIR].name}` : 'Bluzen check-in', X, 1262, `500 24px ${sans}`, P.muted);
     text(fmtTime(S.endedAt), R, 1262, `500 24px ${sans}`, P.muted, 'right');
   },
   save() {
@@ -1904,7 +1940,7 @@ const Summary = {
   enter() {
     if (!S.endedAt) S.endedAt = Date.now();
     const words = resultWords();
-    $('#sumDate').textContent = `${fmtDay(S.endedAt)}, ${fmtTime(S.endedAt)}`;
+    $('#sumDate').textContent = `${fmtDay(S.endedAt)}, ${fmtTime(S.endedAt)}` + (DIR ? ` · Checked in with a direction: ${DIRECTIONS[DIR].name}` : '');
     $('#heroLabel').textContent = words.label;
     $('#sumH').textContent = words.text;
     $('#sumLine').textContent = words.note;
@@ -1923,7 +1959,7 @@ const Summary = {
     Bridge.render();
     const more = $('#sumMore');
     more.textContent = 'This check-in is made by Bluzen, a hypnotherapy and nervous system regulation practice in the North West of Ireland.';
-    if (SETTINGS.quiz) more.append(' ', h('a', { class: 'inline', href: SETTINGS.quiz, target: '_top', rel: 'noopener', text: 'Take the Bluzen quiz.' }));
+    if (SETTINGS.quiz) more.append(' ', h('a', { class: 'inline', href: SETTINGS.quiz, target: '_top', rel: 'noopener', text: DIR ? 'Find a new direction.' : 'Find your direction.' }));
     if (SETTINGS.call) more.append(' ', h('a', { class: 'inline', href: SETTINGS.call, target: '_top', rel: 'noopener', text: 'Book a free 15 minute call.' }));
     Keepsake.render();
   },
@@ -2079,7 +2115,7 @@ const Views = {
         onchange: v => {
           $('#scaleNote').hidden = v > 2;
           $('#supportBtn').classList.toggle('nudge', v <= 2 || S.risk);
-          Gears.drive({ kind: 'over', arousal: strain(v), p: 0 });
+          Gears.drive({ kind: KIND, arousal: strain(v), p: 0 });
           Gears.notch(v);     // the executive gear clicks round a notch per point
         }
       });
@@ -2124,7 +2160,7 @@ const Views = {
           $('#confNext').textContent = v >= 7 ? 'Finish' : 'Make it smaller';
           $('#sustainBox').hidden = v < 7;
           $('#sustainQ').textContent = v >= 10 ? 'What puts it at 10?' : `What puts it at ${v} instead of lower?`;
-          Gears.drive({ kind: 'over', arousal: strain(S.before), p: v >= 7 ? 1 : Math.max(S.calm, 0.6) });
+          Gears.drive({ kind: KIND, arousal: strain(S.before), p: v >= 7 ? 1 : Math.max(S.calm, 0.6) });
           Gears.notch(v);
         }
       });
@@ -2270,6 +2306,7 @@ function frame(now) {
    Start
    ========================================================================== */
 $('#supportBody').append(supportList());
+if (DIR) $('#noDir').hidden = false;
 if (SETTINGS.home) { const a = $('#homeLink'); a.href = SETTINGS.home; a.hidden = false; }
 Theme.apply();
 Nav.init();

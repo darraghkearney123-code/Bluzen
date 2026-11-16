@@ -9,6 +9,7 @@ The Bluzen website: plain static pages, no build step. Served by GitHub Pages at
   - `index.html` is the check-in itself.
   - `manifest.webmanifest` and the icons let people add it to their home screen.
   - `sw.js` keeps a copy of the check-in's own files on the phone so it opens with no signal. It never sends anything. **Bump `CACHE` in `sw.js` whenever anything in `check-in/` changes**, or phones keep the old copy.
+- `direction/index.html`: Find your direction. Eight sliders point check-ins towards Settle, Unload, Refuel or Hold steady, with a murmuration that gathers into the head and gears. Shares the check-in's gear engine (`HG` block, copied unchanged) and support numbers. Stores and sends nothing. The wind-down audio email offer is built but off (`SETTINGS.email`). Its result links to `check-in/#dir=…`, and the check-in leans a few ideas that way.
 - `privacy.html`, `accessibility.html`, `404.html`: plain pages sharing `assets/site.css`.
 - `quiz.html`: the old quiz is retired. This page just forwards old links to the check-in.
 - `assets/`: logo, headshot, share image, and the shared stylesheet.
