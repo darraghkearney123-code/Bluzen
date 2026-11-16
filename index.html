@@ -42,6 +42,8 @@ header.top{display:flex;align-items:center;justify-content:space-between;height:
 .wordmark{font-size:19px;font-weight:700;letter-spacing:-.045em;text-decoration:none}
 .top a.small{font-size:14px;color:var(--muted);text-decoration:none;padding:8px 4px}
 .top a.small:hover{color:var(--text)}
+.top nav{display:flex;gap:10px}
+a.more{color:var(--text);text-decoration:underline;text-decoration-color:var(--line-3);text-underline-offset:4px}
 .hero{text-align:center;padding:12px 0 72px}
 .hero-in{max-width:1080px;margin:0 auto}
 .stage{position:relative;width:100%;max-width:320px;height:clamp(180px,30vh,250px);margin:0 auto;opacity:.92}
@@ -111,7 +113,7 @@ footer h2{font-size:16px;margin:0;letter-spacing:-.01em}
 <a class="skip" href="#main">Skip to content</a>
 <header class="top">
   <a class="wordmark" href="/" aria-label="Bluzen home">bluzen</a>
-  <a class="small" href="#about">About</a>
+  <nav><a class="small" href="how-it-works.html">How it works</a> <a class="small" href="#about">About</a></nav>
 </header>
 
 <main id="main">
@@ -154,6 +156,7 @@ footer h2{font-size:16px;margin:0;letter-spacing:-.01em}
         <li><div><b>One small step.</b> <span>Half a point. Small enough that you’ll actually do it.</span></div></li>
       </ol>
       <p class="note">Built on solution-focused methods hypnotherapists have used for decades, and on research into breathing, stress and planning. It’s a self-help tool for adults, not therapy or a diagnosis.</p>
+      <p class="sub"><a class="more" href="how-it-works.html">More on the approach and the research</a></p>
     </div>
   </section>
 

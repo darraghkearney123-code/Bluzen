@@ -25,3 +25,17 @@ main a:hover{text-decoration-color:currentColor}
 footer{border-top:1px solid var(--line);padding:32px 20px 48px;max-width:680px;margin:0 auto;font-size:13px;color:var(--faint);display:flex;flex-wrap:wrap;gap:4px 16px}
 footer a{text-decoration:none}
 footer a:hover{color:var(--text)}
+/* How it works */
+.mark{display:block;width:96px;height:auto;margin:28px 0 0;opacity:.9}
+.list{list-style:none;padding:0;margin:16px 0 0;counter-reset:n}
+.list li{display:grid;grid-template-columns:30px 1fr;gap:8px;padding:14px 0;border-top:1px solid var(--line);color:var(--muted)}
+.list li:first-child{border-top:0}
+.list li::before{counter-increment:n;content:counter(n);font-size:13px;font-weight:500;color:var(--faint);line-height:1.9}
+.list strong{display:block}
+.find{margin-top:16px;padding:16px 18px;border:1px solid var(--line);border-radius:14px;background:var(--well)}
+.find h3{margin:0;font-size:16px;font-weight:600;letter-spacing:-.01em;color:var(--text)}
+.find p{margin-top:6px}
+.find .src{font-size:13px;color:var(--faint)}
+.quote{margin:16px 0 0;padding-left:14px;border-left:2px solid rgba(61,214,227,.55);color:var(--text)}
+.ctas{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;margin-top:28px}
+.ctas .btn{margin-top:0}
