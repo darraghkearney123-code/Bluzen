@@ -1,0 +1,2288 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!--
+  BLUZEN CHECK-IN
+  A short solution-focused check-in. One self-contained page with nothing to install.
+  Upload it to your site as it is, for example as check-in.html.
+
+  Settings (links to your home page, quiz and booking page) are at the top of the
+  second script block near the bottom of this file.
+
+  Privacy: stateless by design. No accounts, no cookies, no analytics, no storage of any
+  kind, and no outside requests. The Content-Security-Policy line below blocks all network
+  traffic. If you ever add a form, analytics or an embed, that line will block it, and the
+  privacy wording on the page would need to change as well.
+
+  Offline and home screen: manifest.webmanifest and sw.js sit next to this file. The policy
+  allows this page to load those two files from its own folder ('self'), and nothing else.
+  The service worker only keeps a copy of this folder's files on the phone so the check-in
+  opens with no signal. It never sends anything anywhere. Change CACHE in sw.js whenever
+  this file changes, so phones pick up the new version.
+
+  Type: Inter if the device has it, otherwise the device's own clean sans. No font files
+  are embedded or downloaded.
+
+  The head and gears: the head is traced from the Bluzen logo. The gears are real spur
+  gears (10 and 8 teeth, same tooth size), so they mesh properly. See the HG block.
+-->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'none'; manifest-src 'self'; worker-src 'self'; form-action 'none'; base-uri 'none'">
+<title>Bluzen Check-in</title>
+<meta name="description" content="A private three minute check-in. Start with what went right, reset your breathing, and leave with one small step. Nothing is saved and nothing leaves your device.">
+<meta name="theme-color" content="#0B0D10">
+<meta name="color-scheme" content="dark light">
+<meta name="referrer" content="no-referrer">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Check-in">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230B0D10'/%3E%3Ccircle cx='32' cy='32' r='19' fill='none' stroke='%233DD6E3' stroke-width='5'/%3E%3Ccircle cx='32' cy='32' r='6' fill='%233DD6E3'/%3E%3C/svg%3E">
+<style>
+/* ==========================================================================
+   Tokens
+   Dark first: obsidian and charcoal, 1px lines instead of shadows, and one
+   accent, the turquoise of the logo, for anything active or selected.
+   ========================================================================== */
+:root{
+  color-scheme:dark;
+  --bg:#0B0D10;--panel:#13161C;--well:#0F1216;--raise:#1A1E25;
+  --hover:rgba(255,255,255,.035);--press:rgba(255,255,255,.07);
+  --line:rgba(255,255,255,.08);--line-2:rgba(255,255,255,.13);--line-3:rgba(255,255,255,.22);
+  --text:#EDEEF0;--muted:#8B9098;--faint:#6B7079;
+  --accent:#3DD6E3;--accent-dim:rgba(61,214,227,.12);--accent-line:rgba(61,214,227,.55);
+  --cta:#EDEEF0;--cta-hover:#FFFFFF;--on-cta:#0B0C0E;
+  --seg-off:rgba(255,255,255,.07);
+  --hg-head:rgba(237,238,240,.4);--hg-gear:rgba(237,238,240,.7);--hg-live:#EDEEF0;--hg-sync:var(--accent);--orb-fill:#17363C;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --r-sm:6px;--r-md:8px;--r-lg:14px;
+  --sans:"Inter","InterVariable","Inter Variable",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+:root[data-mode="light"]{
+  color-scheme:light;
+  --bg:#E9EAED;--panel:#FBFBFC;--well:#F3F4F6;--raise:#FFFFFF;
+  --hover:rgba(11,12,14,.035);--press:rgba(11,12,14,.07);
+  --line:rgba(11,12,14,.09);--line-2:rgba(11,12,14,.15);--line-3:rgba(11,12,14,.28);
+  --text:#0B0C0E;--muted:#575E68;--faint:#868D97;
+  --accent:#0A7C88;--accent-dim:rgba(10,124,136,.09);--accent-line:rgba(10,124,136,.5);
+  --cta:#0B0C0E;--cta-hover:#25282D;--on-cta:#FFFFFF;
+  --seg-off:rgba(11,12,14,.08);
+  --hg-head:rgba(11,12,14,.38);--hg-gear:rgba(11,12,14,.62);--hg-live:#0B0C0E;--orb-fill:#CFEAEE;
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;background:var(--bg)}
+body{margin:0;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg);color:var(--text);font:400 15px/1.5 var(--sans);font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;-webkit-tap-highlight-color:transparent}
+h1,h2,h3,p,figure,dl,dd{margin:0}
+ol,ul{margin:0;padding:0;list-style:none}
+button,input,textarea{font:inherit;color:inherit;letter-spacing:inherit}
+button{margin:0;padding:0;border:0;background:none;cursor:pointer;text-align:inherit;-webkit-appearance:none;appearance:none;touch-action:manipulation}
+button:disabled{cursor:default}
+a{color:inherit}
+b,strong{font-weight:600}
+[hidden]{display:none!important}
+:focus{outline:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[data-focus]:focus-visible,#main:focus-visible{outline:none}
+::selection{background:var(--accent-dim)}
+.sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+.gap{margin-top:18px}
+.gap-s{margin-top:10px}
+.centre{text-align:center}
+
+/* ==========================================================================
+   The frame: a header, one panel, a status line
+   ========================================================================== */
+.app{flex:1;display:flex;flex-direction:column;width:100%;max-width:468px;margin:0 auto;padding:env(safe-area-inset-top,0px) 8px 0}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px;height:50px;padding-left:2px}
+.top-l,.top-r{display:flex;align-items:center;gap:2px;min-width:0}
+.wordmark{padding:0 8px;font-size:18px;font-weight:700;letter-spacing:-.045em;line-height:1}
+.ib{flex:none;display:grid;place-items:center;width:36px;height:36px;border-radius:var(--r-md);color:var(--muted);transition:background-color .15s var(--ease),color .15s var(--ease)}
+.ib:hover{background:var(--press);color:var(--text)}
+.tb{display:inline-flex;align-items:center;height:34px;padding:0 12px;border:1px solid var(--line-2);border-radius:var(--r-md);font-size:13.5px;font-weight:500;transition:border-color .15s var(--ease),background-color .15s var(--ease),box-shadow .25s var(--ease)}
+.tb:hover{background:var(--hover);border-color:var(--line-3)}
+.tb.nudge{border-color:var(--accent-line);box-shadow:0 0 0 3px var(--accent-dim)}
+.panel{position:relative;flex:1;display:flex;flex-direction:column;min-height:0;padding:14px 16px 16px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r-lg)}
+.status{display:flex;align-items:center;gap:9px;min-height:46px;padding:0 0 env(safe-area-inset-bottom,0px) 10px;font-size:12.5px;line-height:1.35;color:var(--muted)}
+.led{flex:none;width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+.status-t{flex:1;min-width:0}
+@media (min-width:640px) and (min-height:700px){
+  .app{flex:none;margin:auto;padding:24px 16px}
+  .panel{min-height:min(690px,calc(100vh - 150px))}
+}
+
+/* Where you are: four stages */
+.stepper{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-bottom:12px}
+.stepper li{display:flex;flex-direction:column;gap:7px;font-size:12px;font-weight:500;line-height:1;color:var(--faint);transition:color .3s var(--ease)}
+.stepper li::after{content:"";height:2px;border-radius:1px;background:var(--line-2);transition:background-color .45s var(--ease)}
+.stepper li.done{color:var(--muted)}
+.stepper li.now{color:var(--text)}
+.stepper li.done::after,.stepper li.now::after{background:var(--accent)}
+
+/* ==========================================================================
+   The stage: the head and gears, in a display that changes size with the scene
+   ========================================================================== */
+.app{--stage-h:clamp(132px,24vh,220px)}
+.app[data-view="welcome"]{--stage-h:clamp(168px,30vh,262px)}
+.app[data-view="prime"],.app[data-view="anchor"],.app[data-view="sign"],.app[data-view="simplify"]{--stage-h:clamp(96px,14vh,128px)}
+.app[data-view="scale"],.app[data-view="confidence"]{--stage-h:clamp(112px,19vh,178px)}
+.app[data-view="reset"]{--stage-h:clamp(80px,10.5vh,100px)}
+.app[data-view="step"]{--stage-h:clamp(84px,11vh,104px)}
+.app[data-view="summary"],.app[data-view="about"]{--stage-h:0px}
+.stage{position:relative;flex:none;height:var(--stage-h);margin-bottom:18px;border:1px solid var(--line);border-radius:10px;background:var(--well);overflow:hidden;transition:height .55s var(--ease),margin-bottom .55s var(--ease),opacity .35s var(--ease),border-color .35s var(--ease)}
+.app[data-view="summary"] .stage,.app[data-view="about"] .stage{margin-bottom:0;opacity:0;border-color:transparent}
+.hg{position:absolute;top:12px;left:12px;width:calc(100% - 24px);height:calc(100% - 24px);overflow:visible}
+.hg path,.hg circle,.hg line{fill:none;stroke-width:1.6;vector-effect:non-scaling-stroke;stroke-linecap:round;stroke-linejoin:round}
+.hg-head{stroke:var(--hg-head)}
+.hg-gears{stroke:var(--hg-gear);opacity:calc(1 - var(--hg-dim, 0));transition:stroke .9s var(--ease)}
+.hg[data-state="active"] .hg-gears{stroke:var(--hg-live)}
+.hg[data-state="synced"] .hg-gears{stroke:var(--hg-sync)}
+
+/* ==========================================================================
+   Scenes
+   ========================================================================== */
+.scenes{position:relative;flex:1;display:flex;flex-direction:column;min-height:0}
+.scene{display:none;flex:1;flex-direction:column}
+.scene.on{display:flex}
+.scene.enter{animation:scene-in .36s var(--ease) both}
+.app[data-dir="back"] .scene.enter{animation-name:scene-back}
+@keyframes scene-in{from{opacity:0;transform:translate3d(16px,0,0)}}
+@keyframes scene-back{from{opacity:0;transform:translate3d(-16px,0,0)}}
+.phase{display:flex;flex:1;flex-direction:column}
+
+h1{font-size:clamp(27px,7.4vw,32px);line-height:1.1;font-weight:600;letter-spacing:-.034em;text-wrap:balance}
+h2{font-size:clamp(21px,5.6vw,23px);line-height:1.2;font-weight:600;letter-spacing:-.024em;text-wrap:balance}
+h3{font-size:15px;line-height:1.35;font-weight:600;letter-spacing:-.01em}
+.tight-top{margin-top:4px}
+.sub{margin-top:6px;color:var(--muted);text-wrap:pretty}
+.label{font-size:13px;font-weight:500;line-height:1.35;color:var(--muted)}
+.fine{font-size:13px;line-height:1.5;color:var(--muted);text-wrap:pretty}
+.small-print{margin-top:14px;text-align:center}
+.hint{margin-top:8px}
+.note{margin-top:16px;padding:1px 0 1px 12px;border-left:2px solid var(--accent-line);font-size:13.5px;line-height:1.5;color:var(--muted)}
+.inline{display:inline;padding:0;color:var(--text);font:inherit;text-decoration:underline;text-decoration-color:var(--line-3);text-underline-offset:3px;transition:text-decoration-color .15s var(--ease)}
+.inline:hover{text-decoration-color:currentColor}
+
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
+.actions{display:flex;flex-direction:column;align-items:stretch;gap:2px;margin-top:auto;padding-top:22px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 18px;border-radius:var(--r-md);font-size:15px;font-weight:500;letter-spacing:-.006em;white-space:nowrap;transition:background-color .15s var(--ease),border-color .15s var(--ease),color .15s var(--ease),transform .12s var(--ease)}
+.btn:active:not(:disabled){transform:scale(.985)}
+.btn.primary{background:var(--cta);color:var(--on-cta)}
+.btn.primary:hover:not(:disabled){background:var(--cta-hover)}
+.btn.primary:disabled{background:var(--press);color:var(--faint)}
+.btn.line{border:1px solid var(--line-2);color:var(--text)}
+.btn.line:hover:not(:disabled){background:var(--hover);border-color:var(--line-3)}
+.btn.line:disabled{color:var(--muted);border-color:var(--line)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px}
+.link{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 8px;border-radius:var(--r-sm);font-size:14px;color:var(--muted);transition:color .15s var(--ease)}
+.link:hover{color:var(--text)}
+.links{display:flex;flex-wrap:wrap;justify-content:center;gap:0 4px;margin-top:4px}
+.links.start{justify-content:flex-start;margin-left:-8px}
+kbd{display:none;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 5px;border:1px solid var(--line-2);border-radius:5px;font:500 11.5px/1 var(--sans);color:var(--muted)}
+@media (hover:hover) and (pointer:fine){kbd{display:inline-flex}}
+
+/* Option rows */
+.rows{display:grid;gap:6px;margin-top:18px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:12px;width:100%;min-height:58px;padding:10px 12px 10px 14px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--well);text-align:left;transition:border-color .15s var(--ease),background-color .15s var(--ease)}
+.row b{font-size:15px;font-weight:500;line-height:1.3}
+.row small{grid-column:1;font-size:13px;line-height:1.35;color:var(--muted)}
+.row kbd{grid-column:2;grid-row:1 / span 2}
+.row:hover{border-color:var(--line-2);background:var(--hover)}
+.row:active{background:var(--press)}
+.row[aria-pressed="true"]{border-color:var(--accent-line);background:var(--accent-dim)}
+.rows.tight{margin-top:10px;gap:4px}
+.rows.tight .row{min-height:46px;padding-top:9px;padding-bottom:9px}
+.rows.tight .row b{font-size:14.5px}
+
+/* Chips */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips:empty{display:none}
+.chip{display:inline-flex;align-items:center;gap:8px;min-height:38px;padding:0 12px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--well);font-size:14px;line-height:1.25;text-align:left;transition:border-color .15s var(--ease),background-color .15s var(--ease),color .15s var(--ease)}
+.chip:hover{border-color:var(--line-2);background:var(--hover)}
+.chip[aria-pressed="true"]{border-color:var(--accent-line);background:var(--accent-dim)}
+.chip.add{color:var(--muted)}
+.chip.add::before{content:"+";font-family:var(--sans);color:var(--faint)}
+.chip.add:hover{color:var(--text)}
+.chip.item i{font-style:normal;font-family:var(--sans);color:var(--faint)}
+.chip.item:hover i{color:var(--text)}
+.chip.new{animation:chip-in .3s var(--ease)}
+@keyframes chip-in{from{opacity:0;transform:scale(.94)}}
+.pop{animation:pop .26s var(--ease)}
+@keyframes pop{40%{transform:scale(.96)}}
+
+/* Inputs */
+.input{display:block;width:100%;min-height:48px;padding:12px 14px;border:1px solid var(--line-2);border-radius:var(--r-md);background:var(--well);color:var(--text);font-size:16px;line-height:1.45;transition:border-color .15s var(--ease),box-shadow .15s var(--ease)}
+.input::placeholder{color:var(--faint);opacity:1}
+.input:hover{border-color:var(--line-3)}
+.input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+textarea.input{min-height:76px;resize:none;overflow:hidden}
+.add{position:relative;margin-top:18px}
+.add .input{padding-right:54px}
+.add-btn{position:absolute;top:5px;right:5px;bottom:5px;width:40px;display:grid;place-items:center;border-radius:6px;background:var(--press);transition:background-color .15s var(--ease)}
+.add-btn:hover{background:var(--line-2)}
+
+/* Segmented control */
+.seg{position:relative;display:grid;grid-template-columns:repeat(3,1fr);padding:3px;border:1px solid var(--line-2);border-radius:10px;background:var(--well)}
+.seg-thumb{position:absolute;top:3px;bottom:3px;left:3px;width:calc((100% - 6px) / 3);border:1px solid var(--accent-line);border-radius:7px;background:var(--accent-dim);opacity:0;transform:translateX(calc(var(--at, 0) * 100%));transition:transform .32s var(--ease),opacity .2s var(--ease)}
+.seg.has .seg-thumb{opacity:1}
+.seg button{position:relative;min-height:42px;padding:0 4px;border-radius:7px;font-size:14px;font-weight:500;color:var(--muted);text-align:center;transition:color .15s var(--ease)}
+.seg button:hover,.seg button[aria-pressed="true"]{color:var(--text)}
+
+/* ==========================================================================
+   The 0 to 10 scale: segments with a detent at every number
+   ========================================================================== */
+.meter{margin-top:20px}
+.m-read{display:flex;align-items:flex-end;gap:6px;margin-bottom:12px}
+.odo{display:inline-flex;font:500 52px/1 var(--sans);letter-spacing:-.03em}
+.odo-d{display:block;height:1em;overflow:hidden}
+.odo-strip{display:flex;flex-direction:column;transform:translateY(calc(var(--d, 0) * -1em));transition:transform .38s var(--ease)}
+.odo-strip span{display:block;height:1em}
+.odo-d.zero{color:var(--faint)}
+.m-of{padding-bottom:5px;font:500 14px/1 var(--sans);color:var(--faint)}
+.m-side{margin-left:auto;padding-bottom:3px;text-align:right}
+.m-word{display:block;font-size:15px;font-weight:500;line-height:1.25}
+.m-from{display:block;margin-top:2px;font-size:12.5px;line-height:1.3;color:var(--muted)}
+.m-row{display:grid;grid-template-columns:40px minmax(0,1fr) 40px;align-items:center;gap:8px}
+.jog{display:grid;place-items:center;width:40px;height:44px;border:1px solid var(--line-2);border-radius:var(--r-md);background:var(--well);color:var(--muted);font:500 18px/1 var(--sans);-webkit-user-select:none;user-select:none;transition:color .15s var(--ease),border-color .15s var(--ease),background-color .1s var(--ease)}
+.jog:hover{color:var(--text);border-color:var(--line-3)}
+.jog:active{background:var(--press)}
+.m-track{position:relative;height:44px;cursor:pointer;touch-action:none;-webkit-user-select:none;user-select:none;border-radius:4px}
+.m-track:focus-visible{outline-offset:4px}
+.m-seg{position:absolute;top:9px;bottom:9px;left:calc(var(--i) * 10% + 2px);width:calc(10% - 4px);border-radius:3px;background:var(--seg-off);transition:background-color .14s var(--ease),box-shadow .14s var(--ease)}
+.m-seg.on{background:var(--accent)}
+.m-seg.was{background:transparent;box-shadow:inset 0 0 0 1px var(--accent-line)}
+.m-thumb{position:absolute;top:1px;bottom:1px;left:calc(var(--v, 0) * 10%);width:2px;margin-left:-1px;border-radius:1px;background:var(--text);transition:left .16s var(--ease)}
+.m-track.dragging .m-thumb{transition-duration:.07s}
+.m-start{position:absolute;top:-6px;left:calc(var(--s, 0) * 10%);width:10px;height:6px;margin-left:-5px;background:var(--muted);clip-path:polygon(0 0,100% 0,50% 100%)}
+.m-ticks{position:relative;height:16px;margin:6px 48px 0}
+.m-ticks span{position:absolute;left:calc(var(--v) * 10%);transform:translateX(-50%);font:500 11px/16px var(--sans);color:var(--faint);transition:color .15s var(--ease)}
+.m-ticks span.at{color:var(--text)}
+.m-ends{display:flex;justify-content:space-between;gap:12px;margin:4px 48px 0;font-size:12.5px;color:var(--muted)}
+
+/* ==========================================================================
+   The orb: hold to breathe in, let go to breathe out. Flat lines only.
+   ========================================================================== */
+.orb-wrap{display:flex;flex-direction:column;align-items:center;margin-top:16px}
+.orb{position:relative;display:grid;place-items:center;width:min(58vw,212px,27vh);aspect-ratio:1;border-radius:50%;cursor:pointer;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.orb:disabled{cursor:default}
+.orb svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.orb circle{fill:none;vector-effect:non-scaling-stroke}
+.orb-guide{stroke:var(--line-2);stroke-width:1.6}
+.orb-mark{stroke:var(--line-2);stroke-width:1;stroke-dasharray:2 5}
+.orb-core{fill:var(--orb-fill)!important;stroke:var(--accent);stroke-width:1.6;transform-box:fill-box;transform-origin:center;transform:scale(.3)}
+.orb.held .orb-guide{stroke:var(--accent-line)}
+.orb:focus-visible{outline-offset:6px}
+.orb-cue{min-height:2.6em;margin-top:14px;font-size:16px;font-weight:500;line-height:1.3;letter-spacing:-.01em;text-align:center}
+.orb-meta{display:flex;align-items:center;gap:12px;width:min(58vw,212px,27vh);min-width:150px;margin-top:4px;font-size:12.5px;font-weight:500;color:var(--muted)}
+.orb-meta .dots{flex:1;display:flex;gap:4px}
+.dots i{flex:1;height:3px;border-radius:2px;background:var(--seg-off);transition:background-color .25s var(--ease)}
+.dots i.on{background:var(--accent)}
+
+/* ==========================================================================
+   Panels, the result, support
+   ========================================================================== */
+.box{margin-top:16px;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--well)}
+.box > .fine{margin-top:4px}
+.box-actions{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:12px}
+.box .support{margin-top:10px}
+.keep{margin-top:16px;overflow:hidden;border:1px solid var(--line);border-radius:12px;background:var(--well);aspect-ratio:1080 / 1350}
+.keep img{display:block;width:100%;height:auto;-webkit-touch-callout:default}
+#copyText{margin-top:6px;font-size:14px}
+.support > div{display:grid;gap:3px;padding:12px 0;border-top:1px solid var(--line)}
+.support > div:first-child{padding-top:0;border-top:0}
+.support > div:last-child{padding-bottom:0}
+.support dt{font-size:15px;font-weight:600}
+.support .where{margin-left:8px;font-size:12.5px;font-weight:400;color:var(--muted)}
+.support dd{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 16px}
+.support .big{font:500 19px/1.3 var(--sans);letter-spacing:-.02em;color:var(--text);text-decoration:none}
+.support a.big:hover{color:var(--accent)}
+.support strong.big{font-family:var(--sans);font-size:16px;font-weight:600;letter-spacing:-.01em}
+.support dd span{flex-basis:100%;font-size:13px;color:var(--muted)}
+.alert{margin-bottom:8px;padding:14px 16px;border:1px solid var(--accent-line);border-radius:12px;background:var(--panel);font-size:14px}
+.alert p+p{margin-top:10px}
+.alert-nums{display:flex;flex-wrap:wrap;gap:6px}
+.alert-nums a{display:inline-flex;align-items:center;min-height:36px;padding:0 10px;border:1px solid var(--line-2);border-radius:var(--r-sm);font-size:13.5px;text-decoration:none}
+.alert-nums a:hover{border-color:var(--line-3)}
+.page .actions{margin-top:0}
+.prose > p{margin-top:8px;color:var(--muted)}
+.prose > h3{margin-top:24px}
+.prose strong{color:var(--text)}
+.how{margin-top:14px;counter-reset:how}
+.how li{display:grid;grid-template-columns:26px minmax(0,1fr);gap:8px;padding:10px 0;border-top:1px solid var(--line);color:var(--muted)}
+.how li:first-child{border-top:0}
+.how li::before{counter-increment:how;content:counter(how);font:500 12px/1.75 var(--sans);color:var(--faint)}
+
+.toast{position:fixed;left:50%;bottom:max(20px,env(safe-area-inset-bottom,0px));z-index:9;max-width:calc(100% - 32px);padding:10px 14px;border:1px solid var(--line-2);border-radius:var(--r-md);background:var(--raise);color:var(--text);font-size:13.5px;opacity:0;pointer-events:none;transform:translate(-50%,10px);transition:opacity .2s var(--ease),transform .25s var(--ease)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+}
+
+/* If, then: the plan as it will read */
+.plan{margin-top:16px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--well);font-size:15px;line-height:1.45;color:var(--muted);transition:border-color .2s var(--ease)}
+.plan b{font-weight:600;color:var(--text)}
+.plan.ready{border-color:var(--accent-line)}
+.seg button:disabled{color:var(--faint);cursor:default}
+
+/* Daily cue pills */
+.chips.pills .chip{border-radius:999px;padding:0 14px}
+
+/* The support drawer */
+.drawer{position:fixed;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.drawer-back{position:absolute;inset:0;background:rgba(5,6,8,.62);opacity:0;transition:opacity .25s var(--ease)}
+.drawer-sheet{position:relative;width:100%;max-width:468px;max-height:88vh;max-height:88dvh;overflow:auto;padding:16px 18px max(20px,env(safe-area-inset-bottom,0px));background:var(--panel);border:1px solid var(--line);border-bottom:0;border-radius:16px 16px 0 0;transform:translateY(24px);opacity:0;transition:transform .32s var(--ease),opacity .25s var(--ease)}
+.drawer.open .drawer-back{opacity:1}
+.drawer.open .drawer-sheet{transform:none;opacity:1}
+.drawer-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.drawer-sheet:focus-visible{outline:none}
+#supportBody{margin-top:14px}
+@media (min-width:640px) and (min-height:700px){.drawer{align-items:center}.drawer-sheet{border-bottom:1px solid var(--line);border-radius:16px}}
+@media (max-height:700px){#cyclesLabel{display:none}#cycles{margin-top:14px}.orb-wrap{margin-top:12px}}
+
+/* Your own words: an open line, two ways to start, ideas only on request */
+.voice{margin-top:18px}
+.stems{display:grid;gap:2px;margin-top:8px}
+.stems li{position:relative;padding-left:14px;font-size:13px;line-height:1.5;color:var(--faint);-webkit-user-select:none;user-select:none}
+.stems li::before{content:"";position:absolute;left:2px;top:.75em;width:6px;height:1px;background:var(--faint)}
+.scene > .stems{margin-top:8px}
+.idea-toggle{display:inline-flex;align-items:center;gap:6px;min-height:36px;margin-top:6px;font-size:13.5px;font-weight:500;color:var(--muted);transition:color .15s var(--ease)}
+.idea-toggle::after{content:"";width:6px;height:6px;margin-top:-3px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);transition:transform .2s var(--ease)}
+.idea-toggle[aria-expanded="true"]::after{margin-top:3px;transform:rotate(-135deg)}
+.idea-toggle:hover{color:var(--text)}
+.voice .chips{margin-top:6px}
+
+/* A chip wrote into the field: a quiet pulse and a note that it can be changed */
+.input.nudge{animation:nudge 1.1s var(--ease)}
+@keyframes nudge{20%{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}}
+.edit-nudge{margin-top:6px;font-size:12.5px;color:var(--accent)}
+
+/* The contract: blanks until filled, then bright ink */
+.plan .blank{display:inline-block;min-width:4.5em;border-bottom:1px solid var(--line-3);color:transparent;line-height:1.1}
+.plan b{color:var(--text)}
+
+/* Client mode history */
+.history{margin-top:10px}
+.history:empty{display:none}
+.history li{padding:9px 0;border-top:1px solid var(--line);font-size:13.5px}
+.history small{display:block;font-size:12.5px;color:var(--muted)}
+
+/* The double breath in, as an option */
+.opt-row{display:flex;align-items:center;gap:10px}
+.opt-row .fine{flex:1;min-width:0}
+.chip.toggle{flex:none}
+.chip.toggle::before{content:"";width:8px;height:8px;border:1.5px solid var(--muted);border-radius:2px;transition:background-color .15s var(--ease),border-color .15s var(--ease)}
+.chip.toggle[aria-pressed="true"]::before{background:var(--accent);border-color:var(--accent)}
+.chip.toggle:disabled{opacity:.6;cursor:default}
+.bucket{margin-top:6px}
+
+/* The result: the step first, two numbers side by side, then their own words with room to breathe */
+.hero{margin-top:10px;padding:18px 18px 20px;border:1px solid var(--accent-line);border-radius:12px;background:var(--well)}
+.hero-label{color:var(--accent)}
+.hero-text{margin-top:8px;font-size:clamp(21px,5.8vw,24px);line-height:1.32;font-weight:600;letter-spacing:-.02em;text-wrap:pretty}
+.hero-note{margin-top:12px;font-size:14px;line-height:1.55;color:var(--muted);text-wrap:pretty}
+.hero-note:empty{display:none}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}
+.stat{padding:14px 16px 16px;border:1px solid var(--line);border-radius:12px;background:var(--well)}
+.stat .label{font-size:12.5px}
+.stat-n{margin-top:6px;font-size:34px;font-weight:500;line-height:1;letter-spacing:-.03em}
+.stat-n small{margin-left:3px;font-size:13px;font-weight:500;letter-spacing:0;color:var(--faint)}
+.stat-word{margin-top:6px;font-size:19px;font-weight:500;line-height:1.25;color:var(--accent)}
+.mini{display:flex;gap:3px;margin-top:12px}
+.mini i{flex:1;height:3px;border-radius:2px;background:var(--seg-off)}
+.mini i.on{background:var(--muted)}
+.stat.lit .mini i.on{background:var(--accent)}
+.reflect{margin-top:22px}
+.reflect:empty{display:none}
+.reflect > div{padding:16px 0;border-top:1px solid var(--line)}
+.reflect > div:last-child{border-bottom:1px solid var(--line)}
+.reflect dt{font-size:13px;font-weight:500;color:var(--muted)}
+.reflect dd{margin:6px 0 0;font-size:16.5px;line-height:1.6;text-wrap:pretty}
+
+/* The optional state check on the result */
+#sustainBox{margin-top:16px}
+@media (max-height:700px){.app[data-view="reset"]{--stage-h:56px}.opt-row .fine{display:none}.opt-row{margin-top:6px}.orb-wrap{margin-top:8px}.orb,.orb-meta{width:min(58vw,212px,20vh)}.orb-cue{margin-top:8px;min-height:1.3em}.bucket{margin-top:4px}}
+
+</style>
+</head>
+<body>
+<div class="app" id="app" data-view="welcome" data-dir="fwd">
+
+<header class="top">
+  <div class="top-l">
+    <button type="button" class="ib" id="backBtn" data-act="back" aria-label="Back" hidden>
+      <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M10 3.25 5.25 8 10 12.75" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <span class="wordmark" id="brand">bluzen</span>
+  </div>
+  <div class="top-r">
+    <button type="button" class="tb" id="supportBtn" data-go="support">Support</button>
+  </div>
+</header>
+
+<div class="alert" id="riskBox" role="status" hidden>
+  <p><strong>It sounds like things are very heavy right now.</strong> Please don’t carry that on your own. You can talk to someone now, free, at any hour.</p>
+  <p class="alert-nums"><a href="tel:999">999</a><a href="tel:112">112</a><a href="tel:116123">Samaritans 116 123</a><a href="tel:08088088000">Lifeline 0808 808 8000 (NI)</a><a href="sms:85258?body=SHOUT">Text SHOUT to 85258 (NI)</a><a href="tel:1800247247">Pieta 1800 247 247 (ROI)</a><a href="sms:50808?body=HELLO">Text HELLO to 50808 (ROI)</a></p>
+  <p class="fine">999 and 112 are for immediate danger, North and South. You’re welcome to carry on with the check-in as well.</p>
+</div>
+
+<main class="panel" id="main" tabindex="-1">
+  <ol class="stepper" id="stages" aria-label="Where you are in the check-in" hidden>
+    <li>Prime</li>
+    <li>Scale</li>
+    <li>Reset</li>
+    <li>Clarity</li>
+    <li>Step</li>
+  </ol>
+
+  <!-- The head and gears. It mirrors where you are, then comes into step as you settle. -->
+  <div class="stage" id="stage">
+    <svg class="hg" id="hg" viewBox="6 7 224 235" role="img" aria-labelledby="hgTitle" data-state="neutral" focusable="false">
+      <title id="hgTitle">A head in profile with two gears inside. At rest.</title>
+      <g class="hg-body">
+        <g class="hg-head"><path data-head="main"/><path data-head="neck"/></g>
+        <g class="hg-gears">
+          <g data-gear="big"><path/><circle cx="0" cy="0"/></g>
+          <g data-gear="small"><path/><circle cx="0" cy="0"/></g>
+        </g>
+      </g>
+    </svg>
+  </div>
+
+  <div class="scenes">
+
+  <!-- Welcome -->
+  <section class="scene on" data-scene="welcome">
+    <h1 data-focus tabindex="-1">Three minutes. One small step.</h1>
+    <p class="sub">Start with what went right, see where your head is at, reset your breathing, and leave with one thing to do.</p>
+    <div class="actions">
+      <button type="button" class="btn primary" data-act="begin">Start check-in</button>
+      <div class="links"><button type="button" class="link" data-go="about">How it works</button></div>
+    </div>
+    <p class="fine small-print">Nothing is saved. Close the tab and it’s gone. For adults. A self-help tool, not therapy or a diagnosis.</p>
+  </section>
+
+  <!-- Positive priming -->
+  <section class="scene" data-scene="prime">
+    <h2 id="primeQ" data-focus tabindex="-1">Start with what went right.</h2>
+    <p class="sub">One thing today, however small, that went even slightly well.</p>
+    <div class="voice" data-voice="prime">
+      <input class="input" type="text" id="primeText" maxlength="90" aria-labelledby="primeQ" autocomplete="off" spellcheck="false" enterkeyhint="done">
+      <ul class="stems" aria-label="Ways to start"><li>Today I managed to…</li><li>One thing that went okay was…</li></ul>
+      <button type="button" class="idea-toggle" aria-expanded="false" aria-controls="primeChips">Need an idea?</button>
+      <div class="chips" id="primeChips" role="group" aria-label="Ideas" hidden></div>
+    </div>
+    <div class="actions">
+      <button type="button" class="btn primary" data-act="prime-next">Continue</button>
+      <button type="button" class="link" data-act="prime-skip">Nothing comes to mind</button>
+    </div>
+  </section>
+
+  <!-- Arrival scale -->
+  <section class="scene" data-scene="scale">
+    <h2 id="scaleQ" data-focus tabindex="-1">Where’s your headspace right now?</h2>
+    <p class="sub">10 is steady, clear and moving forward. 0 is the opposite. Set it where it is, not where it should be.</p>
+    <div class="meter" id="scaleMeter"></div>
+    <p class="note" id="scaleNote" hidden>That’s a hard place to be. Keep going if this helps. If you feel unsafe or at risk, please use the <button type="button" class="inline" data-go="support">support numbers</button> now.</p>
+    <div class="actions">
+      <button type="button" class="btn primary" data-act="scale-next">Continue</button>
+    </div>
+  </section>
+
+  <!-- Resilience anchor, and good enough today -->
+  <section class="scene" data-scene="anchor">
+    <h2 id="anchorQ" data-focus tabindex="-1">What keeps you at 5 instead of 4?</h2>
+    <p class="sub" id="anchorP">Even on a hard day, something is holding. Name it.</p>
+    <div class="voice" data-voice="anchor">
+      <input class="input" type="text" id="anchorText" maxlength="90" aria-labelledby="anchorQ" autocomplete="off" spellcheck="false" enterkeyhint="done">
+      <ul class="stems" aria-label="Ways to start"><li>What’s helping is…</li><li>I’ve still got…</li></ul>
+      <button type="button" class="idea-toggle" aria-expanded="false" aria-controls="anchorChips">Need an idea?</button>
+      <div class="chips" id="anchorChips" role="group" aria-label="Ideas" hidden></div>
+    </div>
+    <div class="voice gap" data-voice="enough">
+      <label class="label" for="enoughText" id="enoughLabel">And what would feel good enough today?</label>
+      <input class="input gap-s" type="text" id="enoughText" maxlength="80" autocomplete="off" spellcheck="false" enterkeyhint="done">
+      <ul class="stems" aria-label="Ways to start"><li>Getting through…</li><li>One small thing like…</li></ul>
+      <button type="button" class="idea-toggle" aria-expanded="false" aria-controls="enoughChips">Need an idea?</button>
+      <div class="chips" id="enoughChips" role="group" aria-label="Ideas" hidden></div>
+    </div>
+    <div class="actions">
+      <button type="button" class="btn primary" data-act="anchor-next">Continue</button>
+    </div>
+  </section>
+
+  <!-- Reset: cyclic sighing on the orb -->
+  <section class="scene" data-scene="reset">
+    <h2 id="resetH" data-focus tabindex="-1">Two breaths in, one long breath out.</h2>
+    <p class="sub" id="resetP"></p>
+    <p class="fine bucket" id="bucketNote">Stress fills up like a bucket. Each long breath out opens the tap a little.</p>
+    <p class="label gap" id="cyclesLabel">How many rounds?</p>
+    <div class="seg gap-s" id="cycles" role="group" aria-labelledby="cyclesLabel"><span class="seg-thumb" aria-hidden="true"></span></div>
+    <div class="opt-row gap-s"><button type="button" class="chip toggle" id="doubleBtn" aria-pressed="true">Double breath in</button><span class="fine">The cyclic sigh. Turn it off for one long breath in.</span></div>
+    <div class="orb-wrap">
+      <button type="button" class="orb" id="orb" aria-describedby="resetLive">
+        <svg viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+          <circle class="orb-guide" cx="100" cy="100" r="94"/>
+          <circle class="orb-mark" id="orbMark" cx="100" cy="100" r="75"/>
+          <circle class="orb-core" id="orbCore" cx="100" cy="100" r="94"/>
+        </svg>
+      </button>
+      <p class="orb-cue" id="resetCue" aria-hidden="true"></p>
+      <p class="orb-meta"><span id="padCount">0/5</span><span class="dots" id="resetDots" aria-hidden="true"></span></p>
+    </div>
+    <p class="sr" id="resetLive" aria-live="polite"></p>
+    <div class="actions" id="resetAfter" hidden>
+      <button type="button" class="btn primary" data-act="reset-next">Continue</button>
+    </div>
+    <div class="links" id="resetAlts">
+      <button type="button" class="link" id="resetAuto" data-act="reset-auto">Pace it for me</button>
+      <button type="button" class="link" data-act="reset-skip">Skip</button>
+    </div>
+  </section>
+
+  <!-- Clarity check: tomorrow's first sign -->
+  <section class="scene" data-scene="sign">
+    <h2 id="signQ" data-focus tabindex="-1">Tomorrow goes a notch better. What’s the first sign?</h2>
+    <p class="sub">Something you’d notice, or that someone else would.</p>
+    <div class="voice" data-voice="sign">
+      <input class="input" type="text" id="signText" maxlength="100" aria-labelledby="signQ" autocomplete="off" spellcheck="false" enterkeyhint="done">
+      <ul class="stems" aria-label="Ways to start"><li>I’d notice that I…</li><li>Someone might see me…</li></ul>
+      <button type="button" class="idea-toggle" aria-expanded="false" aria-controls="signChips">Need an idea?</button>
+      <div class="chips" id="signChips" role="group" aria-label="Ideas" hidden></div>
+    </div>
+    <div class="actions">
+      <button type="button" class="btn primary" id="signNext" data-act="sign-next" disabled>Continue</button>
+      <button type="button" class="link" data-act="sign-skip">Not sure yet</button>
+    </div>
+  </section>
+
+  <!-- Half a point: If, then -->
+  <section class="scene" data-scene="step">
+    <h2 id="stepQ" data-focus tabindex="-1">What would move you from 5 to 5.5?</h2>
+    <p class="sub">Half a point. Small enough that you’ll actually do it.</p>
+    <p class="plan" id="planLine" aria-live="polite"></p>
+    <label class="label gap" for="thenText" id="thenLabel">Then I’ll…</label>
+    <input class="input gap-s" type="text" id="thenText" maxlength="90" autocomplete="off" spellcheck="false" enterkeyhint="next">
+    <p class="edit-nudge" id="thenNudge" aria-hidden="true" hidden>Edit to fit your day.</p>
+    <ul class="stems" aria-label="Ways to start"><li>Step outside for…</li><li>Spend five minutes…</li></ul>
+    <button type="button" class="idea-toggle" aria-expanded="false" aria-controls="thenChips">Need an idea?</button>
+    <div class="chips gap-s" id="thenChips" role="group" aria-label="Step ideas" hidden></div>
+    <label class="label gap" for="ifText" id="ifLabel">If… your daily cue</label>
+    <input class="input gap-s" type="text" id="ifText" maxlength="70" autocomplete="off" spellcheck="false" enterkeyhint="done">
+    <p class="edit-nudge" id="ifNudge" aria-hidden="true" hidden>Edit to fit your day.</p>
+    <ul class="stems" aria-label="Ways to start"><li>After I finish…</li><li>When I sit down to…</li></ul>
+    <button type="button" class="idea-toggle" aria-expanded="false" aria-controls="ifChips">Need an idea?</button>
+    <div class="chips pills gap-s" id="ifChips" role="group" aria-label="Daily cues" hidden></div>
+    <div class="actions">
+      <button type="button" class="btn primary" id="stepNext" data-act="step-next" disabled>Set this step</button>
+      <button type="button" class="link" data-act="step-skip">No step today</button>
+    </div>
+  </section>
+
+  <!-- Step confidence ruler -->
+  <section class="scene" data-scene="confidence">
+    <h2 id="confQ" data-focus tabindex="-1">How doable does this step feel?</h2>
+    <p class="plan ready" id="confPlan"></p>
+    <div class="meter" id="confMeter"></div>
+    <p class="fine gap-s" id="confHint">7 or more and you’re done. Under 7, you’ll make it smaller first.</p>
+    <div class="voice" id="sustainBox" hidden>
+      <label class="label" for="sustainText" id="sustainQ">What puts it at 7 instead of lower?</label>
+      <input class="input gap-s" type="text" id="sustainText" maxlength="90" autocomplete="off" spellcheck="false" enterkeyhint="done">
+      <ul class="stems" aria-label="Ways to start"><li>It helps that…</li><li>I’ve done something like it when…</li></ul>
+    </div>
+    <div class="actions">
+      <button type="button" class="btn primary" id="confNext" data-act="confidence-next">Finish</button>
+    </div>
+  </section>
+
+  <!-- Below 7: make it smaller -->
+  <section class="scene" data-scene="simplify">
+    <h2 id="simplifyQ" data-focus tabindex="-1">Let’s make it smaller.</h2>
+    <p class="sub" id="simplifyP">What version of it would feel like a 7 or more?</p>
+    <label class="label gap" for="smallerText">Then I’ll…</label>
+    <input class="input gap-s" type="text" id="smallerText" maxlength="90" autocomplete="off" spellcheck="false" enterkeyhint="done">
+    <ul class="stems" aria-label="Ways to shrink it"><li>Just the first two minutes of it</li><li>Set it up now, do it later</li></ul>
+    <div class="actions">
+      <button type="button" class="btn primary" data-act="simplify-next">Check it again</button>
+      <button type="button" class="link" data-act="simplify-keep">Keep it as it is</button>
+    </div>
+  </section>
+
+  <!-- The result -->
+  <section class="scene page" data-scene="summary">
+    <p class="label" id="sumDate"></p>
+    <div class="hero" id="hero">
+      <p class="label hero-label" id="heroLabel"></p>
+      <h2 class="hero-text" id="sumH" data-focus tabindex="-1"></h2>
+      <p class="hero-note" id="sumLine"></p>
+    </div>
+    <div class="stats" id="sumStats"></div>
+    <dl class="reflect" id="sumReflect"></dl>
+    <figure class="keep"><img id="keepImg" alt="" width="1080" height="1350"></figure>
+    <div class="pair">
+      <button type="button" class="btn line" data-act="save-image">Save image</button>
+      <button type="button" class="btn line" data-act="copy">Copy session brief</button>
+    </div>
+    <p class="fine gap-s" id="keepHint" hidden>If nothing was saved, press and hold the image and choose Save.</p>
+    <div class="gap-s" id="copyFallback" hidden>
+      <label class="fine" for="copyText">Select this and copy it</label>
+      <textarea class="input" id="copyText" rows="9" readonly></textarea>
+    </div>
+    <div id="sumSupport"></div>
+    <div class="box" id="bridge" hidden>
+      <h3>Client mode</h3>
+      <p class="fine" id="bridgeNote"></p>
+      <div class="box-actions">
+        <button type="button" class="btn line" id="bridgeSave" data-act="bridge-save">Save to this device</button>
+        <button type="button" class="link" id="bridgeWipe" data-act="bridge-wipe" hidden>Delete saved check-ins</button>
+      </div>
+      <ol class="history" id="bridgeList"></ol>
+    </div>
+    <p class="fine gap" id="sumPrivacy">The session brief is a short plain-text summary, handy to paste into your notes or bring to a 1 to 1 session. Nothing from this check-in is kept. Close the tab and it’s gone.</p>
+    <p class="fine gap-s" id="sumMore"></p>
+    <div class="links start">
+      <button type="button" class="link" data-act="restart">Start a new check-in</button>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="scene page prose" data-scene="about">
+    <h2 data-focus tabindex="-1">How it works.</h2>
+    <ol class="how">
+      <li><span><strong>Prime.</strong> Start with one thing that went right today.</span></li>
+      <li><span><strong>Scale.</strong> Rate your headspace from 0 to 10, name what keeps it from being a point lower, and what would feel good enough today.</span></li>
+      <li><span><strong>Reset.</strong> Three to five rounds of cyclic sighing on the orb: two breaths in, one long breath out.</span></li>
+      <li><span><strong>Clarity.</strong> Picture tomorrow going a notch better, and spot the first small sign of it.</span></li>
+      <li><span><strong>Step.</strong> Choose what would move you half a point, tie it to a daily cue, and check how doable it feels. Or skip it, and notice one small thing worth keeping before tomorrow.</span></li>
+    </ol>
+    <p>There’s no score at the end to pass or fail. You rate how doable your step feels, and if it’s under 7 you make it smaller until it isn’t.</p>
+    <h3>Why it looks forward</h3>
+    <p>It’s built on solution-focused ideas. Instead of digging into problems, it looks at what’s already working, what a slightly better tomorrow would look like, and the smallest step towards it. Small and specific tends to beat big and vague.</p>
+    <h3>The gears</h3>
+    <p>The orb is for your breathing: hold it on the way in, let go on the way out. The two gears are a rough picture of two parts of your brain: the part that thinks things through, and the part that raises the alarm. Under pressure, the alarm tends to run on its own. As you settle, the arm swings the small gear in until the two mesh and turn together. They move with what you tell the check-in. They don’t measure anything.</p>
+    <h3>What it isn’t</h3>
+    <p>This is a self-help tool for adults. It isn’t therapy, medical advice or a diagnosis, and it doesn’t replace your GP or a mental health professional. If you are in crisis, please use the <button type="button" class="inline" data-go="support">support numbers</button>.</p>
+    <h3>Your privacy</h3>
+    <p>There is no account, no cookies, no tracking and no saving. What you write never leaves this page, and it’s gone when you close the tab. The page is locked so it can’t send anything over the internet.</p>
+    <p>You can add it to your home screen. After that it opens like an app and works with no signal at all, because your phone keeps its own copy of the page. Still nothing is saved or sent.</p>
+    <p>If you work with Bluzen 1 to 1, you may be given a client link. Only that link offers to save check-ins, in this browser only, and only when you choose to.</p>
+    <h3>Who made it</h3>
+    <p>Bluzen is a hypnotherapy and nervous system regulation practice in the North West of Ireland, run by Darragh, a solution-focused hypnotherapist. Bluzen exists to bring people support before crisis, not after.</p>
+    <p><a class="inline" id="homeLink" target="_top" hidden>Visit Bluzen</a></p>
+  </section>
+
+  </div>
+</main>
+
+<footer class="status" id="foot">
+  <span class="led" aria-hidden="true"></span>
+  <span class="status-t">Zero accounts. Nothing saved or sent.</span>
+  <button type="button" class="ib" id="themeBtn" aria-label="Switch to light">
+    <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="5.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 2.75a5.25 5.25 0 0 1 0 10.5Z" fill="currentColor"/></svg>
+  </button>
+</footer>
+</div>
+
+<!-- Support drawer -->
+<div class="drawer" id="drawer" hidden>
+  <div class="drawer-back" data-act="drawer-close"></div>
+  <section class="drawer-sheet" id="drawerSheet" role="dialog" aria-modal="true" aria-labelledby="drawerH" tabindex="-1">
+    <div class="drawer-head">
+      <h2 id="drawerH">Talk to someone</h2>
+      <button type="button" class="ib" data-act="drawer-close" aria-label="Close">
+        <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <p class="sub">Free and confidential, North and South. You don’t need to be in crisis to ring or text.</p>
+    <div id="supportBody"></div>
+  </section>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<template id="tplSupport">
+  <dl class="support">
+    <div><dt>In an emergency</dt><dd><a class="big" href="tel:999">999</a><a class="big" href="tel:112">112</a><span>If you or someone else is in immediate danger. Both work North and South.</span></dd></div>
+    <div><dt>Samaritans<span class="where">North and South</span></dt><dd><a class="big" href="tel:116123">116 123</a><span>Free, at any hour.</span></dd></div>
+    <div><dt>Lifeline<span class="where">Northern Ireland</span></dt><dd><a class="big" href="tel:08088088000">0808 808 8000</a><span>Free, at any hour.</span></dd></div>
+    <div><dt>Shout<span class="where">Northern Ireland</span></dt><dd><a class="big" href="sms:85258?body=SHOUT">Text SHOUT to 85258</a><span>Free text support, at any hour, from anywhere in the UK.</span></dd></div>
+    <div><dt>Pieta<span class="where">Republic of Ireland</span></dt><dd><a class="big" href="tel:1800247247">1800 247 247</a><span>Free, at any hour. Or text HELP to 51444 (standard text rates).</span></dd></div>
+    <div><dt>Text About It<span class="where">Republic of Ireland</span></dt><dd><a class="big" href="sms:50808?body=HELLO">Text HELLO to 50808</a><span>Free text support, at any hour.</span></dd></div>
+    <div><dt>Your GP</dt><dd><span>A good first step for anything that has been going on for a while.</span></dd></div>
+  </dl>
+</template>
+
+<script>
+/* ==========================================================================
+   The head and gears
+   The head is traced from the Bluzen logo. Inside it sit two spur gears with
+   the same tooth size (module 6): the executive gear, 10 teeth, on a fixed
+   axle, and the alarm gear, 8 teeth, on a swing arm. As grounding completes,
+   the arm swings the alarm gear in until the centre distance is exactly
+   r1 + r2, where the pitch circles touch, and it locks in phase, turning
+   10/8 as fast the other way round. The teeth are shaped so they never touch
+   at that distance (checked at every angle: 1.5 units of clearance).
+
+   Everything that moves is on a damped spring: the arm, the scale detents on
+   the executive gear, and a slight swivel of the head at the base of the neck.
+
+   It has three looks, which follow from what the page asks of it:
+     neutral  at rest: apart, all but still
+     active   responding: the alarm gear runs on its own, then falls into step
+     synced   in step: meshed, phase locked and turning quietly together
+   Drawing units are the logo's pixels x 0.4.
+   ========================================================================== */
+const HG = (() => {
+  'use strict';
+  const RAD = Math.PI / 180;
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const ramp = (from, to, x) => { const t = clamp((x - from) / (to - from), 0, 1); return t * t * (3 - 2 * t); };
+  const ease = (dt, seconds) => 1 - Math.exp(-dt / seconds);
+  const wrap = (a, period) => { a = ((a % period) + period) % period; return a > period / 2 ? a - period : a; };
+  const motion = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+  const still = () => !!motion.matches;
+
+  const HEAD = { main: 'M51.4 232.8L51.4 217.4C51.4 207.9 54.1 188.8 51.2 180.8C49.3 175.5 45.5 171.2 42.3 166.6C27.9 145.6 17.3 133.8 15.2 107.3C14.9 103 15.6 98.8 16 94.6C17.2 81.6 22.3 69.9 29.6 59.2C62.6 10.7 138.3 1.6 182.2 41.4C192.7 50.9 200.8 63.4 202 77.7C202.7 86 199.8 105.5 200.9 109.5C203.8 120.2 220.7 134.2 220.8 144.8C220.8 154 206.4 152.2 203.4 159.4C200.2 167.3 202.3 197.9 195.4 207.9C189.9 215.8 178.4 216 169.8 216C165.8 216 155.6 216.1 152.2 215.6C150.4 215.3 148.6 214.5 146.8 214.1C129 209.8 122.2 207.8 106.2 198.4', neck: 'M150.9 215.3L150.9 232.8' };
+  const VIEWBOX = '6 7 224 235';
+  const NECK = [101.15, 232.8];       // the base of the neck, where the head swivels
+
+  // Pitch radius is module x teeth / 2. Tips stand 0.45 modules above it, roots sit 0.8 below.
+  // tipHalf and rootHalf: half the angle a tooth covers at its tip and at its root.
+  const MODULE = 6;
+  const spur = (teeth, x, y, turn, hub) => {
+    const r = MODULE * teeth / 2, pitch = 360 / teeth;
+    return { teeth, pitchR: r, tip: r + 0.45 * MODULE, root: r - 0.8 * MODULE, tipHalf: 0.11 * pitch, rootHalf: 0.35 * pitch, hub, x, y, turn };
+  };
+  const BIG = spur(10, 68.84, 93.56, 0, 12.6);       // the executive gear, on a fixed axle
+  const SMALL = spur(8, 111.52, 61.52, 9, 9);        // the alarm gear, on the arm; x, y is where it sits in the logo
+
+  const AXIS = Math.atan2(SMALL.y - BIG.y, SMALL.x - BIG.x);
+  const AXIS_DEG = AXIS / RAD;
+  const UX = Math.cos(AXIS), UY = Math.sin(AXIS);
+  const MESH = BIG.pitchR + SMALL.pitchR;   // d sync = r1 + r2: the pitch circles touch
+  const CLEAR = BIG.tip + SMALL.tip;        // any closer than this and the teeth overlap, so the two can only turn together
+  const REST = CLEAR + 1.2;                 // at rest: sitting just clear of each other
+  const RATIO = BIG.teeth / SMALL.teeth;
+  const PITCH = 360 / SMALL.teeth;          // one tooth of the alarm gear, in degrees
+  const BIG_PITCH = 360 / BIG.teeth;
+  const SPEED = 12;                         // the executive gear in working order, in degrees a second
+  const DETENT = BIG_PITCH / 2;             // one point on the 0 to 10 scale turns the executive gear half a tooth
+
+  // The swing arm: a fixed pivot off to the side of the alarm gear. The arm keeps its length,
+  // so as it swings, the alarm gear moves on an arc that brings it in towards the executive gear.
+  const ARM = 32;
+  const S_MESH = [BIG.x + UX * MESH, BIG.y + UY * MESH];
+  const PIVOT = [S_MESH[0] - UY * ARM, S_MESH[1] + UX * ARM];   // perpendicular to the axis, below and to the right
+  function smallAt(gap) {
+    // where the circle of radius gap round the executive axle meets the circle of radius ARM round the pivot
+    const dx = PIVOT[0] - BIG.x, dy = PIVOT[1] - BIG.y, d = Math.hypot(dx, dy);
+    const a = (gap * gap - ARM * ARM + d * d) / (2 * d);
+    const hh = Math.sqrt(Math.max(0, gap * gap - a * a));
+    const mx = BIG.x + dx * a / d, my = BIG.y + dy * a / d;
+    const c1 = [mx + hh * dy / d, my - hh * dx / d], c2 = [mx - hh * dy / d, my + hh * dx / d];
+    return Math.hypot(c1[0] - S_MESH[0], c1[1] - S_MESH[1]) < Math.hypot(c2[0] - S_MESH[0], c2[1] - S_MESH[1]) ? c1 : c2;
+  }
+  // The angle of the line from the executive axle to the alarm gear changes a little as the arm swings.
+  const lineDeg = gap => { const s = smallAt(gap); return Math.atan2(s[1] - BIG.y, s[0] - BIG.x) / RAD; };
+
+  // The outline of a gear: flat-topped teeth with softened corners, as in the logo.
+  function gearPath({ teeth, tip, root, tipHalf, rootHalf }, soften = 0.9) {
+    const at = (r, deg) => [r * Math.cos(deg * RAD), r * Math.sin(deg * RAD)];
+    const f = p => p[0].toFixed(2) + ' ' + p[1].toFixed(2);
+    const pts = [];
+    for (let k = 0; k < teeth; k++) {
+      const c = k * 360 / teeth;
+      pts.push(at(root, c - rootHalf), at(tip, c - tipHalf), at(tip, c + tipHalf), at(root, c + rootHalf));
+    }
+    const towards = (p, q) => {
+      const len = Math.hypot(q[0] - p[0], q[1] - p[1]), t = Math.min(soften, len / 2) / len;
+      return [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t];
+    };
+    let d = '';
+    pts.forEach((corner, i) => {
+      const before = pts[(i + pts.length - 1) % pts.length], after = pts[(i + 1) % pts.length];
+      d += (i ? 'L' : 'M') + f(towards(corner, before)) + 'Q' + f(corner) + ' ' + f(towards(corner, after));
+    });
+    return d + 'Z';
+  }
+
+  // Phase lock: where the alarm gear has to sit for its gaps to meet the executive gear's teeth,
+  // measured along the line between their centres at the given distance.
+  const meshAngle = (a1, gap = MESH) => { const L = lineDeg(gap); return L + 180 - PITCH / 2 - (a1 - L) * RATIO; };
+  const centres = gap => ({ big: [BIG.x, BIG.y], small: smallAt(gap) });
+
+  // A still picture for a given amount of progress, 0 to 1. Used with reduced motion and for the keepsake card.
+  function poseFor(p, a1 = BIG.turn) {
+    const gap = lerp(REST, MESH, ramp(0.7, 0.98, p));
+    const a2 = p >= 0.5 || gap < CLEAR ? meshAngle(a1, gap) : SMALL.turn;
+    return { gap, a1, a2, centres: centres(gap), look: p > 0.96 ? 'synced' : 'active' };
+  }
+
+  // How the alarm gear runs on its own before the two are in step. a: strain, 0 to 1.
+  // Speeds are multiples of its working speed.
+  const tickTock = t => { const ph = (t / 0.55) % 1; return ph < 0.26 ? (1 - Math.cos(2 * Math.PI * ph / 0.26)) / 0.26 : 0; };
+  const STYLE = {
+    over: { free: a => 0.15 + 2.4 * a, big: () => 0 },
+    wound: { free: a => 0.15 + 1.4 * a, big: () => 0.04, jerk: a => Math.min(1, 0.25 + a) },
+    low: { free: a => 0.3 - 0.22 * a, big: a => 0.18 * (1 - a), dim: a => 0.5 * a },
+    steady: { free: a => 0.3 + 0.9 * a, big: () => 0.3 }
+  };
+
+  // A damped spring, stepped in small slices so it stays stable on slow frames.
+  function spring(s, target, k, c, dt) {
+    let n = Math.max(1, Math.ceil(dt / 0.008));
+    const hh = dt / n;
+    while (n--) { s.v += (k * (target - s.x) - c * s.v) * hh; s.x += s.v * hh; }
+  }
+
+  function create(svg) {
+    const one = sel => svg.querySelector(sel);
+    one('[data-head="main"]').setAttribute('d', HEAD.main);
+    one('[data-head="neck"]').setAttribute('d', HEAD.neck);
+    const body = one('.hg-body'), big = one('[data-gear="big"]'), small = one('[data-gear="small"]'), title = one('title');
+    [[big, BIG], [small, SMALL]].forEach(([node, g]) => {
+      node.querySelector('path').setAttribute('d', gearPath(g));
+      node.querySelector('circle').setAttribute('r', String(g.hub));
+    });
+    const place = (node, at, turn) => node.setAttribute('transform', `translate(${at[0].toFixed(2)} ${at[1].toFixed(2)}) rotate(${(turn % 360).toFixed(2)})`);
+    const CAPTIONS = { neutral: 'At rest', out: 'Out of step', coming: 'Coming into step', synced: 'In step' };
+
+    const G = {
+      mode: 'neutral', look: '', caption: '',
+      kind: 'over', arousal: 0, target: 0, pv: 0,
+      a1: BIG.turn, a2: SMALL.turn, v1: 0, v2: 0, pace: 0, hold: 0, slip: 0,
+      gapS: { x: REST, v: 0 },        // the arm, as a spring on the centre distance
+      tiltS: { x: 0, v: 0 }, tilt: 0, // the swivel at the base of the neck, in degrees
+      detent: null, detentBase: 0,    // when set, the executive gear is held at a notch for that scale value
+      breath: 0, torque: 0, viscous: 0.7, kick: 0, dim: 0, shownDim: -1, idle: 1, clock: 0, running: false, last: 0,
+      onlook: null,
+      get gap() { return this.gapS.x; },
+
+      // At rest. Passing 'synced' instead goes straight to in step.
+      set(mode) {
+        if (mode === 'synced') { this.drive({ p: 1 }); return; }
+        this.mode = 'neutral';
+        this.target = 0;
+        this.breath = 0;
+        this.detent = null;
+        this.changed();
+      },
+      // Responding. p: how far into step, 0 to 1. arousal: strain, 0 to 1.
+      drive({ p = this.target, arousal = this.arousal, kind = this.kind } = {}) {
+        this.mode = 'driven';
+        this.target = clamp(+p || 0, 0, 1);
+        this.arousal = clamp(+arousal || 0, 0, 1);
+        this.kind = STYLE[kind] ? kind : 'over';
+        this.changed();
+      },
+      // The 0 to 10 scale turns the executive gear notch by notch. Pass null to let it run again.
+      notch(v) {
+        if (v == null) { this.detent = null; return; }
+        if (this.detent == null) this.detentBase = this.a1 - v * DETENT;
+        this.detent = v;
+        if (still()) { this.a1 = this.detentBase + v * DETENT; this.pose(); return; }
+        this.wake();
+      },
+      // A slight swivel of the head at the base of the neck: positive bows it, negative lifts it.
+      posture(deg) {
+        this.tilt = clamp(+deg || 0, -1.5, 1.5);
+        if (still()) { this.tiltS.x = this.tilt; this.tiltS.v = 0; this.draw(); return; }
+        this.wake();
+      },
+      // A small turn of the executive gear, as if something clicked into place.
+      tick(deg = BIG_PITCH / 4) {
+        if (still() || this.detent != null) return;
+        this.kick += deg;
+        this.wake();
+      },
+      // A nudge of speed that dies away on its own: a chip tapped, a few letters typed.
+      impulse(dv = 30) {
+        if (still() || this.detent != null) return;
+        this.v1 += dv;
+        this.wake();
+      },
+      // The orb: holding winds the executive gear up with a gentle torque (degrees a second, per second);
+      // letting go hands it to a thicker viscosity, which slows it back to its working pace.
+      breathe(torque, viscous = 0.7) {
+        this.torque = still() ? 0 : torque;
+        this.viscous = viscous;
+        if (torque) this.wake();
+      },
+      changed() {
+        if (still()) { this.pose(); return; }
+        this.report();
+        this.wake();
+      },
+
+      // With reduced motion, each state is a still picture.
+      pose() {
+        if (this.mode === 'neutral') {
+          this.pv = 0; this.a2 = SMALL.turn; this.gapS.x = REST; this.dim = 0;
+          if (this.detent == null) this.a1 = BIG.turn;
+        } else {
+          this.pv = this.target;
+          if (this.detent != null) this.a1 = this.detentBase + this.detent * DETENT;
+          const P = poseFor(this.pv, this.a1);
+          this.gapS.x = P.gap; this.a2 = P.a2;
+          const st = STYLE[this.kind];
+          this.dim = st.dim ? st.dim(this.arousal) * (1 - ramp(0.1, 0.6, this.pv)) : 0;
+        }
+        this.gapS.v = 0; this.tiltS.x = this.tilt; this.tiltS.v = 0;
+        this.v1 = this.v2 = this.pace = this.slip = this.kick = this.torque = 0;
+        this.hold = this.pv >= 0.5 ? 1 : 0;
+        this.idle = 0;
+        this.report();
+        this.draw();
+      },
+
+      step(dt) {
+        this.clock += dt;
+        const driven = this.mode !== 'neutral';
+
+        // 1. Progress eases towards where it has been asked to be: into step slowly, out of it a little faster.
+        const goal = driven ? this.target : 0;
+        this.pv += (goal - this.pv) * ease(dt, goal > this.pv ? 1.3 : 0.8);
+        const st = STYLE[this.kind], a = this.arousal, p = this.pv;
+        let spinBig = 0, own = 0, steer = 0, want = REST, dim = 0;
+        if (driven) {
+          own = lerp(st.free(a), 1, ramp(0.12, 0.45, p));       // the alarm gear eases from its own pace to the working pace
+          spinBig = lerp(st.big(a), 1, ramp(0.04, 0.4, p));
+          steer = ramp(0.4, 0.6, p);                             // then it is steered into phase
+          want = lerp(REST, MESH, ramp(0.7, 0.98, p));           // then the arm swings it in
+          dim = st.dim ? st.dim(a) * (1 - ramp(0.1, 0.6, p)) : 0;
+        }
+
+        // 2. The executive gear: held at a scale notch on a spring, or turning, plus any click from a tap.
+        const before = this.a1;
+        if (this.detent != null) {
+          const s = { x: this.a1, v: this.v1 };
+          spring(s, this.detentBase + this.detent * DETENT, 140, 15, dt);    // a little under critical damping: it settles into the notch
+          this.a1 = s.x; this.v1 = s.v;
+        } else {
+          this.v1 += this.torque * dt;                                       // winding up while the orb is held
+          this.v1 += (SPEED * spinBig - this.v1) * ease(dt, this.viscous);   // and a viscous pull back to its pace
+          let k = 0;
+          if (this.kick) {
+            k = this.kick * ease(dt, 0.09);
+            this.kick -= k;
+            if (Math.abs(this.kick) < 0.02) { k += this.kick; this.kick = 0; }
+          }
+          this.a1 += this.v1 * dt + k;
+        }
+        const turned = dt > 0 ? (this.a1 - before) / dt : 0;     // how fast it actually turned this frame
+
+        // 3. The alarm gear.
+        const offBy = () => wrap(this.a2 - meshAngle(this.a1, this.gap), PITCH);
+        if (this.gap < CLEAR) {
+          // Its teeth are between the executive gear's teeth: phase locked, it can only follow.
+          this.slip *= Math.exp(-dt / 0.12);
+          this.a2 += this.slip - offBy();
+          this.v2 = this.pace = -turned * RATIO;
+          this.hold = 1;
+        } else {
+          // Clear of the executive gear: it runs at its own pace until it is steered into phase.
+          this.hold += (steer - this.hold) * ease(dt, 0.5);
+          this.pace += (-SPEED * RATIO * own - this.pace) * ease(dt, 0.6);
+          const jerk = driven && st.jerk ? st.jerk(a) * (1 - this.hold) : 0;
+          const free = this.pace * (jerk ? lerp(1, tickTock(this.clock), jerk) : 1);
+          const inStep = -turned * RATIO - clamp(2.2 * offBy(), -16, 16);
+          this.v2 = lerp(free, inStep, this.hold);
+          this.a2 += this.v2 * dt;
+          this.slip = offBy();
+        }
+
+        // 4. The arm, on a spring. It only swings the gear in once the teeth line up, and never past r1 + r2.
+        const linedUp = Math.abs(offBy()) < 1.2 && Math.abs(this.v2 + turned * RATIO) < 2.4;
+        if (want < CLEAR + 0.4 && this.gap >= CLEAR && !linedUp) want = CLEAR + 0.4;
+        spring(this.gapS, want, 26, 10.2, dt);                    // critically damped: no overshoot
+        if (this.gapS.x < MESH) { this.gapS.x = MESH; this.gapS.v = Math.max(0, this.gapS.v); }
+        if (want >= CLEAR && this.gapS.x < CLEAR && !linedUp && this.gapS.v < 0) this.gapS.v = 0;
+        this.dim += (dim - this.dim) * ease(dt, 0.6);
+
+        // 5. Posture, on a soft spring.
+        spring(this.tiltS, this.tilt, 18, 7, dt);
+
+        // 6. At rest, a slow drift that is barely there.
+        const resting = !driven && this.detent == null && Math.abs(this.v1) < 0.4 && Math.abs(this.v2) < 0.4 && this.gap > CLEAR;
+        this.idle += ((resting ? 1 : 0) - this.idle) * ease(dt, 0.9);
+        this.report();
+      },
+
+      report() {
+        if (Math.abs(this.dim - this.shownDim) > 0.004) { this.shownDim = this.dim; svg.style.setProperty('--hg-dim', this.dim.toFixed(3)); }
+        const look = this.mode === 'neutral' ? 'neutral' : (this.pv > 0.96 && this.gap < MESH + 0.5) ? 'synced' : 'active';
+        const caption = CAPTIONS[look === 'active' ? (this.pv >= 0.4 ? 'coming' : 'out') : look];
+        if (look === this.look && caption === this.caption) return;
+        this.look = look;
+        this.caption = caption;
+        svg.setAttribute('data-state', look);
+        if (title) title.textContent = `A head in profile with two gears inside. ${caption}.`;
+        if (this.onlook) this.onlook(look, caption);
+      },
+
+      draw() {
+        const drift = this.idle * clamp((this.gap - CLEAR) / (REST - CLEAR), 0, 1);
+        const d1 = 1.2 * Math.sin(this.clock * 2 * Math.PI / 11) * drift;
+        const d2 = 1.6 * Math.sin(this.clock * 2 * Math.PI / 8.3 + 1.3) * drift;
+        const at = centres(this.gap);
+        place(big, at.big, this.a1 + d1);
+        place(small, at.small, this.a2 + d2);
+        if (body) body.setAttribute('transform', `rotate(${this.tiltS.x.toFixed(3)} ${NECK[0]} ${NECK[1]})`);
+      },
+
+      wake() {
+        if (this.running || still()) return;
+        this.running = true;
+        this.last = performance.now();
+        requestAnimationFrame(t => this.frame(t));
+      },
+      frame(now) {
+        if (still()) { this.running = false; this.pose(); return; }
+        const dt = Math.min(0.05, Math.max(0, (now - this.last) / 1000));
+        this.last = now;
+        this.step(dt);
+        this.draw();
+        requestAnimationFrame(t => this.frame(t));
+      }
+    };
+
+    G.report();
+    G.draw();
+    G.wake();
+    const onMotion = () => { if (still()) G.pose(); else G.wake(); };
+    if (motion.addEventListener) motion.addEventListener('change', onMotion);
+    else if (motion.addListener) motion.addListener(onMotion);
+    return G;
+  }
+
+  return { create, gearPath, meshAngle, centres, poseFor, smallAt, HEAD, VIEWBOX, NECK, PIVOT, BIG, SMALL, MESH, CLEAR, REST, RATIO, PITCH, DETENT, AXIS_DEG };
+})();
+
+</script>
+<script>
+(() => {
+'use strict';
+
+/* ---------- Settings: the only lines you should need to change ---------- */
+const SETTINGS = {
+  home: '/',   // where "Visit Bluzen" on the How it works page goes. Use '' to hide the link.
+  quiz: '',    // optional: full link to the Bluzen quiz, offered at the end of a check-in
+  call: ''     // optional: full link to book a free 15 minute call, offered at the end
+};
+
+/* ==========================================================================
+   Small helpers
+   ========================================================================== */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const root = document.documentElement;
+const app = $('#app');
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const motionQuery = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+const still = () => !!motionQuery.matches;
+const buzz = ms => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* not supported */ } };
+const two = n => String(n).padStart(2, '0');
+const clean = v => String(v || '').trim().replace(/\s+/g, ' ');
+// "Step outside" reads as "then I’ll step outside". Leaves names and "I" alone.
+const lower = t => (/^[A-Z][a-z’']/.test(t) && !/^I[\s’']/.test(t) ? t.charAt(0).toLowerCase() + t.slice(1) : t);
+const unstop = t => t.replace(/[.\s]+$/, '');
+
+// Builds an element. Text always goes in as text, never as HTML.
+function h(tag, props, ...kids) {
+  const n = document.createElement(tag);
+  if (props) for (const k in props) {
+    const v = props[k];
+    if (v == null || v === false) continue;
+    if (k === 'class') n.className = v;
+    else if (k === 'text') n.textContent = v;
+    else if (k === 'on') for (const ev in v) n.addEventListener(ev, v[ev]);
+    else n.setAttribute(k, v === true ? '' : v);
+  }
+  for (const kid of kids.flat()) if (kid != null && kid !== false) n.append(kid);
+  return n;
+}
+const fmtDay = t => new Date(t).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+const fmtShort = t => new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+const fmtTime = t => new Date(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+let toastTimer = 0;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+function pop(el) { el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
+
+/* ==========================================================================
+   Wording
+   ========================================================================== */
+// Arrival: 0 is the opposite of 10, which is steady, clear and moving forward.
+const WORDS = ['Stuck', 'Very rough', 'Very rough', 'Rough', 'Rough', 'Middling', 'Middling', 'Fairly clear', 'Fairly clear', 'Clear', 'Clear and moving'];
+const DOABLE = ['Not doable', 'Very unlikely', 'Unlikely', 'Unlikely', 'A stretch', 'Maybe', 'Maybe', 'Doable', 'Very doable', 'Very doable', 'Definitely'];
+const PRIMES = ['Got up and got going', 'A decent conversation', 'Ate something good', 'Got something done', 'Got outside', 'Had a laugh', 'Showed up when it was hard'];
+const ANCHORS = ['The people around me', 'I’ve come through days like this before', 'Some sleep, even a bit', 'My routine', 'Getting outside', 'Having something to do', 'Plain stubbornness'];
+const ENOUGH = ['Getting through the day', 'One thing done', 'A bit of headspace', 'A decent evening', 'Going easy on myself'];
+const SIGNS = ['I get up without hitting snooze', 'I eat a proper breakfast', 'I reply to that message', 'I get outside before lunch', 'I’m easier on the people around me', 'I start the day with a plan'];
+const THENS = ['Step outside for five minutes', 'Drink a glass of water', 'Write down tomorrow’s one thing', 'Put the phone in another room', 'Message one person', 'Eat something proper', 'Go to bed half an hour earlier'];
+const IFS = ['I finish my dinner', 'I put the kettle on', 'I sit into the car', 'I close the laptop', 'It hits 9pm', 'I get in the door'];
+// When no step is set: a solution-focused observation task.
+const NOTICE = 'Notice one small thing worth keeping before tomorrow.';
+// Cyclic sighing: a breath in, a short top-up breath on top, then a long breath out.
+// On the orb, the breath in fills it to the dotted ring and the top-up fills the rest.
+// The breath out lengthens over the rounds: pace first, then lead.
+const SIGH = { in: 2.4, top: 1.0, out: [5, 5.5, 6, 6.5, 6.5], gap: 0.8 };
+const ROUND_WORDS = { 3: 'Three', 4: 'Four', 5: 'Five' };
+
+/* ==========================================================================
+   The head and gears (the HG block above), and the light or dark switch
+   ========================================================================== */
+const Gears = HG.create($('#hg'));
+window.BluzenGears = Gears;      // handy for trying states from the console
+
+// Dark first. The switch lasts as long as the tab, because nothing is stored.
+const Theme = {
+  current: 'dark',
+  apply() {
+    const light = this.current === 'light';
+    if (light) root.setAttribute('data-mode', 'light'); else root.removeAttribute('data-mode');
+    $('#themeBtn').setAttribute('aria-label', light ? 'Switch to dark' : 'Switch to light');
+    const meta = $('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', light ? '#E9EAED' : '#0B0D10');
+    if (Nav.current === 'summary') Keepsake.render();
+  },
+  toggle() { this.current = this.current === 'light' ? 'dark' : 'light'; this.apply(); }
+};
+
+/* ==========================================================================
+   This check-in. It lives in this variable only, and is gone with the tab.
+   (The one exception is client mode, below, and only when the person chooses to save.)
+   ========================================================================== */
+const fresh = () => ({
+  prime: '', before: null, calm: 0,
+  anchor: '', enough: '',
+  rounds: 0, reset: '',
+  sign: '',
+  then: '', cue: '', conf: null, shrunk: false, sustain: '',
+  double: true,
+  finished: false,
+  startedAt: 0, endedAt: 0, risk: false
+});
+let S = fresh();
+
+// How rough it is, from 0 (clear) to 1 (stuck). Drives how hard the alarm gear runs on its own.
+const strain = v => (10 - v) / 10;
+// Between the active moments, the gears show how settled the person has got so far.
+function rest() {
+  if (S.before == null) { Gears.set('neutral'); return; }
+  Gears.drive({ kind: 'over', arousal: strain(S.before), p: S.calm });
+}
+const an = n => (n === 8 || n === 11 || n === 18 ? `an ${n}` : `a ${n}`);   // "an 8", "a 7"
+const halfUp = v => (v >= 10 ? null : `${v}.5`);
+const planText = () => (S.then && S.cue ? `If ${lower(unstop(S.cue))}, then I’ll ${lower(unstop(S.then))}.` : '');
+const holding = () => S.anchor || '';
+
+/* A gentle safety net. If someone writes something that suggests they are at risk,
+   the support numbers appear at the top of the page. Nothing is sent anywhere. */
+const RISK = /\b(?:suicid\w*|kill(?:ing)? myself|end(?:ing)? (?:my life|it all)|take my (?:own )?life|want to die|wish i (?:was|were) dead|better off (?:dead|without me)|don'?t want to (?:be here|be alive|wake up|live(?! (?:here|there|in|with|at|near|like|on)\b))|no (?:reason|point) (?:to live|in living|in going on)|self[- ]?harm\w*|hurt(?:ing)? myself|harm(?:ing)? myself|can'?t go on(?: like this)?(?: any ?more| any longer)?(?! \w))\b/i;
+function riskCheck(text) {
+  if (!text || S.risk) return;
+  if (RISK.test(text.replace(/[‘’]/g, "'"))) {
+    S.risk = true;
+    $('#riskBox').hidden = false;
+    $('#supportBtn').classList.add('nudge');
+  }
+}
+
+/* ==========================================================================
+   Moving between scenes
+   ========================================================================== */
+const STAGES = ['prime', 'scale', 'reset', 'sign', 'step'];
+const FLOW = ['prime', 'scale', 'anchor', 'reset', 'sign', 'step', 'confidence', 'simplify', 'summary'];
+
+function paintChrome(view) {
+  const stage = Views[view].stage, ol = $('#stages');
+  ol.hidden = !stage;
+  if (stage) {
+    const at = stage === 'check' ? STAGES.length : STAGES.indexOf(stage);
+    $$('li', ol).forEach((li, i) => {
+      li.classList.toggle('done', i < at);
+      li.classList.toggle('now', i === at);
+      if (i === at) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
+    });
+  }
+  $('#backBtn').hidden = view === 'welcome';
+  app.dataset.view = view;
+  // The head lifts a little as the check-in goes on: bowed 1.5 degrees at the start, lifted 1.5 by the end.
+  const at = stage === 'check' ? STAGES.length - 1 : STAGES.indexOf(stage);
+  Gears.posture(stage ? 1.5 - 3 * at / (STAGES.length - 1) : 0);
+}
+
+const Nav = {
+  trail: ['welcome'], pos: 0, ok: false, current: '',
+  init() {
+    // The browser's own back button steps back through the check-in instead of leaving the page.
+    try { history.replaceState({ bz: 0 }, ''); this.ok = !!(history.state && history.state.bz === 0); } catch (e) { this.ok = false; }
+    window.addEventListener('popstate', e => {
+      if (!e.state || typeof e.state.bz !== 'number') return;
+      const to = clamp(e.state.bz, 0, this.trail.length - 1), dir = to < this.pos ? 'back' : 'fwd';
+      this.pos = to;
+      this.render(this.trail[this.pos], false, dir);
+    });
+    this.render('welcome', true);
+  },
+  go(view) {
+    this.trail = this.trail.slice(0, this.pos + 1);
+    this.trail.push(view);
+    this.pos++;
+    if (this.ok) { try { history.pushState({ bz: this.pos }, ''); } catch (e) { this.ok = false; } }
+    this.render(view, false, 'fwd');
+  },
+  back() {
+    if (this.pos <= 0) return;
+    if (this.ok && history.state && history.state.bz === this.pos) { history.back(); return; }
+    this.pos--;
+    this.render(this.trail[this.pos], false, 'back');
+  },
+  render(view, first, dir = 'fwd') {
+    if (FLOW.includes(view) && view !== 'prime' && view !== 'scale' && S.before == null) view = 'scale';
+    if (['confidence', 'simplify'].includes(view) && !planText()) view = 'step';
+    if (view === 'summary' && !S.finished) view = planText() ? 'confidence' : 'step';
+    if (!Views[view]) view = 'welcome';
+    this.trail[this.pos] = view;
+    const prev = this.current;
+    if (prev && Views[prev].leave) Views[prev].leave();
+    this.current = view;
+    app.dataset.dir = dir;
+    $$('.scene').forEach(sc => {
+      const on = sc.dataset.scene === view;
+      sc.classList.toggle('on', on);
+      sc.classList.remove('enter');
+      if (on && !first && !still()) { void sc.offsetWidth; sc.classList.add('enter'); }
+    });
+    paintChrome(view);
+    if (Views[view].enter) Views[view].enter();
+    if (!first) {
+      window.scrollTo(0, 0);
+      const head = $('.scene.on [data-focus]');
+      if (head) { try { head.focus({ preventScroll: true }); } catch (e) { /* older browsers */ } }
+    }
+  }
+};
+
+/* ==========================================================================
+   The 0 to 10 scale
+   Ten segments with a detent at every number. Drag along it, tap a point,
+   use the − and + buttons (they repeat while held) or the arrow keys.
+   ========================================================================== */
+class Meter {
+  constructor(el, labelId, wordId) {
+    this.value = 5; this.start = null; this.onchange = null; this.dragging = false; this.timer = 0;
+    const strip = n => h('span', { class: 'odo-strip' }, Array.from({ length: n }, (_, i) => h('span', { text: String(i) })));
+    this.tens = h('span', { class: 'odo-d' }, strip(2));
+    this.ones = h('span', { class: 'odo-d' }, strip(10));
+    this.word = h('span', { class: 'm-word', id: wordId });
+    this.from = h('span', { class: 'm-from', hidden: true });
+    this.track = h('div', { class: 'm-track', role: 'slider', tabindex: '0', 'aria-labelledby': labelId, 'aria-valuemin': '0', 'aria-valuemax': '10', 'aria-orientation': 'horizontal' });
+    this.segs = Array.from({ length: 10 }, (_, i) => h('span', { class: 'm-seg', style: `--i:${i}` }));
+    this.mark = h('span', { class: 'm-start', hidden: true });
+    this.thumb = h('span', { class: 'm-thumb' });
+    this.track.append(...this.segs, this.mark, this.thumb);
+    this.nums = Array.from({ length: 11 }, (_, i) => h('span', { style: `--v:${i}`, text: String(i) }));
+    this.lo = h('span');
+    this.hi = h('span');
+    const jog = (d, glyph) => h('button', { type: 'button', class: 'jog', tabindex: '-1', 'aria-hidden': 'true', 'data-jog': String(d), text: glyph });
+    el.append(
+      h('div', { class: 'm-read' },
+        h('span', { class: 'odo', 'aria-hidden': 'true' }, this.tens, this.ones),
+        h('span', { class: 'm-of', 'aria-hidden': 'true', text: '/10' }),
+        h('span', { class: 'm-side' }, this.word, this.from)),
+      h('div', { class: 'm-row' }, jog(-1, '−'), this.track, jog(1, '+')),
+      h('div', { class: 'm-ticks', 'aria-hidden': 'true' }, this.nums),
+      h('div', { class: 'm-ends', 'aria-hidden': 'true' }, this.lo, this.hi)
+    );
+
+    const fromX = e => { const r = this.track.getBoundingClientRect(); return Math.round(clamp((e.clientX - r.left) / r.width, 0, 1) * 10); };
+    this.track.addEventListener('pointerdown', e => {
+      if (e.button) return;
+      e.preventDefault();
+      try { this.track.setPointerCapture(e.pointerId); } catch (x) { /* fine without it */ }
+      try { this.track.focus({ preventScroll: true }); } catch (x) { /* older browsers */ }
+      this.dragging = true;
+      this.track.classList.add('dragging');
+      this.set(fromX(e), true);
+    });
+    this.track.addEventListener('pointermove', e => { if (this.dragging) this.set(fromX(e), true); });
+    ['pointerup', 'pointercancel'].forEach(type => this.track.addEventListener(type, () => { this.dragging = false; this.track.classList.remove('dragging'); }));
+    this.track.addEventListener('keydown', e => {
+      const steps = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1, PageUp: 2, PageDown: -2 };
+      if (e.key in steps) { e.preventDefault(); this.set(this.value + steps[e.key], true); }
+      else if (e.key === 'Home') { e.preventDefault(); this.set(0, true); }
+      else if (e.key === 'End') { e.preventDefault(); this.set(10, true); }
+    });
+    el.addEventListener('pointerdown', e => {
+      const b = e.target.closest ? e.target.closest('[data-jog]') : null;
+      if (!b || e.button) return;
+      e.preventDefault();
+      const d = Number(b.dataset.jog);
+      this.set(this.value + d, true);
+      clearTimeout(this.timer);
+      const again = wait => { this.timer = setTimeout(() => { this.set(this.value + d, true); again(110); }, wait); };
+      again(420);
+    });
+    const stop = () => clearTimeout(this.timer);
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(type => el.addEventListener(type, stop));
+  }
+  open({ value, start = null, lo, hi, words = WORDS, onchange }) {
+    this.words = words;
+    this.start = start;
+    this.onchange = onchange;
+    this.lo.textContent = lo;
+    this.hi.textContent = hi;
+    this.mark.hidden = this.from.hidden = start == null;
+    if (start != null) { this.track.style.setProperty('--s', String(start)); this.from.textContent = `Started at ${start}`; }
+    this.set(value, false);
+  }
+  set(v, byHand) {
+    v = clamp(Math.round(v), 0, 10);
+    if (byHand && v === this.value) return;
+    if (byHand) buzz(4);
+    this.value = v;
+    this.paint();
+    if (this.onchange) this.onchange(v);
+  }
+  paint() {
+    const v = this.value, s = this.start;
+    this.tens.firstChild.style.setProperty('--d', String(Math.floor(v / 10)));
+    this.ones.firstChild.style.setProperty('--d', String(v % 10));
+    this.tens.classList.toggle('zero', v < 10);
+    this.track.style.setProperty('--v', String(v));
+    this.segs.forEach((seg, i) => {
+      seg.classList.toggle('on', i < v);
+      seg.classList.toggle('was', s != null && i >= v && i < s);   // ground lost since the start shows as an outline
+    });
+    this.nums.forEach((n, i) => n.classList.toggle('at', i === v));
+    const W = this.words || WORDS;
+    this.word.textContent = W[v];
+    this.track.setAttribute('aria-valuenow', String(v));
+    this.track.setAttribute('aria-valuetext', `${v} out of 10, ${W[v].toLowerCase()}` + (s != null && s !== v ? `, started at ${s}` : ''));
+  }
+}
+
+/* ==========================================================================
+   Your own words
+   Reflections start as an open line with two ways to start underneath, and the
+   ideas stay folded away until asked for. A tapped idea writes a real, editable
+   value into the field, with a quiet pulse to show it can be changed.
+   ========================================================================== */
+function nudge(input, noteSel) {
+  input.classList.remove('nudge'); void input.offsetWidth; input.classList.add('nudge');
+  if (noteSel) $(noteSel).hidden = false;
+}
+function ideas(boxSel, inputSel, list, { append = false, onpick } = {}) {
+  const box = $(boxSel), input = $(inputSel);
+  box.textContent = '';
+  list.forEach(text => box.append(h('button', {
+    type: 'button', class: 'chip', text, 'aria-pressed': String(clean(input.value) === text),
+    on: { click: e => {
+      const cur = clean(input.value);
+      input.value = append && cur && !cur.toLowerCase().includes(text.toLowerCase()) ? `${cur}, ${lower(text)}` : text;
+      syncChips(boxSel, input.value);
+      pop(e.currentTarget);
+      buzz(6);
+      nudge(input);
+      Gears.impulse(36);
+      if (onpick) onpick(input.value);
+    } }
+  })));
+}
+const syncChips = (boxSel, value) => $$(`${boxSel} .chip`).forEach(c => c.setAttribute('aria-pressed', String(c.textContent === clean(value))));
+// "Need an idea?" opens and closes the ideas under it.
+$$('.idea-toggle').forEach(t => t.addEventListener('click', () => {
+  const open = t.getAttribute('aria-expanded') !== 'true';
+  t.setAttribute('aria-expanded', String(open));
+  $('#' + t.getAttribute('aria-controls')).hidden = !open;
+}));
+const foldIdeas = scene => $$(`[data-scene="${scene}"] .idea-toggle`).forEach(t => { t.setAttribute('aria-expanded', 'false'); $('#' + t.getAttribute('aria-controls')).hidden = true; });
+
+/* ==========================================================================
+   Reset: cyclic sighing on the orb.
+   Hold the orb and breathe in through the nose: it fills to the dotted ring.
+   Keep holding and sip in a little more on top: it fills the rest.
+   Let go and breathe out slowly through the mouth: it empties. 3, 4 or 5 rounds.
+   "Pace it for me" runs the same rhythm on its own; a tap then pauses it.
+   ========================================================================== */
+const orb = $('#orb');
+const setCue = text => { const c = $('#resetCue'); if (c.textContent !== text) { c.textContent = text; $('#resetLive').textContent = text; } };
+const setOrb = v => { $('#orbCore').style.transform = `scale(${(0.3 + 0.7 * clamp(v, 0, 1)).toFixed(4)})`; };
+
+const Reset = {
+  active: false, total: 4, count: 0, phase: 'ready', t: 0, lvl: 0,
+  auto: false, running: false, started: false, done: false, valid: false,
+  enter() {
+    this.active = true;
+    this.setup(S.rounds || (S.before <= 3 ? 5 : S.before <= 6 ? 4 : 3));
+  },
+  // The text that goes with the double breath in, on or off.
+  words() {
+    return S.double
+      ? { p: 'Hold the orb and breathe in through your nose, then sip in a little more. Let go and breathe out slowly through your mouth.', in: 'Breathe in through your nose' }
+      : { p: 'Hold the orb and breathe in slowly through your nose. Let go and breathe out slowly through your mouth.', in: 'Breathe in slowly through your nose' };
+  },
+  // How full the orb gets on the first breath in: to the dotted ring with the double breath, all the way without it.
+  firstFill() { return S.double ? 0.75 : 1; },
+  firstTime() { return S.double ? SIGH.in : SIGH.in + SIGH.top; },
+  leave() {
+    this.active = false;
+    Gears.breath = 0;
+    Gears.breathe(0);
+    orb.classList.remove('held');
+    if (!this.done) { this.running = false; if (this.phase !== 'ready') { this.phase = 'ready'; this.lvl = 0; setOrb(0); } }
+  },
+  setup(n) {
+    this.total = n; this.count = 0; this.phase = 'ready'; this.t = 0; this.lvl = 0;
+    this.auto = false; this.running = false; this.started = false; this.done = false; this.valid = false;
+    $('#resetH').textContent = 'Two breaths in, one long breath out.';
+    $('#resetP').textContent = this.words().p;
+    $('#resetAfter').hidden = true;
+    $('#doubleBtn').disabled = false;
+    $('#doubleBtn').setAttribute('aria-pressed', String(S.double));
+    $('#orbMark').style.display = S.double ? '' : 'none';
+    $('#resetAlts').hidden = false;
+    $('#resetAuto').hidden = false;
+    orb.disabled = false;
+    orb.classList.remove('held');
+    orb.setAttribute('aria-label', 'Breathing orb. Press and hold as you breathe in, then let go to breathe out.');
+    setCue('Hold to breathe in');
+    setOrb(0);
+    Gears.breath = 0;
+    this.paintRounds();
+    this.paintDots();
+    this.lead();
+  },
+  paintRounds() {
+    const seg = $('#cycles');
+    $$('button', seg).forEach(b => b.remove());
+    [3, 4, 5].forEach(n => seg.append(h('button', {
+      type: 'button', text: `${n} rounds`, 'aria-pressed': String(n === this.total), disabled: this.started,
+      on: { click: () => { if (this.started) return; S.rounds = n; buzz(6); this.setup(n); } }
+    })));
+    seg.classList.add('has');
+    seg.style.setProperty('--at', String(this.total - 3));
+  },
+  paintDots() {
+    const box = $('#resetDots');
+    if (box.children.length !== this.total) { box.textContent = ''; for (let i = 0; i < this.total; i++) box.append(h('i')); }
+    $$('i', box).forEach((d, i) => d.classList.toggle('on', i < this.count));
+    $('#padCount').textContent = `${this.count}/${this.total}`;
+  },
+  begun() {
+    if (this.started) return;
+    this.started = true;
+    $$('#cycles button').forEach(b => { b.disabled = true; });
+    $('#doubleBtn').disabled = true;
+  },
+  // Holding the orb
+  down() {
+    if (this.done) return;
+    if (this.auto) { this.togglePause(); return; }
+    if (this.phase === 'in' || this.phase === 'top' || this.phase === 'full') return;
+    if (this.phase === 'out' && this.valid) { this.valid = false; this.counted(); if (this.done) return; }   // breathing in again early still counts the round
+    this.begun();
+    $('#resetAuto').hidden = true;
+    orb.classList.add('held');
+    this.phase = 'in'; this.t = 0;
+    setCue(this.words().in);
+    buzz(5);
+    this.lead();
+  },
+  up() {
+    if (this.auto || !['in', 'top', 'full'].includes(this.phase)) return;
+    orb.classList.remove('held');
+    this.valid = this.lvl >= 0.7;
+    this.phase = 'out'; this.t = 0;
+    setCue(this.valid ? 'Long breath out through your mouth' : 'Hold a little longer on the way in');
+  },
+  // Paced for me
+  goAuto() {
+    if (this.done) return;
+    this.begun();
+    this.auto = true; this.running = true;
+    $('#resetAuto').hidden = true;
+    $('#resetP').textContent = 'Follow the orb. In through your nose as it fills, a little more on top, then out slowly through your mouth as it empties. Tap it to pause.';
+    orb.setAttribute('aria-label', 'Breathing orb, paced. Tap to pause or carry on.');
+    orb.classList.add('held');
+    this.phase = 'in'; this.t = 0; this.lvl = 0;
+    setCue(this.words().in);
+    this.lead();
+  },
+  togglePause() {
+    this.running = !this.running;
+    orb.classList.toggle('held', this.running);
+    setCue(this.running ? ({ in: this.words().in, top: 'Sip in a little more', out: 'Long breath out through your mouth', gap: 'Again' }[this.phase] || '') : 'Paused. Tap to carry on');
+    if (!this.running) Gears.breathe(0, 1.4);
+  },
+  counted() {
+    this.count++;
+    this.paintDots();
+    buzz(8);
+    this.lead();
+    if (this.count >= this.total) this.finish();
+  },
+  // Each round brings the gears a little further into step.
+  lead() {
+    const p = this.started ? 0.08 + 0.92 * (this.count / this.total) : 0;
+    Gears.drive({ kind: 'over', arousal: strain(S.before == null ? 5 : S.before), p: Math.min(p, 0.9) });
+  },
+  step(dt) {
+    if (!this.active || this.done) return;
+    if (this.auto && !this.running) return;
+    this.t += dt;
+    const outFor = SIGH.out[Math.min(this.count, SIGH.out.length - 1)];
+    if (this.phase === 'in') {
+      const fill = this.firstFill();
+      this.lvl = Math.min(fill, this.lvl + fill * dt / this.firstTime());
+      if (this.lvl >= fill) {
+        if (S.double) { this.phase = 'top'; this.t = 0; setCue('Sip in a little more'); buzz(5); }
+        else if (this.auto) { this.valid = true; this.phase = 'out'; this.t = 0; setCue('Long breath out through your mouth'); }
+        else { this.phase = 'full'; setCue('Now let go'); buzz(8); }
+      }
+    } else if (this.phase === 'top') {
+      this.lvl = Math.min(1, this.lvl + 0.25 * dt / SIGH.top);
+      if (this.lvl >= 1) {
+        if (this.auto) { this.valid = true; this.phase = 'out'; this.t = 0; setCue('Long breath out through your mouth'); }
+        else { this.phase = 'full'; setCue('Now let go'); buzz(8); }
+      }
+    } else if (this.phase === 'out') {
+      this.lvl = Math.max(0, this.lvl - dt / outFor);
+      if (this.lvl <= 0) {
+        if (this.valid) { this.valid = false; this.counted(); }
+        if (!this.done) {
+          if (this.auto) { this.phase = 'gap'; this.t = 0; setCue('Again'); }
+          else { this.phase = 'ready'; setCue(this.count ? 'Hold to breathe in again' : 'Hold to breathe in'); }
+        }
+      }
+    } else if (this.phase === 'gap') {
+      if (this.t >= SIGH.gap) { this.phase = 'in'; this.t = 0; setCue(this.words().in); }
+    }
+    if (!this.done) {
+      Gears.breath = this.lvl;
+      setOrb(this.lvl);
+      // breathing in winds the executive gear up; the breath out lets it slow, viscously, back into step
+      const winding = this.phase === 'in' || this.phase === 'top';
+      Gears.breathe(winding ? 26 : 0, this.phase === 'out' ? 1.5 : 0.7);
+    }
+  },
+  finish() {
+    this.done = true; this.running = false; this.phase = 'done';
+    S.rounds = this.total;
+    S.reset = this.auto ? 'paced' : 'held';
+    S.calm = 1;
+    rest();
+    Gears.breath = 0;
+    Gears.breathe(0);
+    setOrb(0);
+    orb.classList.remove('held');
+    orb.disabled = true;
+    setCue(`${ROUND_WORDS[this.total]} rounds done.`);
+    $('#resetP').textContent = 'Under pressure, the body goes into protect mode. A long, slow breath out is one of the quickest ways to tell it that it can stand down.';
+    $('#resetAfter').hidden = false;
+    $('#resetAlts').hidden = true;
+    buzz(14);
+    const next = $('#resetAfter button');
+    if (next) { try { next.focus({ preventScroll: true }); } catch (e) { /* older browsers */ } }
+  }
+};
+
+/* ==========================================================================
+   Half a point up: the step, its daily cue, and how doable it feels
+   ========================================================================== */
+const Step = {
+  enter() {
+    const v = S.before, up = halfUp(v);
+    $('#stepQ').textContent = up ? `What would move you from ${v} to ${up}?` : 'What would keep you at 10?';
+    $('#thenText').value = S.then;
+    $('#ifText').value = S.cue;
+    $('#thenNudge').hidden = $('#ifNudge').hidden = true;
+    foldIdeas('step');
+    ideas('#thenChips', '#thenText', THENS, { onpick: () => { $('#thenNudge').hidden = false; this.read(); } });
+    ideas('#ifChips', '#ifText', IFS, { onpick: () => { $('#ifNudge').hidden = false; this.read(); } });
+    this.read();
+  },
+  // The contract reads as one line, with blanks until each part is filled in.
+  read() {
+    S.then = clean($('#thenText').value).slice(0, 90);
+    S.cue = clean($('#ifText').value).slice(0, 70);
+    syncChips('#thenChips', S.then);
+    syncChips('#ifChips', S.cue);
+    const line = $('#planLine'), blank = () => h('span', { class: 'blank', 'aria-label': 'blank' }, 'blank');
+    line.textContent = '';
+    line.append('If ', S.cue ? h('b', { text: lower(unstop(S.cue)) }) : blank(), ', then I’ll ', S.then ? h('b', { text: lower(unstop(S.then)) }) : blank(), '.');
+    line.classList.toggle('ready', !!(S.then && S.cue));
+    $('#stepNext').disabled = !(S.then && S.cue);
+  },
+  next() {
+    this.read();
+    if (!S.then || !S.cue) return;
+    riskCheck(S.then + ' ' + S.cue);
+    S.calm = Math.max(S.calm, 0.8);
+    Nav.go('confidence');
+  },
+  skip() { S.then = ''; S.cue = ''; S.conf = null; S.shrunk = false; S.sustain = ''; finish(); }
+};
+
+/* ==========================================================================
+   The result, the keepsake card and the session brief
+   ========================================================================== */
+function supportList() { return $('#tplSupport').content.cloneNode(true); }
+
+// The end of the check-in: either a step that is ready to go, or something to notice.
+function resultWords() {
+  if (!planText()) return { label: 'Your task before tomorrow', text: NOTICE, note: '' };
+  const note = S.conf < 7 ? 'If it doesn’t happen, make it smaller again tomorrow. That still counts.'
+    : S.shrunk ? 'You made it smaller to get there, which is how steps actually happen.' : '';
+  return { label: 'Your next half point', text: planText(), note };
+}
+// The two numbers that sit side by side: where they arrived, and how doable the step is (or the reset, with no step).
+function stats() {
+  const out = [{ label: 'Arrived', n: S.before, word: WORDS[S.before] }];
+  if (S.conf != null) out.push({ label: 'Doable', n: S.conf, word: DOABLE[S.conf], lit: true });
+  else if (S.reset && S.reset !== 'skipped') out.push({ label: 'Reset', text: `${S.rounds} rounds` });
+  else if (S.enough) out.push({ label: 'Good enough', text: S.enough });
+  return out;
+}
+// Their own words, in the order they'll want to read them back.
+function reflections() {
+  return [
+    ['Went right today', S.prime],
+    [S.before === 0 ? 'What’s got me through' : `What keeps me at ${S.before}`, S.anchor],
+    ['Good enough today', S.enough],
+    ['Tomorrow’s first sign', S.sign],
+    [S.conf != null ? `What puts it at ${S.conf}` : '', S.sustain]
+  ].filter(r => r[0] && r[1]);
+}
+
+// The session brief: plain text, built to paste into notes or bring to a 1 to 1 session.
+function summaryText() {
+  const mins = S.startedAt ? Math.max(1, Math.round((S.endedAt - S.startedAt) / 60000)) : 0;
+  const reset = S.reset === 'skipped' || !S.reset ? 'skipped' : `${S.rounds} rounds of cyclic sighing${S.reset === 'paced' ? ', paced' : ''}`;
+  const L = [
+    'Bluzen check-in: session brief',
+    `${fmtDay(S.endedAt)}, ${fmtTime(S.endedAt)}${mins ? `, about ${mins} min` : ''}`,
+    '',
+    `Went right today: ${S.prime || 'not noted'}`,
+    `Headspace on arrival (0 to 10, 10 is steady and clear): ${S.before}`,
+    `Keeps it at ${S.before} rather than lower: ${holding() || 'not noted'}`,
+    `Good enough today: ${S.enough || 'not noted'}`,
+    `Reset: ${reset}`,
+    `Clarity check, tomorrow’s first sign: ${S.sign || 'not noted'}`
+  ];
+  if (planText()) {
+    L.push(`Half a point step: ${planText()}`);
+    L.push(`Doable: ${S.conf} out of 10${S.shrunk ? ', after making it smaller' : ''}`);
+    if (S.sustain) L.push(`What puts it at ${S.conf} instead of lower: ${S.sustain}`);
+  } else {
+    L.push('No step set. To notice: ' + NOTICE);
+  }
+  L.push('', 'Self-help check-in. Not a clinical record.');
+  return L.join('\n');
+}
+
+const Keepsake = {
+  canvas: null, url: '', file: null, blob: null, token: 0,
+  async render() {
+    const token = ++this.token;
+    try {
+      if (document.fonts && document.fonts.ready) await Promise.race([document.fonts.ready, new Promise(res => setTimeout(res, 800))]);
+    } catch (e) { /* draw with whatever is ready */ }
+    if (token !== this.token || Nav.current !== 'summary') return;
+    const cv = this.canvas || (this.canvas = document.createElement('canvas'));
+    cv.width = 1080; cv.height = 1350;
+    const c = cv.getContext('2d');
+    if (!c) return;
+    this.draw(c);
+    this.url = cv.toDataURL('image/png');
+    const img = $('#keepImg');
+    img.src = this.url;
+    img.alt = summaryText();
+    this.blob = null; this.file = null;
+    if (cv.toBlob) cv.toBlob(b => {
+      if (token !== this.token || !b) return;
+      this.blob = b;
+      try { this.file = new File([b], this.name(), { type: 'image/png' }); } catch (e) { this.file = null; }
+    }, 'image/png');
+  },
+  name() {
+    const d = new Date(S.endedAt || Date.now());
+    return `bluzen-check-in-${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}.png`;
+  },
+  draw(c) {
+    const W = 1080, H = 1350, light = Theme.current === 'light';
+    const P = light
+      ? { ground: '#E9EAED', card: '#FBFBFC', line: 'rgba(11,12,14,.10)', text: '#0B0C0E', muted: '#575E68', faint: '#868D97', off: 'rgba(11,12,14,.08)', accent: '#0A7C88', head: 'rgba(11,12,14,.4)', gear: 'rgba(11,12,14,.8)' }
+      : { ground: '#0B0D10', card: '#13161C', line: 'rgba(255,255,255,.09)', text: '#EDEEF0', muted: '#8B9098', faint: '#6B7079', off: 'rgba(255,255,255,.08)', accent: '#3DD6E3', head: 'rgba(237,238,240,.4)', gear: 'rgba(237,238,240,.86)' };
+    const sans = 'Inter, "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif';
+    const X = 104, R = 976;
+    const box = (x, y, w, hh, r) => { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + hh, r); c.arcTo(x + w, y + hh, x, y + hh, r); c.arcTo(x, y + hh, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); };
+    const rule = y => { c.strokeStyle = P.line; c.lineWidth = 2; c.beginPath(); c.moveTo(X, y); c.lineTo(R, y); c.stroke(); };
+    const text = (s, x, y, font, color, align = 'left') => { c.font = font; c.fillStyle = color; c.textAlign = align; c.fillText(s, x, y); };
+    const wrap = (s, maxW, maxLines) => {
+      const words = String(s).split(/\s+/).filter(Boolean), lines = [];
+      let line = '';
+      for (let word of words) {
+        while (c.measureText(word).width > maxW) {             // a single very long word: break it
+          let cut = word.length;
+          while (cut > 1 && c.measureText((line ? line + ' ' : '') + word.slice(0, cut)).width > maxW) cut--;
+          lines.push((line ? line + ' ' : '') + word.slice(0, cut));
+          line = '';
+          word = word.slice(cut);
+        }
+        const next = line ? line + ' ' + word : word;
+        if (c.measureText(next).width > maxW && line) { lines.push(line); line = word; } else line = next;
+      }
+      if (line) lines.push(line);
+      if (lines.length > maxLines) {
+        lines.length = maxLines;
+        let last = lines[maxLines - 1];
+        while (last.length > 1 && c.measureText(last + '…').width > maxW) last = last.slice(0, -1);
+        lines[maxLines - 1] = last.replace(/[\s,;.]+$/, '') + '…';
+      }
+      return lines;
+    };
+    // The head and gears, in the same flat lines as on screen, posed to match how the check-in ended.
+    const mark = (x, y, height, p) => {
+      if (typeof Path2D !== 'function') return;
+      const s = height / 235, pose = HG.poseFor(p);
+      c.save();
+      c.translate(x - 6 * s, y - 7 * s);
+      c.scale(s, s);
+      c.lineWidth = 3.2 / s; c.lineCap = 'round'; c.lineJoin = 'round';
+      c.strokeStyle = P.head;
+      c.stroke(new Path2D(HG.HEAD.main));
+      c.stroke(new Path2D(HG.HEAD.neck));
+      c.strokeStyle = pose.look === 'synced' ? P.accent : P.gear;
+      [[HG.BIG, pose.centres.big, pose.a1], [HG.SMALL, pose.centres.small, pose.a2]].forEach(([g, at, turn]) => {
+        c.save();
+        c.translate(at[0], at[1]);
+        c.rotate(turn * Math.PI / 180);
+        c.stroke(new Path2D(HG.gearPath(g)));
+        c.beginPath(); c.arc(0, 0, g.hub, 0, Math.PI * 2); c.stroke();
+        c.restore();
+      });
+      c.restore();
+    };
+    const bar = (x, y, w, v, lit) => {
+      const g = 6, sw = (w - g * 9) / 10;
+      for (let i = 0; i < 10; i++) { box(x + i * (sw + g), y, sw, 14, 3); c.fillStyle = i < v ? lit : P.off; c.fill(); }
+    };
+
+    // the card, with small corner marks like a drawing sheet
+    c.fillStyle = P.ground; c.fillRect(0, 0, W, H);
+    box(40, 40, W - 80, H - 80, 36); c.fillStyle = P.card; c.fill();
+    c.strokeStyle = P.line; c.lineWidth = 2; c.stroke();
+    c.strokeStyle = P.off; c.lineWidth = 2;
+    [[72, 72, 1, 1], [W - 72, 72, -1, 1], [72, H - 72, 1, -1], [W - 72, H - 72, -1, -1]].forEach(([x, y, sx, sy]) => { c.beginPath(); c.moveTo(x, y + 18 * sy); c.lineTo(x, y); c.lineTo(x + 18 * sx, y); c.stroke(); });
+    c.textBaseline = 'alphabetic';
+
+    // who and when
+    text('bluzen', X, 132, `700 46px ${sans}`, P.text);
+    text(fmtDay(S.endedAt), R, 128, `500 26px ${sans}`, P.muted, 'right');
+    rule(178);
+
+    // Measure first: the step, its note, and as many of their own words as fit. Then share any spare room
+    // between the gaps, so a short check-in sits as balanced as a long one.
+    const words = resultWords();
+    c.font = `600 54px ${sans}`;
+    const hero = wrap(words.text, R - X, 3);
+    c.font = `400 29px ${sans}`;
+    const note = words.note ? wrap(words.note, R - X, 2) : [];
+    const heroH = 76 + (hero.length - 1) * 70 + (note.length ? 58 + (note.length - 1) * 42 : 0);
+    const FLOOR = 1196, STATS = 200;
+    let gapA = 70, gapB = 48, gapC = 76, rowGap = 70;
+    const rows = [];
+    let end = 256 + heroH + gapA + STATS + gapB + gapC;    // the baseline of the first reflection label
+    for (const [name, t] of reflections()) {
+      c.font = `400 36px ${sans}`;
+      const lines = wrap(t, R - X, 2);
+      const last = end + (rows.length ? rowGap : 0) + 50 + (lines.length - 1) * 52;
+      if (last > FLOOR) break;
+      rows.push({ name, lines });
+      end = last;
+    }
+    if (!rows.length) end = 256 + heroH + gapA + STATS;     // nothing below the numbers: no rule either
+    const spare = Math.max(0, Math.min(FLOOR - end, 420));
+    let y = 256 + spare * 0.3;
+    gapA += spare * 0.25;
+    if (rows.length) {
+      gapB += spare * 0.08; gapC += spare * 0.08;
+      if (rows.length > 1) rowGap += Math.min(spare * 0.29 / (rows.length - 1), 60);
+    }
+
+    // 1. The step, or the task, carries the card
+    text(words.label, X, y, `500 28px ${sans}`, P.accent);
+    y += 76;
+    hero.forEach((l, i) => text(l, X, y + i * 70, `600 54px ${sans}`, P.text));
+    y += (hero.length - 1) * 70;
+    if (note.length) {
+      y += 58;
+      note.forEach((l, i) => text(l, X, y + i * 42, `400 29px ${sans}`, P.muted));
+      y += (note.length - 1) * 42;
+    }
+
+    // 2. Where they arrived and how doable it is, side by side, with the head and gears
+    const top = y + gapA, colA = 372, colB = 684, colW = 292;
+    mark(X, top, STATS, S.calm >= 1 || (S.conf != null && S.conf >= 7) ? 1 : S.calm);
+    stats().forEach((st, i) => {
+      const x = i ? colB : colA;
+      text(st.label, x, top + 30, `500 26px ${sans}`, P.muted);
+      if (st.n != null) {
+        text(two(st.n), x, top + 134, `500 104px ${sans}`, P.text);
+        c.font = `500 104px ${sans}`;
+        text('/10', x + c.measureText(two(st.n)).width + 10, top + 134, `500 28px ${sans}`, P.faint);
+        bar(x, top + 172, colW - 30, st.n, st.lit ? P.accent : P.muted);
+      } else {
+        c.font = `500 42px ${sans}`;
+        wrap(st.text, colW - 20, 2).forEach((l, k) => text(l, x, top + 100 + k * 52, `500 42px ${sans}`, P.accent));
+      }
+    });
+    y = top + STATS;
+
+    // 3. Their own words, with room to breathe
+    if (rows.length) {
+      rule(y + gapB);
+      y += gapB + gapC;
+      rows.forEach((r, k) => {
+        if (k) y += rowGap;
+        text(r.name, X, y, `500 25px ${sans}`, P.muted);
+        r.lines.forEach((l, i) => text(l, X, y + 50 + i * 52, `400 36px ${sans}`, P.text));
+        y += 50 + (r.lines.length - 1) * 52;
+      });
+    }
+
+    // the foot
+    text('Bluzen check-in', X, 1262, `500 24px ${sans}`, P.muted);
+    text(fmtTime(S.endedAt), R, 1262, `500 24px ${sans}`, P.muted, 'right');
+  },
+  save() {
+    const hint = () => { $('#keepHint').hidden = false; };
+    if (!this.canvas || !this.url) { hint(); return; }
+    const filename = this.name();
+    // A host page can take over saving by cancelling this event. The Claude preview does.
+    const ev = new CustomEvent('bluzen:save-image', { cancelable: true, detail: { blob: this.blob, filename, done: () => toast('Saved.'), fail: hint } });
+    if (!window.dispatchEvent(ev)) return;
+    // Phones: the share sheet, which includes Save Image.
+    const touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    try {
+      if (touch && this.file && navigator.canShare && navigator.canShare({ files: [this.file] })) {
+        navigator.share({ files: [this.file] }).catch(e => { if (!e || e.name !== 'AbortError') hint(); });
+        return;
+      }
+    } catch (e) { /* fall through to a download */ }
+    // Everything else: an ordinary download.
+    try {
+      const link = h('a', { href: this.url, download: filename });
+      document.body.append(link);
+      link.click();
+      link.remove();
+    } catch (e) { /* the hint below covers it */ }
+    hint();
+  }
+};
+
+const Summary = {
+  enter() {
+    if (!S.endedAt) S.endedAt = Date.now();
+    const words = resultWords();
+    $('#sumDate').textContent = `${fmtDay(S.endedAt)}, ${fmtTime(S.endedAt)}`;
+    $('#heroLabel').textContent = words.label;
+    $('#sumH').textContent = words.text;
+    $('#sumLine').textContent = words.note;
+    const box = $('#sumStats');
+    box.textContent = '';
+    stats().forEach(st => box.append(h('div', { class: st.lit ? 'stat lit' : 'stat' },
+      h('p', { class: 'label', text: st.label }),
+      st.n != null
+        ? [h('p', { class: 'stat-n' }, two(st.n), h('small', { text: '/10' })), h('p', { class: 'sr', text: st.word }),
+           h('div', { class: 'mini', 'aria-hidden': 'true' }, Array.from({ length: 10 }, (_, i) => h('i', { class: i < st.n ? 'on' : null })))]
+        : h('p', { class: 'stat-word', text: st.text }))));
+    this.reflect();
+    $('#keepHint').hidden = true;
+    $('#copyFallback').hidden = true;
+    this.support();
+    Bridge.render();
+    const more = $('#sumMore');
+    more.textContent = 'This check-in is made by Bluzen, a hypnotherapy and nervous system regulation practice in the North West of Ireland.';
+    if (SETTINGS.quiz) more.append(' ', h('a', { class: 'inline', href: SETTINGS.quiz, target: '_top', rel: 'noopener', text: 'Take the Bluzen quiz.' }));
+    if (SETTINGS.call) more.append(' ', h('a', { class: 'inline', href: SETTINGS.call, target: '_top', rel: 'noopener', text: 'Book a free 15 minute call.' }));
+    Keepsake.render();
+  },
+  reflect() {
+    const dl = $('#sumReflect');
+    dl.textContent = '';
+    reflections().forEach(([name, t]) => dl.append(h('div', null, h('dt', { text: name }), h('dd', { text: t }))));
+  },
+  // Support is offered gently after a very low arrival.
+  support() {
+    const box = $('#sumSupport');
+    box.textContent = '';
+    if (S.before <= 2) box.append(h('div', { class: 'box' }, h('h3', { text: 'If it stays heavy, talk to someone.' }), h('p', { class: 'fine', text: 'You don’t need to be in crisis to ring or text. These are free, North and South.' }), supportList()));
+  },
+  copy() {
+    const text = summaryText();
+    const done = () => toast('Session brief copied.');
+    const fallback = () => {
+      $('#copyFallback').hidden = false;
+      const ta = $('#copyText');
+      ta.value = text;
+      ta.focus();
+      ta.select();
+      try { if (document.execCommand('copy')) done(); } catch (e) { /* the text is on screen to copy by hand */ }
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(done, fallback); return; }
+    } catch (e) { /* fall through */ }
+    fallback();
+  }
+};
+
+/* ==========================================================================
+   Client mode: the optional longitudinal bridge
+   Off on the public page, which never touches storage. Only a link ending in
+   ?client=1 shows it, and only a tap on "Save to this device" writes anything:
+   a short record of each check-in, in this browser only, deletable at any time.
+   ========================================================================== */
+const Bridge = {
+  KEY: 'bluzen.client.v1',
+  on: (() => { try { return new URLSearchParams(window.location.search).get('client') === '1'; } catch (e) { return false; } })(),
+  saved: false,
+  store() { try { return window.localStorage; } catch (e) { return null; } },
+  read() {
+    const st = this.store();
+    if (!st) return [];
+    try {
+      const d = JSON.parse(st.getItem(this.KEY) || '[]');
+      return Array.isArray(d) ? d.filter(e => e && typeof e.t === 'number').slice(0, 100) : [];
+    } catch (e) { return []; }
+  },
+  render() {
+    $('#bridge').hidden = !this.on;
+    $('#sumPrivacy').textContent = this.on
+      ? 'Client mode. Nothing is kept unless you choose to save it below. The session brief is a short plain-text summary, handy to paste into your notes or bring to your next session.'
+      : 'The session brief is a short plain-text summary, handy to paste into your notes or bring to a 1 to 1 session. Nothing from this check-in is kept. Close the tab and it’s gone.';
+    if (!this.on) return;
+    const log = this.read();
+    $('#bridgeSave').disabled = this.saved;
+    $('#bridgeSave').textContent = this.saved ? 'Saved' : 'Save to this device';
+    $('#bridgeWipe').hidden = !log.length;
+    $('#bridgeNote').textContent = this.saved
+      ? 'Saved in this browser only. Nothing is sent anywhere. Delete it at any time below.'
+      : 'Saving keeps a short record of this check-in in this browser only, so you can look back over time. Nothing is sent anywhere. On a shared device, other people could see it.';
+    const list = $('#bridgeList');
+    list.textContent = '';
+    log.slice(0, 8).forEach(e => list.append(h('li', null,
+      `${fmtShort(e.t)}: arrived at ${e.before}${e.conf != null ? `, step ${e.conf}/10 doable` : ', something to notice'}`,
+      h('small', { text: e.step || 'Observation task' }))));
+  },
+  save() {
+    if (!this.on || this.saved) return;
+    const st = this.store();
+    const log = this.read();
+    log.unshift({ t: S.endedAt, before: S.before, conf: S.conf, step: planText(), enough: S.enough });
+    try { st.setItem(this.KEY, JSON.stringify(log.slice(0, 100))); this.saved = true; toast('Saved to this browser.'); }
+    catch (e) { $('#bridgeNote').textContent = 'This browser would not let the page save. Private browsing can cause that. You can still copy the session brief.'; return; }
+    this.render();
+  },
+  wipe(btn) {
+    if (!btn.dataset.armed) {
+      btn.dataset.armed = '1';
+      btn.textContent = 'Tap again to delete them all';
+      setTimeout(() => { if (btn.isConnected) { delete btn.dataset.armed; btn.textContent = 'Delete saved check-ins'; } }, 3000);
+      return;
+    }
+    delete btn.dataset.armed;
+    btn.textContent = 'Delete saved check-ins';
+    try { this.store().removeItem(this.KEY); } catch (e) { /* nothing to delete */ }
+    this.saved = false;
+    this.render();
+    toast('Deleted from this browser.');
+  }
+};
+
+/* ==========================================================================
+   The support drawer
+   ========================================================================== */
+const Drawer = {
+  el: $('#drawer'), from: null,
+  open(from) {
+    if (!this.el.hidden) return;
+    this.from = from || document.activeElement;
+    this.el.hidden = false;
+    document.body.style.overflow = 'hidden';
+    void this.el.offsetWidth;
+    this.el.classList.add('open');
+    try { $('#drawerSheet').focus({ preventScroll: true }); } catch (e) { /* older browsers */ }
+  },
+  close() {
+    if (this.el.hidden) return;
+    this.el.classList.remove('open');
+    document.body.style.overflow = '';
+    const done = () => { this.el.hidden = true; };
+    if (still()) done(); else setTimeout(done, 260);
+    if (this.from && this.from.focus) { try { this.from.focus({ preventScroll: true }); } catch (e) { /* older browsers */ } }
+  }
+};
+document.addEventListener('keydown', e => {
+  if (Drawer.el.hidden) return;
+  if (e.key === 'Escape') { e.preventDefault(); Drawer.close(); return; }
+  if (e.key === 'Tab') {   // keep focus inside the drawer while it is open
+    const f = $$('#drawerSheet a, #drawerSheet button');
+    if (!f.length) return;
+    const first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && (document.activeElement === first || document.activeElement === $('#drawerSheet'))) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+});
+
+/* ==========================================================================
+   The scenes
+   ========================================================================== */
+const scaleMeter = new Meter($('#scaleMeter'), 'scaleQ', 'scaleWord');
+const confMeter = new Meter($('#confMeter'), 'confQ', 'confWord');
+
+const Views = {
+  welcome: { enter() { Gears.set('neutral'); } },
+  prime: {
+    stage: 'prime',
+    enter() {
+      Gears.set('neutral');
+      $('#primeText').value = S.prime;
+      foldIdeas('prime');
+      ideas('#primeChips', '#primeText', PRIMES);
+    }
+  },
+  scale: {
+    stage: 'scale',
+    enter() {
+      scaleMeter.open({
+        value: S.before == null ? 5 : S.before, lo: 'Stuck', hi: 'Clear and moving',
+        onchange: v => {
+          $('#scaleNote').hidden = v > 2;
+          $('#supportBtn').classList.toggle('nudge', v <= 2 || S.risk);
+          Gears.drive({ kind: 'over', arousal: strain(v), p: 0 });
+          Gears.notch(v);     // the executive gear clicks round a notch per point
+        }
+      });
+    },
+    leave() { $('#supportBtn').classList.toggle('nudge', S.risk); Gears.notch(null); }
+  },
+  anchor: {
+    stage: 'scale',
+    enter() {
+      rest();
+      const v = S.before;
+      $('#anchorQ').textContent = v === 0 ? 'What’s got you through today, even so?' : `What keeps you at ${v} instead of ${v - 1}?`;
+      $('#anchorP').textContent = v >= 7 ? 'Know what’s working, so you can do more of it.' : 'Even on a hard day, something is holding. Name it.';
+      $('#anchorText').value = S.anchor;
+      foldIdeas('anchor');
+      ideas('#anchorChips', '#anchorText', ANCHORS, { append: true });
+      $('#enoughText').value = S.enough;
+      ideas('#enoughChips', '#enoughText', ENOUGH);
+    }
+  },
+  reset: { stage: 'reset', enter() { Reset.enter(); }, leave() { Reset.leave(); } },
+  sign: {
+    stage: 'sign',
+    enter() {
+      rest();
+      const input = $('#signText');
+      input.value = S.sign;
+      foldIdeas('sign');
+      ideas('#signChips', '#signText', SIGNS, { onpick: () => { $('#signNext').disabled = false; } });
+      $('#signNext').disabled = !clean(input.value);
+    }
+  },
+  step: { stage: 'step', enter() { rest(); Step.enter(); } },
+  confidence: {
+    stage: 'step',
+    enter() {
+      $('#confPlan').textContent = planText();
+      $('#sustainText').value = S.sustain;
+      confMeter.open({
+        value: S.conf == null ? 5 : S.conf, lo: 'Not doable', hi: 'Definitely', words: DOABLE,
+        onchange: v => {
+          $('#confNext').textContent = v >= 7 ? 'Finish' : 'Make it smaller';
+          $('#sustainBox').hidden = v < 7;
+          $('#sustainQ').textContent = v >= 10 ? 'What puts it at 10?' : `What puts it at ${v} instead of lower?`;
+          Gears.drive({ kind: 'over', arousal: strain(S.before), p: v >= 7 ? 1 : Math.max(S.calm, 0.6) });
+          Gears.notch(v);
+        }
+      });
+    },
+    leave() { Gears.notch(null); }
+  },
+  simplify: {
+    stage: 'step',
+    enter() {
+      rest();
+      $('#simplifyP').textContent = `It’s ${an(S.conf)} right now. What version of it would feel like a 7 or more?`;
+      $('#smallerText').value = S.then;
+    }
+  },
+  summary: { stage: 'check', enter() { Summary.enter(); } },
+  about: {}
+};
+
+/* ==========================================================================
+   What each button does
+   ========================================================================== */
+// Straight to the result: the keepsake card and the session brief.
+function finish() {
+  S.finished = true;
+  S.endedAt = Date.now();
+  if (planText() && S.conf >= 7) S.calm = 1;
+  Nav.go('summary');
+}
+function startOver() {
+  S = fresh();
+  Bridge.saved = false;
+  $('#riskBox').hidden = true;
+  $('#supportBtn').classList.remove('nudge');
+  Gears.set('neutral');
+}
+const Actions = {
+  begin() { startOver(); S.startedAt = Date.now(); Nav.go('prime'); },
+  back() { Nav.back(); },
+  restart() { startOver(); Nav.go('welcome'); },
+  'prime-next'() { S.prime = clean($('#primeText').value).slice(0, 90); riskCheck(S.prime); Nav.go('scale'); },
+  'prime-skip'() { S.prime = ''; Nav.go('scale'); },
+  'scale-next'() { S.before = scaleMeter.value; S.calm = 0; Nav.go('anchor'); },
+  'anchor-next'() {
+    S.anchor = clean($('#anchorText').value).slice(0, 90);
+    S.enough = clean($('#enoughText').value).slice(0, 80);
+    riskCheck(`${S.anchor} ${S.enough}`);
+    S.calm = Math.min(1, S.calm + 0.1);
+    Nav.go('reset');
+  },
+  'reset-next'() { Nav.go('sign'); },
+  'reset-auto'() { Reset.goAuto(); },
+  'reset-skip'() { S.reset = 'skipped'; S.calm = Math.max(S.calm, 0.3); rest(); Nav.go('sign'); },
+  'sign-next'() {
+    S.sign = clean($('#signText').value).slice(0, 100);
+    if (!S.sign) return;
+    riskCheck(S.sign);
+    Nav.go('step');
+  },
+  'sign-skip'() { S.sign = ''; Nav.go('step'); },
+  'step-next'() { Step.next(); },
+  'step-skip'() { Step.skip(); },
+  // 7 or more goes straight to the result. Under 7, make it smaller first.
+  'confidence-next'() {
+    S.conf = confMeter.value;
+    if (S.conf >= 7) {
+      S.sustain = clean($('#sustainText').value).slice(0, 90);
+      riskCheck(S.sustain);
+      finish();
+    } else Nav.go('simplify');
+  },
+  // Back to the ruler, starting from the last rating, so the change is easy to see.
+  'simplify-next'() {
+    const t = clean($('#smallerText').value).slice(0, 90);
+    if (t && t !== S.then) { S.then = t; S.shrunk = true; riskCheck(t); }
+    Nav.go('confidence');
+  },
+  'simplify-keep'() { finish(); },
+  'save-image'() { Keepsake.save(); },
+  copy() { Summary.copy(); },
+  'bridge-save'() { Bridge.save(); },
+  'bridge-wipe'(btn) { Bridge.wipe(btn); },
+  'drawer-close'() { Drawer.close(); }
+};
+
+document.addEventListener('click', e => {
+  const t = e.target.closest ? e.target.closest('[data-go],[data-act]') : null;
+  if (!t || t.disabled) return;
+  if (t.dataset.go === 'support') { Drawer.open(t); return; }
+  if (t.dataset.go) { Nav.go(t.dataset.go); return; }
+  const fn = Actions[t.dataset.act];
+  if (fn) fn(t, e);
+});
+
+/* ==========================================================================
+   Hands on
+   ========================================================================== */
+orb.addEventListener('pointerdown', e => {
+  if (e.button || orb.disabled) return;
+  e.preventDefault();
+  try { orb.setPointerCapture(e.pointerId); } catch (x) { /* fine without it */ }
+  try { orb.focus({ preventScroll: true }); } catch (x) { /* older browsers */ }
+  Reset.down();
+});
+['pointerup', 'pointercancel'].forEach(type => orb.addEventListener(type, () => Reset.up()));
+orb.addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { e.preventDefault(); Reset.down(); } });
+orb.addEventListener('keyup', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); Reset.up(); } });
+orb.addEventListener('blur', () => Reset.up());
+orb.addEventListener('contextmenu', e => e.preventDefault());
+orb.addEventListener('click', e => e.preventDefault());
+$('#signText').addEventListener('input', e => { $('#signNext').disabled = !clean(e.target.value); syncChips('#signChips', e.target.value); });
+$('#primeText').addEventListener('input', e => syncChips('#primeChips', e.target.value));
+$('#anchorText').addEventListener('input', e => syncChips('#anchorChips', e.target.value));
+$('#enoughText').addEventListener('input', e => syncChips('#enoughChips', e.target.value));
+$('#thenText').addEventListener('input', () => { $('#thenNudge').hidden = true; Step.read(); });
+$('#ifText').addEventListener('input', () => { $('#ifNudge').hidden = true; Step.read(); });
+$('#thenText').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#ifText').focus(); } });
+['#ifText', '#signText', '#anchorText', '#enoughText', '#primeText', '#smallerText', '#sustainText'].forEach(sel => $(sel).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } }));
+$('#themeBtn').addEventListener('click', () => Theme.toggle());
+$('#doubleBtn').addEventListener('click', () => {
+  if (Reset.started) return;
+  S.double = !S.double;
+  buzz(6);
+  Reset.setup(Reset.total);
+});
+let lastKey = 0;
+$$('input.input[type="text"]').forEach(el => el.addEventListener('input', () => {
+  const now = performance.now();
+  if (now - lastKey > 140) { lastKey = now; Gears.impulse(9); }
+}));
+
+/* ==========================================================================
+   One loop for the breathing. The gears run their own.
+   ========================================================================== */
+let lastFrame = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, Math.max(0, (now - lastFrame) / 1000));
+  lastFrame = now;
+  Reset.step(dt);
+  requestAnimationFrame(frame);
+}
+
+/* ==========================================================================
+   Start
+   ========================================================================== */
+$('#supportBody').append(supportList());
+if (SETTINGS.home) { const a = $('#homeLink'); a.href = SETTINGS.home; a.hidden = false; }
+Theme.apply();
+Nav.init();
+requestAnimationFrame(frame);
+// Offline: keep a copy of this folder on the phone. Only over https, and it never sends anything.
+if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => { /* still works online */ }); });
+}
+const wanted = (window.location.hash || '').slice(1);
+if (wanted === 'about') Nav.go('about');
+if (wanted === 'support') Drawer.open($('#supportBtn'));
+})();
+
+</script>
+</body>
+</html>
