@@ -10,9 +10,10 @@ The Bluzen website: plain static pages, no build step. Served by GitHub Pages at
   - `manifest.webmanifest` and the icons let people add it to their home screen.
   - `sw.js` keeps a copy of the check-in's own files on the phone so it opens with no signal. It never sends anything. **Bump `CACHE` in `sw.js` whenever anything in `check-in/` changes**, or phones keep the old copy.
 - `direction/index.html`: Find your direction. Eight sliders point check-ins towards Settle, Unload, Refuel or Hold steady, with a murmuration that gathers into the head and gears. Shares the check-in's gear engine (`HG` block, copied unchanged) and support numbers. Stores and sends nothing. The wind-down audio email offer is built but off (`SETTINGS.email`). Its result links to `check-in/#dir=…`, and the check-in leans a few ideas that way.
-- `privacy.html`, `accessibility.html`, `404.html`: plain pages sharing `assets/site.css`.
+- `how-it-works.html`, `support.html`, `privacy.html`, `accessibility.html`, `404.html` and the draft `sessions.html`: plain pages sharing `assets/site.css`. They allow no inline styles and no scripts, so all of their look lives in that one file.
+- Light and dark: the home page and the plain pages follow the device's setting (`prefers-color-scheme`). The check-in and Find your direction keep their own switch.
 - `quiz.html`: the old quiz is retired. This page just forwards old links to the check-in.
-- `assets/`: logo, headshot, share image, and the shared stylesheet.
+- `assets/`: logo, headshot, share image, and the shared stylesheet. `bluzen-mark.svg` and `bluzen-mark-light.svg` are the head and gears drawn as vectors from the check-in's own geometry, for dark and light pages.
 - `cloudflare-worker/mailerlite-proxy.js`: the MailerLite proxy. Nothing on the site uses it now, but it's kept for the wind-down audio sign-up later. It's deployed separately in Cloudflare.
 
 ## Privacy, by design

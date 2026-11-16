@@ -8,7 +8,7 @@
   One self-contained page in the check-in's look. No fonts, scripts, trackers or embeds from
   anywhere else: the policy line below allows this page's own images and nothing more.
   The hero is a murmuration that gathers into the Bluzen head and gears. With reduced motion
-  it shows the logo, still.
+  it shows the logo, still. The page follows the device's light or dark setting.
   Before publishing: confirm the CPHT and David Newton wording with CPHT Belfast, and confirm
   which contact email works (bluzenfocus.com or bluzenfocus.net). Search for CONFIRM.
 -->
@@ -22,106 +22,202 @@
 <meta property="og:description" content="Three minutes. One small step. Works offline, and nothing you type leaves your phone.">
 <meta property="og:image" content="https://www.bluzenfocus.net/assets/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#0B0D10">
-<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0B0D10" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#E9EAED" media="(prefers-color-scheme: light)">
+<meta name="color-scheme" content="dark light">
 <meta name="referrer" content="no-referrer">
 <link rel="icon" href="assets/bluzen-mark-cyan.png">
 <link rel="apple-touch-icon" href="check-in/apple-touch-icon.png">
 <style>
-:root{--bg:#0B0D10;--panel:#13161C;--well:#0F1216;--line:rgba(255,255,255,.08);--line-2:rgba(255,255,255,.13);--line-3:rgba(255,255,255,.22);--text:#EDEEF0;--muted:#9AA0A8;--faint:#7A8089;--accent:#3DD6E3;--accent-dim:rgba(61,214,227,.12);--ease:cubic-bezier(.2,.8,.2,1);--sans:"Inter","InterVariable","Inter Variable",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+/* Tokens: the check-in's. Dark first; light follows the device's setting. */
+:root{
+  color-scheme:dark;
+  --bg:#0B0D10;--panel:#13161C;--well:#0F1216;
+  --line:rgba(255,255,255,.08);--line-2:rgba(255,255,255,.13);--line-3:rgba(255,255,255,.22);
+  --text:#EDEEF0;--muted:#9AA0A8;--faint:#7A8089;
+  --accent:#3DD6E3;--accent-ink:#3DD6E3;--accent-dim:rgba(61,214,227,.12);--accent-line:rgba(61,214,227,.55);
+  --cta:#EDEEF0;--cta-hover:#FFFFFF;--on-cta:#0B0C0E;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --sans:"Inter","InterVariable","Inter Variable",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --edge:20px;
+}
+@media (prefers-color-scheme:light){
+  :root{
+    color-scheme:light;
+    --bg:#E9EAED;--panel:#FBFBFC;--well:#F3F4F6;
+    --line:rgba(11,12,14,.09);--line-2:rgba(11,12,14,.15);--line-3:rgba(11,12,14,.28);
+    --text:#0B0C0E;--muted:#575E68;--faint:#5F6670;
+    --accent:#0A7C88;--accent-ink:#08707B;--accent-dim:rgba(10,124,136,.1);--accent-line:rgba(10,124,136,.5);
+    --cta:#0B0C0E;--cta-hover:#25282D;--on-cta:#FFFFFF;
+  }
+}
 *,*::before,*::after{box-sizing:border-box}
-html{background:var(--bg);-webkit-text-size-adjust:100%;scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--text);font:400 16px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
-h1,h2,h3,p{margin:0}
+html{background:var(--bg);-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-behavior:smooth;scroll-padding-top:16px}
+body{margin:0;background:var(--bg);color:var(--text);font:400 16px/1.6 var(--sans);font-kerning:normal;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;-webkit-tap-highlight-color:transparent}
+h1,h2,h3,p,dl,dd,ol,ul{margin:0;padding:0}
+ol,ul{list-style:none}
 a{color:inherit}
+::selection{background:var(--accent-line);color:var(--text)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
 .skip{position:absolute;left:-999px;top:8px;padding:8px 12px;background:var(--panel);border:1px solid var(--line-2);border-radius:8px;z-index:9}
 .skip:focus{left:8px}
-.wrap{width:100%;max-width:680px;margin:0 auto;padding:0 20px}
-header.top{display:flex;align-items:center;justify-content:space-between;height:60px;max-width:1080px;margin:0 auto;padding:0 20px}
+.wrap{width:100%;max-width:1040px;margin:0 auto;padding:0 var(--edge)}
+
+/* Header */
+header.top{display:flex;align-items:center;justify-content:space-between;height:60px;max-width:1040px;margin:0 auto;padding:0 var(--edge)}
 .wordmark{font-size:19px;font-weight:700;letter-spacing:-.045em;text-decoration:none}
-.top a.small{font-size:14px;color:var(--muted);text-decoration:none;padding:8px 4px}
-.top a.small:hover{color:var(--text)}
-.top nav{display:flex;gap:10px}
-a.more{color:var(--text);text-decoration:underline;text-decoration-color:var(--line-3);text-underline-offset:4px}
-.hero{text-align:center;padding:12px 0 72px}
-.hero-in{max-width:1080px;margin:0 auto}
-.stage{position:relative;width:100%;max-width:320px;height:clamp(180px,30vh,250px);margin:0 auto;opacity:.92}
-@media (min-width:900px){
-  .hero{padding:56px 0 96px}
-  .hero-in{display:grid;grid-template-columns:1.1fr .9fr;align-items:center;gap:40px;padding:0 20px}
-  .hero-in .wrap{order:1;text-align:left;padding:0;margin:0;max-width:none}
-  .hero-in .stage{order:2;max-width:420px;height:360px}
-  .hero-in .lede,.hero-in .promise{margin-left:0}
-  .hero-in .actions{align-items:flex-start}
-  h1{font-size:56px}
-}
-@media (min-width:900px){
-  section.block{padding:96px 0}
-  /* line every section up with the hero's left edge, and keep reading lines comfortable */
-  .hero-in{max-width:1000px}
-  header.top{max-width:1000px}
-  section.block .wrap,footer .wrap{max-width:1000px}
-  section.block .wrap > p,section.block .wrap > h2,section.block .wrap > .steps,section.block .wrap > .about,footer .wrap > *{max-width:680px}
-  .facts,.phones{max-width:none}
-}
-.stage canvas{display:block;width:100%;height:100%;-webkit-mask-image:radial-gradient(ellipse 54% 56% at 50% 50%,#000 52%,transparent 100%);mask-image:radial-gradient(ellipse 54% 56% at 50% 50%,#000 52%,transparent 100%)}
-h1{font-size:clamp(32px,8vw,52px);line-height:1.08;font-weight:600;letter-spacing:-.035em;text-wrap:balance;margin-top:8px}
-.lede{margin:16px auto 0;max-width:30em;color:var(--muted);font-size:17px;text-wrap:pretty}
-.actions{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:28px}
-.btn{display:inline-flex;align-items:center;justify-content:center;min-height:50px;padding:0 28px;border-radius:10px;font-size:16px;font-weight:500;text-decoration:none;transition:background-color .15s var(--ease),transform .12s var(--ease)}
-.btn.primary{background:var(--text);color:#0B0C0E}
-.btn.primary:hover{background:#fff}
+.top nav{display:flex;gap:2px;margin-right:-8px}
+.top nav a{font-size:14px;color:var(--muted);text-decoration:none;padding:8px;border-radius:6px;transition:color .15s var(--ease)}
+.top nav a:hover{color:var(--text)}
+
+/* Links and buttons */
+a.more,.cta-row a,.rows a,.fine a{color:var(--text);text-decoration:underline;text-decoration-color:var(--line-3);text-decoration-thickness:1px;text-underline-offset:4px;transition:text-decoration-color .15s var(--ease)}
+a.more:hover,.cta-row a:hover,.rows a:hover,.fine a:hover{text-decoration-color:currentColor}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:50px;padding:0 28px;border-radius:10px;font-size:16px;font-weight:500;letter-spacing:-.005em;text-decoration:none;transition:background-color .15s var(--ease),transform .12s var(--ease)}
+.btn.primary{background:var(--cta);color:var(--on-cta)}
+.btn.primary:hover{background:var(--cta-hover)}
 .btn:active{transform:scale(.985)}
-.link{color:var(--muted);font-size:15px;text-decoration:none;padding:8px}
+.link{color:var(--muted);font-size:15px;text-decoration:none;padding:8px;border-radius:6px;transition:color .15s var(--ease)}
 .link:hover{color:var(--text)}
-.promise{margin:18px auto 0;max-width:22em;font-size:13.5px;color:var(--faint);text-wrap:balance}
-.promise .led{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);margin-right:8px;vertical-align:1px}
-section.block{padding:72px 0;border-top:1px solid var(--line)}
-.label{font-size:13px;font-weight:500;color:var(--accent);letter-spacing:.01em}
-h2{font-size:clamp(25px,6vw,32px);line-height:1.15;font-weight:600;letter-spacing:-.025em;margin-top:8px;text-wrap:balance}
-.block p.sub{margin-top:14px;color:var(--muted);text-wrap:pretty}
-.facts{display:grid;gap:10px;margin-top:28px}
-.fact{padding:18px 18px 20px;border:1px solid var(--line);border-radius:14px;background:var(--well)}
-.fact h3{font-size:16px;font-weight:600;letter-spacing:-.01em}
-.fact p{margin-top:4px;color:var(--muted);font-size:15px}
-@media (min-width:640px){.facts{grid-template-columns:repeat(3,1fr)}}
-.steps{list-style:none;margin:28px 0 0;padding:0;counter-reset:s}
-.steps li{display:grid;grid-template-columns:32px 1fr;gap:10px;padding:16px 0;border-top:1px solid var(--line)}
-.steps li:first-child{border-top:0}
-.steps li::before{counter-increment:s;content:counter(s);font-size:13px;font-weight:500;color:var(--faint);line-height:1.9}
-.steps b{font-weight:600}
+.link span{display:inline-block;margin-left:4px;transition:transform .2s var(--ease)}
+.link:hover span{transform:translateY(2px)}
+
+/* Hero */
+.hero{text-align:center;padding:8px 0 76px}
+.stage{position:relative;width:100%;max-width:300px;height:clamp(176px,28vh,236px);margin:0 auto;opacity:.92}
+.stage canvas{display:block;width:100%;height:100%;-webkit-mask-image:radial-gradient(ellipse 54% 56% at 50% 50%,#000 52%,transparent 100%);mask-image:radial-gradient(ellipse 54% 56% at 50% 50%,#000 52%,transparent 100%)}
+h1{font-size:clamp(34px,9.4vw,60px);line-height:1.04;font-weight:600;letter-spacing:-.04em;margin-top:10px}
+h1 span{display:block}
+.lede{margin:18px auto 0;max-width:29em;color:var(--muted);font-size:17px;line-height:1.55;text-wrap:pretty}
+.actions{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:28px}
+.promise{margin:22px auto 0;font-size:13.5px;line-height:1.55;color:var(--faint)}
+.promise .l{display:block}
+.led{display:inline-block;width:6px;height:6px;margin-right:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);vertical-align:1px}
+
+/* Sections. Each opens with a hairline carrying three gear teeth. */
+section.block{padding:0 0 72px}
+.rule{height:5px;margin-bottom:28px;background:
+  linear-gradient(90deg,var(--line-3) 0 5px,transparent 5px 9px,var(--line-3) 9px 14px,transparent 14px 18px,var(--line-3) 18px 23px,transparent 23px) no-repeat left top/23px 4px,
+  linear-gradient(var(--line-2),var(--line-2)) no-repeat left bottom/100% 1px}
+.label{font-size:13px;font-weight:500;color:var(--accent-ink);letter-spacing:.005em}
+h2{font-size:clamp(26px,6.6vw,36px);line-height:1.12;font-weight:600;letter-spacing:-.03em;margin-top:8px;text-wrap:balance}
+h3{font-size:16px;line-height:1.4;font-weight:600;letter-spacing:-.01em}
+.head{position:relative}
+.head .sub{margin-top:14px;color:var(--muted);max-width:30em;text-wrap:pretty}
+.body{margin-top:28px}
+.fine{font-size:13.5px;line-height:1.55;color:var(--faint);text-wrap:pretty}
+code{font:400 .93em/1 var(--mono);color:var(--muted);padding:2px 5px;border:1px solid var(--line);border-radius:5px;background:var(--well);white-space:nowrap}
+
+/* Private by design: a plain ledger, not cards */
+.ledger > div{padding:16px 0 18px;border-top:1px solid var(--line)}
+.ledger > div:first-child{border-top:0;padding-top:0}
+.ledger dt{font-size:16px;font-weight:600;letter-spacing:-.01em}
+.ledger dd{margin-top:3px;color:var(--muted);text-wrap:pretty}
+.ledger + .fine{margin-top:6px;padding-top:16px;border-top:1px solid var(--line)}
+
+/* How it works: five numbered steps, and two gears that turn as you read down */
+.cog{position:absolute;right:0;top:-4px;width:64px;height:auto;overflow:visible;color:var(--faint)}
+.cog g{transform-box:fill-box;transform-origin:center}
+.cog .sm{color:var(--accent)}
+#how-h{padding-right:76px}
+.steps{counter-reset:s}
+.steps li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:8px;padding:15px 0;border-top:1px solid var(--line)}
+.steps li:first-child{border-top:0;padding-top:0}
+.steps li::before{counter-increment:s;content:counter(s);font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;color:var(--faint);line-height:1.97}
+.steps li:last-child::before{color:var(--accent-ink)}
+.steps b{font-weight:600;letter-spacing:-.01em}
 .steps span{color:var(--muted)}
-.note{margin-top:22px;padding-left:12px;border-left:2px solid rgba(61,214,227,.55);font-size:14.5px;color:var(--muted)}
-.phones{display:grid;gap:10px;margin-top:28px}
-@media (min-width:640px){.phones{grid-template-columns:1fr 1fr}}
-.soon .tag{display:inline-block;margin-top:12px;padding:3px 10px;border:1px solid var(--line-2);border-radius:999px;font-size:12.5px;color:var(--faint)}
-.fact a{color:var(--text);text-underline-offset:3px;text-decoration-color:var(--line-3)}
-.about{display:grid;grid-template-columns:1fr;gap:18px;align-items:start;margin-top:24px}
-@media (min-width:560px){.about{grid-template-columns:96px 1fr;gap:20px}}
-.about img{width:96px;height:116px;object-fit:cover;object-position:center 20%;border-radius:12px;border:1px solid var(--line)}
-.about p+p{margin-top:12px}
-.about p{color:var(--muted)}
+.note{margin-top:24px;padding-left:14px;border-left:2px solid var(--accent-line);font-size:14.5px;color:var(--muted);text-wrap:pretty}
+.body > p.after{margin-top:18px}
+
+/* On your phone: a small drawing of a home screen beside the two sets of steps */
+.phone{display:grid;grid-template-columns:76px minmax(0,1fr);gap:22px;align-items:start}
+.handset{display:block;width:76px;height:auto;margin-top:4px}
+.handset .shell{fill:var(--well);stroke:var(--line-3)}
+.handset .app{fill:var(--line)}
+.handset .ours{fill:var(--accent-dim);stroke:var(--accent)}
+.handset .ring{fill:none;stroke:var(--accent);stroke-width:1.3}
+.os > div{padding:14px 0 16px;border-top:1px solid var(--line)}
+.os > div:first-child{border-top:0;padding-top:0}
+.os dt{font-size:16px;font-weight:600;letter-spacing:-.01em}
+.os dd{margin-top:3px;color:var(--muted);text-wrap:pretty}
+.open{margin-top:26px}
+
+/* What's next: rows with a quiet status */
+.rows li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 16px;align-items:baseline;padding:16px 0 18px;border-top:1px solid var(--line)}
+.rows li:first-child{border-top:0;padding-top:0}
+.rows p{grid-column:1/-1;color:var(--muted);text-wrap:pretty}
+.tag{font-size:12.5px;color:var(--faint);white-space:nowrap}
+.tag::before{content:"";display:inline-block;width:5px;height:5px;margin-right:7px;border-radius:50%;border:1px solid var(--faint);vertical-align:1px}
+.tag.live::before{background:var(--accent);border-color:var(--accent)}
+
+/* About */
+.about p{font-size:18px;line-height:1.55;color:var(--muted);max-width:30em;text-wrap:pretty}
+.about img{display:block;width:96px;height:116px;margin-bottom:18px;object-fit:cover;object-position:center 20%;border-radius:12px;border:1px solid var(--line)}
 .about p strong{color:var(--text);font-weight:500}
-.cta-row{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:22px}
-.cta-row a{color:var(--text);text-decoration:underline;text-decoration-color:var(--line-3);text-underline-offset:4px}
-.cta-row a:hover{text-decoration-color:currentColor}
-footer{border-top:1px solid var(--line);padding:48px 0 56px;font-size:14px;color:var(--muted)}
-footer h2{font-size:16px;margin:0;letter-spacing:-.01em}
-.nums{display:grid;gap:8px;margin:14px 0 0;padding:0;list-style:none}
-.nums a{color:var(--text);text-decoration:none;font-weight:500}
-.nums a:hover{color:var(--accent)}
-.legal{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:28px;color:var(--faint);font-size:13px}
-.legal a{text-decoration:none}
+.cta-row{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:20px}
+
+/* Footer */
+footer{padding:0 0 56px;font-size:14.5px;color:var(--muted)}
+footer h2{font-size:19px;line-height:1.3;margin:0;letter-spacing:-.015em}
+footer .head p{margin-top:6px;max-width:26em}
+.nums li{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 12px;padding:11px 0;border-top:1px solid var(--line)}
+.nums li:first-child{border-top:0;padding-top:0}
+.nums a{color:var(--text);text-decoration:none;font-size:16px;font-weight:500;font-variant-numeric:tabular-nums;transition:color .15s var(--ease)}
+.nums a:hover{color:var(--accent-ink)}
+.nums .where{color:var(--faint);font-size:13.5px}
+.legal{display:flex;flex-wrap:wrap;gap:4px 18px;margin-top:36px;color:var(--faint);font-size:13px}
+.legal a{text-decoration:none;transition:color .15s var(--ease)}
 .legal a:hover{color:var(--text)}
-@media (prefers-reduced-motion:reduce){*{transition-duration:.001ms!important}html{scroll-behavior:auto}}
+
+@media (max-width:359px){.top nav a{padding:8px 5px;font-size:13.5px}}
+@media (min-width:600px){
+  :root{--edge:28px}
+  .phone{grid-template-columns:92px minmax(0,1fr);gap:32px}
+  .handset{width:92px}
+}
+
+/* Laptop and up: one left edge for everything, headings in a narrow column, detail beside them */
+@media (min-width:900px){
+  :root{--edge:40px}
+  body{font-size:17px}
+  header.top{height:72px}
+  .hero{padding:44px 0 112px;text-align:left}
+  .hero-in{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);align-items:center;gap:48px;max-width:1040px;margin:0 auto;padding:0 var(--edge)}
+  .hero-in .wrap{order:1;padding:0}
+  .hero-in .stage{order:2;max-width:380px;height:340px;margin:0 0 0 auto}
+  .lede{margin-left:0;font-size:19px}
+  .actions{flex-direction:row;align-items:center;gap:14px;margin-top:32px}
+  .promise{margin-left:0}
+  .promise .l{display:inline}
+  section.block{padding-bottom:112px}
+  .rule{margin-bottom:40px}
+  .split{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);column-gap:64px;align-items:start}
+  .split .body{margin-top:6px}
+  .split > .rule{grid-column:1/-1}
+  .cog{position:static;display:block;width:124px;margin:36px 0 0 2px}
+  #how-h{padding-right:0}
+  .ledger > div{display:grid;grid-template-columns:10.5em minmax(0,1fr);gap:24px;padding:18px 0 20px}
+  .ledger dd{margin-top:0}
+  .os > div{display:grid;grid-template-columns:5.5em minmax(0,1fr);gap:20px}
+  .os dd{margin-top:0}
+  .phone{grid-template-columns:104px minmax(0,1fr);gap:40px}
+  .handset{width:104px}
+  .rows p{grid-column:1;max-width:32em}
+  .rows .tag{grid-row:1;grid-column:2}
+  .about p{font-size:20px}
+  footer{padding-bottom:64px}
+  footer .split .body{margin-top:2px}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.001ms!important}html{scroll-behavior:auto}}
 </style>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 <header class="top">
   <a class="wordmark" href="/" aria-label="Bluzen home">bluzen</a>
-  <nav><a class="small" href="how-it-works.html">How it works</a> <a class="small" href="#about">About</a></nav>
+  <nav aria-label="Main"><a href="how-it-works.html">How it works</a><a href="#about">About</a><a href="support.html">Support</a></nav>
 </header>
 
 <main id="main">
@@ -129,102 +225,153 @@ footer h2{font-size:16px;margin:0;letter-spacing:-.01em}
    <div class="hero-in">
     <div class="stage" aria-hidden="true"><canvas id="swarm"></canvas></div>
     <div class="wrap">
-      <h1>Three minutes. One small step.</h1>
-      <p class="lede">A private check-in for your head. Start with what went right, reset your breathing, and leave with one thing to do.</p>
+      <h1><span>Three minutes.</span> <span>One small step.</span></h1>
+      <p class="lede">A private check-in for your head. Start with what went right, reset your breathing, and leave with one thing to&nbsp;do.</p>
       <div class="actions">
         <a class="btn primary" href="check-in/">Start check-in</a>
-        <a class="link" href="#phone">Add it to your phone</a>
+        <a class="link" href="#phone">Add it to your phone <span aria-hidden="true">↓</span></a>
       </div>
-      <p class="promise"><span class="led" aria-hidden="true"></span>Works with no signal. Nothing you type leaves your phone.</p>
+      <p class="promise"><span class="l"><span class="led" aria-hidden="true"></span>Works with no signal.</span> <span class="l">Nothing you type leaves your&nbsp;phone.</span></p>
     </div>
    </div>
   </section>
 
   <section class="block" aria-labelledby="private-h">
-    <div class="wrap">
-      <p class="label">Private by design</p>
-      <h2 id="private-h">Nothing to sign up to. Nothing to steal.</h2>
-      <div class="facts">
-        <div class="fact"><h3>No account</h3><p>No name, no email, no login. Just open it and start.</p></div>
-        <div class="fact"><h3>Nothing saved or sent</h3><p>What you type stays on your phone and is gone when you close it. The page is locked so it can’t send anything.</p></div>
-        <div class="fact"><h3>Works anywhere</h3><p>Add it to your home screen and it works with no signal at all.</p></div>
+    <div class="wrap split">
+      <div class="rule" aria-hidden="true"></div>
+      <div class="head">
+        <p class="label">Private by design</p>
+        <h2 id="private-h">Nothing to sign up to. Nothing to&nbsp;steal.</h2>
+      </div>
+      <div class="body">
+        <dl class="ledger">
+          <div><dt>No account</dt><dd>No name, no email, no login. Just open it and start.</dd></div>
+          <div><dt>Nothing saved or sent</dt><dd>What you type stays on your phone and is gone when you close it. The page is locked so it can’t send anything.</dd></div>
+          <div><dt>Works anywhere</dt><dd>Add it to your home screen and it works with no signal at all.</dd></div>
+        </dl>
+        <p class="fine">If you like to check these things yourself: open the check-in’s page source and look for <code>connect-src 'none'</code>. That line is part of the lock.</p>
       </div>
     </div>
   </section>
 
   <section class="block" aria-labelledby="how-h">
-    <div class="wrap">
-      <p class="label">How it works</p>
-      <h2 id="how-h">Five steps, about three minutes.</h2>
-      <ol class="steps">
-        <li><div><b>What went right.</b> <span>One thing today, however small.</span></div></li>
-        <li><div><b>Where your head’s at.</b> <span>A quick 0 to 10, and what’s keeping you there.</span></div></li>
-        <li><div><b>Reset.</b> <span>A few rounds of slow breathing. Two breaths in, one long breath out.</span></div></li>
-        <li><div><b>Tomorrow.</b> <span>The first sign it’s going a notch better.</span></div></li>
-        <li><div><b>One small step.</b> <span>Half a point. Small enough that you’ll actually do it.</span></div></li>
-      </ol>
-      <p class="note">Built on solution-focused methods hypnotherapists have used for decades, and on research into breathing, stress and planning. It’s a self-help tool for adults, not therapy or a diagnosis.</p>
-      <p class="sub"><a class="more" href="how-it-works.html">More on the approach and the research</a></p>
+    <div class="wrap split">
+      <div class="rule" aria-hidden="true"></div>
+      <div class="head">
+        <p class="label">How it works</p>
+        <h2 id="how-h">Five steps, about three&nbsp;minutes.</h2>
+        <!-- The two gears from the logo, with real meshing teeth. They turn a little as the reader moves down the steps. Still with reduced motion. -->
+        <svg class="cog" id="cog" viewBox="-35 -61 107 96" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true">
+          <g transform="translate(0 0)"><g class="big" id="cogBig"><path d="M24.31 -6.35Q24.59 -5.50 25.43 -5.16L31.79 -2.59Q32.62 -2.26 32.62 -1.36L32.62 1.36Q32.62 2.26 31.79 2.59L25.43 5.16Q24.59 5.50 24.31 6.35L23.41 9.15Q23.13 10.01 23.60 10.77L27.24 16.58Q27.72 17.35 27.19 18.08L25.59 20.27Q25.06 21.00 24.19 20.78L17.54 19.12Q16.67 18.90 15.94 19.43L13.56 21.16Q12.83 21.69 12.77 22.59L12.29 29.43Q12.23 30.33 11.37 30.61L8.79 31.45Q7.93 31.72 7.35 31.03L2.95 25.78Q2.37 25.09 1.47 25.09L-1.47 25.09Q-2.37 25.09 -2.95 25.78L-7.35 31.03Q-7.93 31.72 -8.79 31.45L-11.37 30.61Q-12.23 30.33 -12.29 29.43L-12.77 22.59Q-12.83 21.69 -13.56 21.16L-15.94 19.43Q-16.67 18.90 -17.54 19.12L-24.19 20.78Q-25.06 21.00 -25.59 20.27L-27.19 18.08Q-27.72 17.35 -27.24 16.58L-23.60 10.77Q-23.13 10.01 -23.41 9.15L-24.31 6.35Q-24.59 5.50 -25.43 5.16L-31.79 2.59Q-32.62 2.26 -32.62 1.36L-32.62 -1.36Q-32.62 -2.26 -31.79 -2.59L-25.43 -5.16Q-24.59 -5.50 -24.31 -6.35L-23.41 -9.15Q-23.13 -10.01 -23.60 -10.77L-27.24 -16.58Q-27.72 -17.35 -27.19 -18.08L-25.59 -20.27Q-25.06 -21.00 -24.19 -20.78L-17.54 -19.12Q-16.67 -18.90 -15.94 -19.43L-13.56 -21.16Q-12.83 -21.69 -12.77 -22.59L-12.29 -29.43Q-12.23 -30.33 -11.37 -30.61L-8.79 -31.45Q-7.93 -31.72 -7.35 -31.03L-2.95 -25.78Q-2.37 -25.09 -1.47 -25.09L1.47 -25.09Q2.37 -25.09 2.95 -25.78L7.35 -31.03Q7.93 -31.72 8.79 -31.45L11.37 -30.61Q12.23 -30.33 12.29 -29.43L12.77 -22.59Q12.83 -21.69 13.56 -21.16L15.94 -19.43Q16.67 -18.90 17.54 -19.12L24.19 -20.78Q25.06 -21.00 25.59 -20.27L27.19 -18.08Q27.72 -17.35 27.24 -16.58L23.60 -10.77Q23.13 -10.01 23.41 -9.15Z"/><circle r="12.6"/></g></g>
+          <g transform="translate(43.19 -32.42)"><g class="sm" id="cogSm" transform="rotate(74.48)"><path d="M18.13 -6.04Q18.48 -5.21 19.33 -4.91L25.75 -2.61Q26.60 -2.30 26.60 -1.40L26.60 1.40Q26.60 2.30 25.75 2.61L19.33 4.91Q18.48 5.21 18.13 6.04L17.10 8.55Q16.75 9.38 17.14 10.20L20.05 16.37Q20.44 17.18 19.80 17.82L17.82 19.80Q17.18 20.44 16.37 20.05L10.20 17.14Q9.38 16.75 8.55 17.10L6.04 18.13Q5.21 18.48 4.91 19.33L2.61 25.75Q2.30 26.60 1.40 26.60L-1.40 26.60Q-2.30 26.60 -2.61 25.75L-4.91 19.33Q-5.21 18.48 -6.04 18.13L-8.55 17.10Q-9.38 16.75 -10.20 17.14L-16.37 20.05Q-17.18 20.44 -17.82 19.80L-19.80 17.82Q-20.44 17.18 -20.05 16.37L-17.14 10.20Q-16.75 9.38 -17.10 8.55L-18.13 6.04Q-18.48 5.21 -19.33 4.91L-25.75 2.61Q-26.60 2.30 -26.60 1.40L-26.60 -1.40Q-26.60 -2.30 -25.75 -2.61L-19.33 -4.91Q-18.48 -5.21 -18.13 -6.04L-17.10 -8.55Q-16.75 -9.38 -17.14 -10.20L-20.05 -16.37Q-20.44 -17.18 -19.80 -17.82L-17.82 -19.80Q-17.18 -20.44 -16.37 -20.05L-10.20 -17.14Q-9.38 -16.75 -8.55 -17.10L-6.04 -18.13Q-5.21 -18.48 -4.91 -19.33L-2.61 -25.75Q-2.30 -26.60 -1.40 -26.60L1.40 -26.60Q2.30 -26.60 2.61 -25.75L4.91 -19.33Q5.21 -18.48 6.04 -18.13L8.55 -17.10Q9.38 -16.75 10.20 -17.14L16.37 -20.05Q17.18 -20.44 17.82 -19.80L19.80 -17.82Q20.44 -17.18 20.05 -16.37L17.14 -10.20Q16.75 -9.38 17.10 -8.55Z"/><circle r="9"/></g></g>
+        </svg>
+      </div>
+      <div class="body">
+        <ol class="steps" id="steps">
+          <li><div><b>What went right.</b> <span>One thing today, however small.</span></div></li>
+          <li><div><b>Where your head’s at.</b> <span>A quick 0 to 10, and what’s keeping you there.</span></div></li>
+          <li><div><b>Reset.</b> <span>A few rounds of slow breathing. Two breaths in, one long breath out.</span></div></li>
+          <li><div><b>Tomorrow.</b> <span>The first sign it’s going a notch better.</span></div></li>
+          <li><div><b>One small step.</b> <span>Half a point. Small enough that you’ll actually do it.</span></div></li>
+        </ol>
+        <p class="note">Built on solution-focused methods hypnotherapists have used for decades, and on research into breathing, stress and planning. It’s a self-help tool for adults, not therapy or a diagnosis.</p>
+        <p class="after"><a class="more" href="how-it-works.html">More on the approach and the research</a></p>
+      </div>
     </div>
   </section>
 
   <section class="block" id="phone" aria-labelledby="phone-h">
-    <div class="wrap">
-      <p class="label">On your phone</p>
-      <h2 id="phone-h">Keep it on your home screen.</h2>
-      <p class="sub">Open it once with signal. From then on it opens like an app, and works without.</p>
-      <div class="phones">
-        <div class="fact"><h3>iPhone</h3><p>Open the check-in in Safari, tap the Share button, then Add to Home Screen.</p></div>
-        <div class="fact"><h3>Android</h3><p>Open the check-in in Chrome, tap the menu, then Install app or Add to Home screen.</p></div>
+    <div class="wrap split">
+      <div class="rule" aria-hidden="true"></div>
+      <div class="head">
+        <p class="label">On your phone</p>
+        <h2 id="phone-h">Keep it on your home&nbsp;screen.</h2>
+        <p class="sub">Open it once with signal. From then on it opens like an app, and works without.</p>
       </div>
-      <div class="actions" style="align-items:flex-start"><a class="btn primary" href="check-in/">Open the check-in</a></div>
+      <div class="body">
+        <div class="phone">
+          <svg class="handset" viewBox="0 0 96 178" aria-hidden="true">
+            <rect class="shell" x=".75" y=".75" width="94.5" height="176.5" rx="17" stroke-width="1.5"/>
+            <rect class="app" x="38" y="9" width="20" height="5" rx="2.5"/>
+            <g class="app">
+              <rect x="10" y="30" width="20" height="20" rx="5.5"/><rect x="38" y="30" width="20" height="20" rx="5.5"/><rect x="66" y="30" width="20" height="20" rx="5.5"/>
+              <rect x="10" y="60" width="20" height="20" rx="5.5"/><rect x="66" y="60" width="20" height="20" rx="5.5"/>
+              <rect x="10" y="90" width="20" height="20" rx="5.5"/><rect x="38" y="90" width="20" height="20" rx="5.5"/>
+              <rect x="10" y="142" width="76" height="26" rx="9"/>
+            </g>
+            <rect class="ours" x="38" y="60" width="20" height="20" rx="5.5" stroke-width="1.2"/>
+            <circle class="ring" cx="45.6" cy="72.2" r="3.6"/><circle class="ring" cx="51.6" cy="67.4" r="2.7"/>
+          </svg>
+          <dl class="os">
+            <div><dt>iPhone</dt><dd>Open the check-in in Safari, tap the Share button, then Add to Home Screen.</dd></div>
+            <div><dt>Android</dt><dd>Open the check-in in Chrome, tap the menu, then Install app or Add to Home screen.</dd></div>
+          </dl>
+        </div>
+        <p class="open"><a class="btn primary" href="check-in/">Open the check-in</a></p>
+      </div>
     </div>
   </section>
 
   <section class="block" id="more" aria-labelledby="more-h">
-    <div class="wrap">
-      <p class="label">What’s next</p>
-      <h2 id="more-h">More on the way.</h2>
-      <div class="facts">
-        <!-- Find your direction is built (direction/). Marked as an early version until Darragh has refined the wording. -->
-        <div class="fact soon"><h3>Find your direction</h3><p>Eight quick sliders to help you choose which way to point your check-ins. <a href="direction/">Try it</a>.</p><span class="tag">Early version</span></div>
-        <!-- PLACEHOLDER: wind-down audio. Swap in the email sign-up when the audio is recorded. -->
-        <div class="fact soon"><h3>Wind-down audio</h3><p>A guided audio for the end of the day. Use it after an evening check-in.</p><span class="tag">Coming soon</span></div>
-        <!-- PLACEHOLDER: 1:1 sessions. Add the session block and pricing when ready. -->
-        <div class="fact soon"><h3>One to one sessions</h3><p>Solution Focused Hypnotherapy, online, for adults. <a href="https://calendly.com/darraghkearney123/30min" rel="noopener">Book a free 15 minute call</a>.</p></div>
+    <div class="wrap split">
+      <div class="rule" aria-hidden="true"></div>
+      <div class="head">
+        <p class="label">What’s next</p>
+        <h2 id="more-h">More on the way.</h2>
+      </div>
+      <div class="body">
+        <ul class="rows">
+          <!-- Find your direction is built (direction/). Marked as an early version until Darragh has refined the wording. -->
+          <li><h3>Find your direction</h3><span class="tag live">Early version</span><p>Eight quick sliders to help you choose which way to point your check-ins. <a href="direction/">Try it</a>.</p></li>
+          <!-- PLACEHOLDER: wind-down audio. Swap in the email sign-up when the audio is recorded. -->
+          <li><h3>Wind-down audio</h3><span class="tag">Coming soon</span><p>A guided audio for the end of the day. Use it after an evening check-in.</p></li>
+          <!-- PLACEHOLDER: 1:1 sessions. Add the session block and pricing when ready. -->
+          <li><h3>One to one sessions</h3><p>Solution Focused Hypnotherapy, online, for adults. <a href="https://calendly.com/darraghkearney123/30min" rel="noopener">Book a free 15 minute call</a>.</p></li>
+        </ul>
       </div>
     </div>
   </section>
 
   <section class="block" id="about" aria-labelledby="about-h">
-    <div class="wrap">
-      <p class="label">Who made it</p>
-      <!-- PLACEHOLDER: Darragh's own story goes here. Photo optional, casual rather than posed. -->
-      <h2 id="about-h">I’m Darragh.</h2>
-      <p class="sub">I’m a Solution Focused Hypnotherapist from the North West of Ireland. More about me, and why I made this, is on the way.</p>
-      <div class="cta-row">
-        <!-- TODO CONTACT: there is no working contact address yet. Set one up (for example hello@ your domain, forwarding to your own inbox), then put it here, in privacy.html, accessibility.html and how-it-works.html. -->
-        <span>Contact details coming soon</span>
+    <div class="wrap split">
+      <div class="rule" aria-hidden="true"></div>
+      <div class="head">
+        <p class="label">Who made it</p>
+        <!-- PLACEHOLDER: Darragh's own story goes here. Photo optional, casual rather than posed.
+             When there's a photo he likes, put an <img> at the top of the .about block below: the style is ready for it. -->
+        <h2 id="about-h">I’m Darragh.</h2>
+      </div>
+      <div class="body about">
+        <p>I’m a Solution Focused Hypnotherapist from the North West of Ireland. More about me, and why I made this, is on the way.</p>
+        <div class="cta-row">
+          <!-- TODO CONTACT: there is no working contact address yet. Set one up (for example hello@ your domain, forwarding to your own inbox), then put it here, in privacy.html, accessibility.html and how-it-works.html. -->
+          <span>Contact details coming soon</span>
+        </div>
       </div>
     </div>
   </section>
 </main>
 
 <footer>
-  <div class="wrap">
-    <h2>Need someone now?</h2>
-    <p style="margin-top:6px">Bluzen isn’t a crisis service. These are free and there at any hour.</p>
-    <ul class="nums">
-      <li><a href="tel:116123">Samaritans 116 123</a> · Ireland and the UK</li>
-      <li><a href="tel:1800247247">Pieta 1800 247 247</a> · Republic of Ireland</li>
-      <li><a href="tel:08088088000">Lifeline 0808 808 8000</a> · Northern Ireland</li>
-      <li><a href="tel:999">999</a> or <a href="tel:112">112</a> · in an emergency, North and South</li>
-    </ul>
-    <div class="legal">
-      <span>© 2026 Bluzen</span>
-      <a href="support.html">All support numbers</a>
-      <a href="privacy.html">Privacy</a>
-      <a href="accessibility.html">Accessibility</a>
+  <div class="wrap split">
+    <div class="rule" aria-hidden="true"></div>
+    <div class="head">
+      <h2>Need someone now?</h2>
+      <p>Bluzen isn’t a crisis service. These are free and there at any hour.</p>
+    </div>
+    <div class="body">
+      <ul class="nums">
+        <li><a href="tel:116123">Samaritans 116 123</a><span class="where">Ireland and the UK</span></li>
+        <li><a href="tel:1800247247">Pieta 1800 247 247</a><span class="where">Republic of Ireland</span></li>
+        <li><a href="tel:08088088000">Lifeline 0808 808 8000</a><span class="where">Northern Ireland</span></li>
+        <li><span><a href="tel:999">999</a> or <a href="tel:112">112</a></span><span class="where">In an emergency, North and South</span></li>
+      </ul>
+      <div class="legal">
+        <span>© 2026 Bluzen</span>
+        <a href="support.html">All support numbers</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="accessibility.html">Accessibility</a>
+      </div>
     </div>
   </div>
 </footer>
@@ -232,13 +379,35 @@ footer h2{font-size:16px;margin:0;letter-spacing:-.01em}
 <script>
 (() => {
 'use strict';
+const motionQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+const lightQ = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : { matches: false };
+const still = motionQ.matches;
+
+/* The two gears beside the five steps. They turn as the steps scroll past, and stay meshed:
+   10 teeth against 8, so the small one turns 10/8 as far, the other way. */
+(() => {
+  const big = document.getElementById('cogBig'), sm = document.getElementById('cogSm'), steps = document.getElementById('steps');
+  if (!big || !sm || !steps || still) return;
+  let shown = 0, want = 0, busy = false;
+  const read = () => { const r = steps.getBoundingClientRect(), vh = window.innerHeight || 800; want = Math.min(1, Math.max(0, (vh * 0.9 - r.top) / (r.height + vh * 0.6))) * 144; };
+  const draw = () => {
+    shown += (want - shown) * 0.12;
+    if (Math.abs(want - shown) < 0.02) { shown = want; busy = false; } else requestAnimationFrame(draw);
+    big.setAttribute('transform', `rotate(${shown.toFixed(2)})`);
+    sm.setAttribute('transform', `rotate(${(74.48 - shown * 1.25).toFixed(2)})`);
+  };
+  const kick = () => { read(); if (!busy) { busy = true; requestAnimationFrame(draw); } };
+  window.addEventListener('scroll', kick, { passive: true });
+  window.addEventListener('resize', kick);
+  kick();
+})();
+
 /* The murmuration. A swarm drifts in calmly and gathers into the Bluzen head and gears,
    in waves: the head first, then the big gear, then the small one, which clicks into mesh.
    Then the crisp logo fades in and the gears turn slowly. A few strays keep drifting.
    Geometry matches the check-in's HG block (logo units x 0.4). */
 const cv = document.getElementById('swarm'); if (!cv || !cv.getContext) return;
 const ctx = cv.getContext('2d');
-const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const HEAD = 'M51.4 232.8L51.4 217.4C51.4 207.9 54.1 188.8 51.2 180.8C49.3 175.5 45.5 171.2 42.3 166.6C27.9 145.6 17.3 133.8 15.2 107.3C14.9 103 15.6 98.8 16 94.6C17.2 81.6 22.3 69.9 29.6 59.2C62.6 10.7 138.3 1.6 182.2 41.4C192.7 50.9 200.8 63.4 202 77.7C202.7 86 199.8 105.5 200.9 109.5C203.8 120.2 220.7 134.2 220.8 144.8C220.8 154 206.4 152.2 203.4 159.4C200.2 167.3 202.3 197.9 195.4 207.9C189.9 215.8 178.4 216 169.8 216C165.8 216 155.6 216.1 152.2 215.6C150.4 215.3 148.6 214.5 146.8 214.1C129 209.8 122.2 207.8 106.2 198.4';
 const NECK = 'M150.9 215.3L150.9 232.8';
 const R = Math.PI / 180;
@@ -249,18 +418,25 @@ const BP = poly(BIG), SP = poly(SM);
 const along = (pts, u) => { const n = pts.length, f = u * n, i = Math.floor(f) % n, t = f - Math.floor(f), a = pts[i], b = pts[(i + 1) % n]; return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]; };
 const AX = Math.atan2(SM.y - BIG.y, SM.x - BIG.x), L = AX / R, RATIO = BIG.n / SM.n, PITCH = 360 / SM.n;
 const ns = 'http://www.w3.org/2000/svg';
-const svg = document.createElementNS(ns, 'svg'); svg.setAttribute('width', '0'); svg.setAttribute('height', '0'); svg.style.position = 'absolute';
+const svg = document.createElementNS(ns, 'svg'); svg.setAttribute('width', '0'); svg.setAttribute('height', '0'); svg.setAttribute('aria-hidden', 'true'); svg.style.position = 'absolute';
 const hp = document.createElementNS(ns, 'path'); hp.setAttribute('d', HEAD); const np = document.createElementNS(ns, 'path'); np.setAttribute('d', NECK);
 svg.append(hp, np); document.body.append(svg);
 const HL = hp.getTotalLength(), NL = np.getTotalLength();
+/* Colours follow the device's light or dark setting. */
+let ink, turq;
+const tint = () => { const lt = lightQ.matches; ink = lt ? [40, 44, 52] : [220, 222, 226]; turq = lt ? [10, 124, 136] : [61, 214, 227]; };
+tint();
 let W = 0, H = 0, S = 1, OX = 0, OY = 0;
 const dpr = Math.min(2, window.devicePixelRatio || 1);
 function size() {
-  W = cv.clientWidth; H = cv.clientHeight; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  S = Math.min((H - 24) / 235, (W - 24) / 224); OX = (W - 224 * S) / 2 - 6 * S; OY = (H - 235 * S) / 2 - 7 * S;
+  const w0 = W, h0 = H;
+  W = cv.clientWidth; H = cv.clientHeight; cv.width = Math.max(1, Math.round(W * dpr)); cv.height = Math.max(1, Math.round(H * dpr)); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  S = Math.max(0.1, Math.min((H - 24) / 235, (W - 24) / 224)); OX = (W - 224 * S) / 2 - 6 * S; OY = (H - 235 * S) / 2 - 7 * S;
+  if (w0 && h0 && typeof P !== 'undefined') for (const p of P) { p.x *= W / w0; p.y *= H / h0; }   // keep the swarm in place when the stage changes size
 }
+const P = [];
 size();
-const small = W < 420, N = small ? 380 : 520, P = [];
+const small = W < 420, N = small ? 380 : 520;
 for (let i = 0; i < N; i++) {
   const part = i < N * 0.48 ? 'head' : i < N * 0.76 ? 'big' : 'sm', k = Math.random();
   let h = null; if (part === 'head') { const l = k * (HL + NL); const q = l < HL ? hp.getPointAtLength(l) : np.getPointAtLength(l - HL); h = [q.x, q.y]; }
@@ -268,7 +444,6 @@ for (let i = 0; i < N; i++) {
 }
 const WAVES = [['head', 0, .34], ['head', .34, .67], ['head', .67, 1], ['big', 0, .5], ['big', .5, 1], ['sm', 0, .4], ['sm', .4, .8], ['sm', .8, 1]];
 let a1 = 0, a2 = 0, gap = 8, locked = false, cro = 0, pulse = 0, tt = 0, wave = 0, start = performance.now(), last = start, running = false, visible = true;
-const turq = [61, 214, 227];
 const tr = d => { const p = new Path2D(); p.addPath(new Path2D(d), new DOMMatrix([S, 0, 0, S, OX, OY])); return p; };
 function gearPath(g, pts, at, ang) {
   const p = new Path2D(), c = Math.cos(ang * R), s = Math.sin(ang * R);
@@ -277,42 +452,48 @@ function gearPath(g, pts, at, ang) {
 }
 function logo(alpha, sx, sy) {
   ctx.save(); ctx.globalAlpha = alpha; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.lineWidth = Math.max(1.4, 1.6 * S);
-  ctx.strokeStyle = 'rgba(237,238,240,0.5)'; ctx.stroke(tr(HEAD)); ctx.stroke(tr(NECK));
-  ctx.strokeStyle = 'rgb(61,214,227)'; ctx.lineWidth = Math.max(1.4, 1.6 * S) + pulse * 2;
+  ctx.strokeStyle = `rgba(${ink.join(',')},${lightQ.matches ? 0.62 : 0.5})`; ctx.stroke(tr(HEAD)); ctx.stroke(tr(NECK));
+  ctx.strokeStyle = `rgb(${turq.join(',')})`; ctx.lineWidth = Math.max(1.4, 1.6 * S) + pulse * 2;
   ctx.stroke(gearPath(BIG, BP, [BIG.x, BIG.y], a1)); ctx.stroke(gearPath(SM, SP, [sx, sy], a2)); ctx.restore();
 }
-if (still) {
+function drawStill() {
+  ctx.clearRect(0, 0, W, H);
   a2 = L + 180 - PITCH / 2 - (a1 - L) * RATIO;
   logo(1, SM.x, SM.y);
-  return;
 }
+const onTheme = () => { tint(); if (still) drawStill(); };
+if (lightQ.addEventListener) lightQ.addEventListener('change', onTheme); else if (lightQ.addListener) lightQ.addListener(onTheme);
+let rt = 0; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { size(); if (still) drawStill(); }, 120); });
+if (still) { drawStill(); return; }
 function frame(now) {
   if (!visible) { running = false; return; }
   const dt = Math.min(0.05, (now - last) / 1000); last = now; tt += dt * 0.5; const t = (now - start) / 1000;
   const due = Math.floor(Math.max(0, t - 1.2) / 0.75);
   while (wave < Math.min(due, WAVES.length)) { const [part, from, to] = WAVES[wave]; P.forEach(p => { if (!p.stray && p.part === part && p.k >= from && p.k < to) p.home = true; }); wave++; }
   if (wave >= WAVES.length && !locked && t > 1.2 + 0.75 * WAVES.length + 1.2) { locked = true; pulse = 1; }
-  gap += ((locked ? 0 : 8) - gap) * 0.05; if (locked) cro = Math.min(1, cro + dt * 0.45); pulse *= 0.95;
+  const f = dt * 60;   // the same pace on 60Hz and 120Hz screens
+  gap += ((locked ? 0 : 8) - gap) * (1 - Math.pow(0.95, f)); if (locked) cro = Math.min(1, cro + dt * 0.45); pulse *= Math.pow(0.95, f);
   const v1 = 7; a1 += v1 * dt;
   const sx = SM.x + Math.cos(AX) * gap, sy = SM.y + Math.sin(AX) * gap;
-  if (locked) { const m = L + 180 - PITCH / 2 - (a1 - L) * RATIO; a2 += (m - a2) * 0.12; } else a2 += -v1 * RATIO * dt;
-  ctx.globalCompositeOperation = 'destination-out'; ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fillRect(0, 0, W, H); ctx.globalCompositeOperation = 'source-over';
+  if (locked) { const m = L + 180 - PITCH / 2 - (a1 - L) * RATIO; a2 += (m - a2) * (1 - Math.pow(0.88, f)); } else a2 += -v1 * RATIO * dt;
+  ctx.globalCompositeOperation = 'destination-out'; ctx.fillStyle = `rgba(0,0,0,${(1 - Math.pow(0.8, f)).toFixed(3)})`; ctx.fillRect(0, 0, W, H); ctx.globalCompositeOperation = 'source-over';
+  const pull = 0.01 * f, drag = Math.pow(0.85, f), steer = 1 - Math.pow(0.96, f);
   for (const p of P) {
     if (p.home) {
       let tx, ty;
       if (p.part === 'head') [tx, ty] = p.h;
       else if (p.part === 'big') { const [x, y] = along(BP, p.k), c = Math.cos(a1 * R), s = Math.sin(a1 * R); tx = BIG.x + x * c - y * s; ty = BIG.y + x * s + y * c; }
       else { const [x, y] = along(SP, p.k), c = Math.cos(a2 * R), s = Math.sin(a2 * R); tx = sx + x * c - y * s; ty = sy + x * s + y * c; }
-      tx = OX + tx * S; ty = OY + ty * S; p.vx += (tx - p.x) * 0.01; p.vy += (ty - p.y) * 0.01; p.vx *= 0.85; p.vy *= 0.85;
+      tx = OX + tx * S; ty = OY + ty * S; p.vx += (tx - p.x) * pull; p.vy += (ty - p.y) * pull; p.vx *= drag; p.vy *= drag;
     } else {
       const ang = Math.sin(p.x * 0.007 + tt * 0.4) * 1.6 + Math.cos(p.y * 0.009 - tt * 0.3) * 1.6 + tt * 0.15;
-      p.vx += (Math.cos(ang) * 0.7 - p.vx) * 0.04; p.vy += (Math.sin(ang) * 0.5 - p.vy) * 0.04;
+      p.vx += (Math.cos(ang) * 0.7 - p.vx) * steer; p.vy += (Math.sin(ang) * 0.5 - p.vy) * steer;
       if (p.x < -4) p.x += W + 8; if (p.x > W + 4) p.x -= W + 8; if (p.y < -4) p.y += H + 8; if (p.y > H + 4) p.y -= H + 8;
     }
-    p.x += p.vx; p.y += p.vy;
+    p.x += p.vx * f; p.y += p.vy * f;
     let a = 0.5 + 0.12 * Math.sin(t * 1.5 + p.ph); if (p.home) a *= 1 - 0.88 * cro;
     const gear = p.home && p.part !== 'head';
-    ctx.fillStyle = gear ? `rgba(${turq.join(',')},${a.toFixed(2)})` : `rgba(220,222,226,${(a * 0.85).toFixed(2)})`;
+    ctx.fillStyle = gear ? `rgba(${turq.join(',')},${a.toFixed(2)})` : `rgba(${ink.join(',')},${(a * 0.85).toFixed(2)})`;
     ctx.fillRect(p.x, p.y, p.sz, p.sz);
   }
   if (cro > 0) logo(cro, sx, sy);
@@ -322,7 +503,6 @@ function go() { if (running || !visible) return; running = true; last = performa
 const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => { visible = es[0].isIntersecting && !document.hidden; go(); }) : null;
 if (io) io.observe(cv);
 document.addEventListener('visibilitychange', () => { visible = !document.hidden; go(); });
-let rt = 0; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(size, 120); });
 go();
 })();
 </script>
